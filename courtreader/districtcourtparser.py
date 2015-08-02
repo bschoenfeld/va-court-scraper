@@ -58,6 +58,8 @@ def next_button_found(soup):
 def parse_case_details(soup):
     case_details = {}
     try:
+        case_details['CourtName'] = soup.find(id='headerCourtName') \
+                                        .string.strip()
         # Parse grids
         for label_cell in soup.find_all(class_=re.compile('labelgrid')):
             value_cell = label_cell.next_sibling

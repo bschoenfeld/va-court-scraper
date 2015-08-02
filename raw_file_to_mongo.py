@@ -8,10 +8,10 @@ with open(file_path, 'r') as data_file:
     for line in data_file:
         case_data = line.split()
         case = {
-            'fips_code': case_data[0],
-            'case_number': case_data[1]
+            'FIPSCode': case_data[0],
+            'CaseNumber': case_data[1]
         }
-        if not case['fips_code'].isdigit(): continue
+        if not case['FIPSCode'].isdigit(): continue
         cases.append(case)
 print len(cases)
 

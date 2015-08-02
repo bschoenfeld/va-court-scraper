@@ -15,6 +15,7 @@ class DistrictCourtReader:
 
     def change_court(self, fips_code):
         if fips_code != self.fips_code:
+            print 'Changing court'
             name = self.court_names[fips_code]
             self.opener.change_court(name, fips_code)
             self.fips_code = fips_code
