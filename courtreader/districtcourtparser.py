@@ -58,6 +58,7 @@ def next_button_found(soup):
 def parse_case_details(soup):
     case_details = {}
     try:
+        # Parse grids
         for label_cell in soup.find_all(class_=re.compile('labelgrid')):
             value_cell = label_cell.next_sibling
             while value_cell.name != 'td':
@@ -65,10 +66,12 @@ def parse_case_details(soup):
             label = get_string_from_cell(label_cell, True)
             value = get_string_from_cell(value_cell)
             case_details[label] = value
+        # Parse tables
+        case_details['Hearings'] = parse_table(soup, 'toggleHearing')
+        case_details['Services'] = parse_table(soup, 'toggleServices')
     except:
         handle_parse_exception(soup)
         raise
-    print case_details
     return case_details
 
 def get_string_from_cell(cell, is_label=False):
@@ -81,3 +84,17 @@ def get_string_from_cell(cell, is_label=False):
                      .replace('/', '') \
                      .replace(' ', '')
     return value
+
+def parse_table(soup, table_id):
+    table_contents = []
+    table_section = soup.find(id=table_id)
+    table_headers = list(table_section.find(class_='gridheader') \
+                                      .stripped_strings)
+    for row in table_section.find_all(class_='gridrow'):
+        table_contents.append(dict(zip( \
+            table_headers, \
+            [cell.string.strip() \
+                if cell.string is not None else '' \
+                for cell in row.find_all('td')] \
+        )))
+    return table_contents
