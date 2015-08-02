@@ -23,7 +23,7 @@ class DistrictCourtOpener:
             page_content = page.read()
         if 'By clicking Accept' in page_content:
             raise RuntimeError('CAPTCHA failed')
-        return BeautifulSoup(page_content)
+        return BeautifulSoup(page_content, 'html.parser')
 
     def solve_captcha(self, url):
         driver = webdriver.Chrome()
@@ -85,7 +85,7 @@ class DistrictCourtOpener:
             if '<a href="caseSearch.do?formAction=caseDetails' in line:
                 line = line.replace('/>', '>')
             content += line
-        soup = BeautifulSoup(content)
+        soup = BeautifulSoup(content, 'html.parser')
         return soup
 
     def open_case_number_search(self, code):
@@ -112,11 +112,10 @@ class DistrictCourtOpener:
 
         url = self.url('criminalDetail.do')
         content = self.opener.open(url)
-        print content
-        soup = BeautifulSoup(content)
+        soup = BeautifulSoup(content, 'html.parser')
         return soup
 
     def open_case_details(self, case):
         url = self.url(case['details_url'])
         page = self.opener.open(url)
-        return BeautifulSoup(page.read())
+        return BeautifulSoup(page.read(), 'html.parser')
