@@ -15,3 +15,26 @@ class CircuitCourtOpener:
         url = self.url('circuit.jsp')
         page = self.opener.open(url)
         return BeautifulSoup(page.read(), 'html.parser')
+
+    def change_court(self, code, court):
+        data = urllib.urlencode({
+            'courtId': code,
+            'courtType': 'C',
+            'caseType': 'ALL',
+            'testdos': False,
+            'sessionCreate': 'NEW',
+            'whichsystem': court
+        })
+        url = self.url('MainMenu.do')
+        print self.opener.open(url, data).read()
+
+    def do_case_number_search(self, code, case_number):
+        data = {
+            'courtId':code,
+            'caseNo':case_number,
+            'categorySelected':'R'
+        }
+        data = urllib.urlencode(data)
+        url = self.url('CaseDetail.do')
+        page = self.opener.open(url, data)
+        return BeautifulSoup(page.read(), 'html.parser')

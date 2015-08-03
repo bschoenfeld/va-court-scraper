@@ -10,8 +10,9 @@ db = client.va_circuit_court_cases
 reader = readers.CircuitCourtReader()
 courts = reader.connect()
 court_codes = {}
-for court in courts:
-    court_codes[court['name'].replace(' Circuit Court', '')] = court['fips_code']
+# TODO - fix this
+#for court in courts:
+#    court_codes[court['name'].replace(' Circuit Court', '')] = court['fips_code']
 
 cases = db.case_numbers.find({ \
                     'court': 'Arlington', \

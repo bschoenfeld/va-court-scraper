@@ -10,13 +10,13 @@ def handle_parse_exception(soup):
 
 def parse_court_names(soup):
     try:
-        courts = []
+        courts = {}
         for option in soup.find_all('option'):
-            courts.append({
-                'fullName': option['value'],
-                'fips_code': option['value'][:3],
+            fips_code = option['value'][:3]
+            courts[fips_code] = {
+                'full_name': option['value'],
                 'name': option['value'][5:]
-            })
+            }
         return courts
     except:
         handle_parse_exception(soup)

@@ -4,11 +4,11 @@ import os
 from courtreader import readers
 
 # Connect to database
-client = pymongo.MongoClient(os.environ['DISTRICT_DB'])
-db = client.va_district_court_cases
+client = pymongo.MongoClient(os.environ['CIRCUIT_DB'])
+db = client.va_circuit_court_cases
 
 # Connect to District Court Reader
-reader = readers.DistrictCourtReader()
+reader = readers.CircuitCourtReader()
 reader.connect()
 
 # Fill in cases
