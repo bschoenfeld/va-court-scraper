@@ -1,3 +1,4 @@
+import circuitcourtparser
 import districtcourtparser
 import sys
 from circuitcourtopener import CircuitCourtOpener
@@ -61,14 +62,4 @@ class CircuitCourtReader:
 
     def connect(self):
         soup = self.opener.open_welcome_page()
-
-    def change_court(self, fips_code):
-        if fips_code != self.fips_code:
-            #name = self.court_names[fips_code]
-            self.opener.change_court(None, fips_code)
-            self.fips_code = fips_code
-
-    def get_cases_by_name(self, fips_code, name):
-        self.change_court(fips_code)
-        print 'Searching'
-        self.opener.do_name_search(fips_code, name)
+        return circuitcourtparser.parse_court_names(soup)
