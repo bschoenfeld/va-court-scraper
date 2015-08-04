@@ -62,7 +62,7 @@ class CircuitCourtReader:
 
     def connect(self):
         soup = self.opener.open_welcome_page()
-        self.courts = circuitcourtparser.parse_court_names(soup)
+        return circuitcourtparser.parse_court_names(soup)
 
     def change_court(self, fips_code):
         if fips_code != self.fips_code:
@@ -75,5 +75,4 @@ class CircuitCourtReader:
         self.change_court(fips_code)
         sleep(1)
         soup = self.opener.do_case_number_search(fips_code, case_number)
-        print soup
         return circuitcourtparser.parse_case_details(soup)

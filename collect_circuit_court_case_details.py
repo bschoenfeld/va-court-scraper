@@ -15,6 +15,7 @@ reader.connect()
 while True:
     case = db.cases.find_one({
         'FIPSCode': '013', \
+        'CaseNumber': {'$regex': 'CR1[0-4].*'}, \
         'date_collected': {'$exists': False} \
     })
     if case is None: break

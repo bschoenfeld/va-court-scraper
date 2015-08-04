@@ -26,7 +26,7 @@ class CircuitCourtOpener:
             'whichsystem': court
         })
         url = self.url('MainMenu.do')
-        print self.opener.open(url, data).read()
+        self.opener.open(url, data)
 
     def do_case_number_search(self, code, case_number):
         data = {
