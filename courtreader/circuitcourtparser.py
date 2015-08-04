@@ -54,17 +54,24 @@ def get_hearings_from_table(case, table):
         case['Hearings'].append(hearing)
 
 def parse_case_details(soup):
-    case_details = {}
-    tables = soup.find_all('table')
-    details_table = tables[4]
-    hearings_table = tables[6]
-    final_disposition_table = tables[8]
-    sentencing_table = tables[9]
-    appeal_table = tables[10]
+    try:
+        case_details = {}
+        if soup.find(text=re.compile('Case not found')) is not None:
+            case_details['error'] = 'case_not_found'
+            return case_details
+        tables = soup.find_all('table')
+        details_table = tables[4]
+        hearings_table = tables[6]
+        final_disposition_table = tables[8]
+        sentencing_table = tables[9]
+        appeal_table = tables[10]
 
-    get_data_from_table(case_details, details_table)
-    get_data_from_table(case_details, final_disposition_table)
-    get_data_from_table(case_details, sentencing_table)
-    get_hearings_from_table(case_details, hearings_table)
+        get_data_from_table(case_details, details_table)
+        get_data_from_table(case_details, final_disposition_table)
+        get_data_from_table(case_details, sentencing_table)
+        get_hearings_from_table(case_details, hearings_table)
 
-    return case_details
+        return case_details
+    except:
+        handle_parse_exception(soup)
+        raise
