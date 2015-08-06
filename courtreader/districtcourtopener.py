@@ -7,7 +7,7 @@ class DistrictCourtOpener:
     url_root = 'https://eapps.courts.state.va.us/gdcourts/'
 
     def __init__(self):
-        self.opener = Opener()
+        self.opener = Opener('district')
 
     def url(self, url):
         return DistrictCourtOpener.url_root + url;

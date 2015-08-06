@@ -63,3 +63,5 @@ unexpected_output.html
 *.csv
 
 sandbox.py
+
+*.cookie
