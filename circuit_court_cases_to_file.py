@@ -2,7 +2,7 @@ import csv
 import os
 import pymongo
 
-fips_code = '013'
+fips_code = '700'
 
 # Connect to database
 client = pymongo.MongoClient(os.environ['CIRCUIT_DB'])

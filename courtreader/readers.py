@@ -13,6 +13,7 @@ class DistrictCourtReader:
     def connect(self):
         soup = self.opener.open_welcome_page()
         self.court_names = districtcourtparser.parse_court_names(soup)
+        return self.court_names
 
     def change_court(self, fips_code):
         if fips_code != self.fips_code:
