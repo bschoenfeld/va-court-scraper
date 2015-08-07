@@ -1,0 +1,2 @@
+nohup unbuffer python collect_circuit_court_case_details.py > circuit.log&
+nohup unbuffer python collect_district_court_case_details.py > district.log&

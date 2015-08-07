@@ -14,7 +14,7 @@ reader.connect()
 # Fill in cases
 while True:
     case = db.cases.find_one({
-        'FIPSCode': '701', \
+        'FIPSCode': '702', \
         'date_collected': {'$exists': False} \
     })
     if case is None: break

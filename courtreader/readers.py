@@ -24,7 +24,7 @@ class DistrictCourtReader:
 
     def get_case_details_by_number(self, fips_code, case_number):
         self.change_court(fips_code)
-        sleep(5)
+        sleep(1)
         soup = self.opener.do_case_number_search(fips_code, case_number)
         return districtcourtparser.parse_case_details(soup)
 
