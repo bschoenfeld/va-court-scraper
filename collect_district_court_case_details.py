@@ -2,6 +2,7 @@ import datetime
 import pymongo
 import os
 import sys
+import time
 from courtreader import readers
 
 # Connect to database
@@ -25,4 +26,5 @@ while True:
     case_details['date_collected'] = datetime.datetime.utcnow()
     updated_case = dict(case.items() + case_details.items())
     db.cases.replace_one({'_id': case['_id']}, updated_case)
+    time.sleep(2)
 print 'Finished'
