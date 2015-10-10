@@ -1,6 +1,7 @@
 import datetime
 import pymongo
 import os
+import sys
 from courtreader import readers
 
 # Connect to database
@@ -14,8 +15,8 @@ reader.connect()
 # Fill in cases
 while True:
     case = db.cases.find_one({
-        'FIPSCode': '702', \
-        'date_collected': {'$exists': False} \
+        'FIPSCode': sys.argv[1],
+        'date_collected': {'$exists': False}
     })
     if case is None: break
     print case['CaseNumber']
