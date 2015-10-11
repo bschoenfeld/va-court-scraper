@@ -29,6 +29,7 @@
                         <th data-sortable="true">Percent Complete</th>
                         <th data-sortable="true">Count Complete</th>
                         <th data-sortable="true">Total</th>
+                        <th>Data</th>
                     </tr>
                 </thead>
                 {% for court in courts | sort(attribute='name') %}
@@ -38,6 +39,7 @@
                         <td class="percentage-completed"></td>
                         <td class="completed-count"></td>
                         <td class="total-count"></td>
+                        <td><a href="/export/{{ court.fips_code }}/cases.csv">Download</a></td>
                     </tr>
                 {% endfor %}
             </table>

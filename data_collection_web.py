@@ -1,6 +1,8 @@
+import StringIO
+import csv
 import os
 import pymongo
-from flask import Flask, session, render_template, request, jsonify
+from flask import Flask, Response, render_template, jsonify
 
 app = Flask(__name__)
 
@@ -25,6 +27,39 @@ def status(fips_code):
         'date_collected': {'$exists': True}
     })
     return jsonify(**court)
+
+@app.route('/export/<fips_code>/cases.csv')
+def export_cases(fips_code):
+    district_db_client = pymongo.MongoClient(os.environ['DISTRICT_DB'])
+    district_db = district_db_client.va_district_court_cases
+    cases = district_db.cases.find({
+        'FIPSCode': fips_code,
+        'date_collected': {'$exists': True}
+    }, projection = {
+        '_id': False,
+        'error': False,
+        'date_collected': False,
+        'Hearings': False,
+        'Services': False,
+    })
+    fieldnames = [
+        'FIPSCode', 'CaseNumber', 'Locality', 'CourtName', 'FiledDate',
+        'Name', 'AKA1', 'AKA2', 'DOB', 'Gender', 'Race', 'Address',
+        'OffenseDate', 'ArrestDate', 'Class', 'Status', 'Complainant',
+        'CaseType', 'Charge', 'CodeSection',
+        'AmendedCaseType', 'AmendedCharge', 'AmendedCode',
+        'FinalDisposition', 'DefenseAttorney',
+        'SentenceTime', 'SentenceSuspendedTime',
+        'ProbationType', 'ProbationTime', 'ProbationStarts',
+        'Fine', 'Costs', 'FineCostsDue', 'FineCostsPaid', 'FineCostsPaidDate',
+        'OperatorLicenseRestrictionCodes', 'OperatorLicenseSuspensionTime',
+        'RestrictionStartDate', 'RestrictionEndDate', 'VASAP'
+    ]
+    output = StringIO.StringIO()
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerows(cases)
+    return Response(output.getvalue(), mimetype='text/csv')
 
 if __name__ == "__main__":
     # Bind to PORT if defined, otherwise default to 5000.
