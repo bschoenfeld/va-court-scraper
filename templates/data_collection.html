@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Virginia Court Case Collection</title>
+        <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" rel="stylesheet">
+        <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+        <link href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.9.0/bootstrap-table.min.css" rel="stylesheet">
+        <style>
+        </style>
+    </head>
+    <body>
+        <nav class="navbar navbar-inverse" role="navigation">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="/">Virginia Court Case Collection</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container">
+            <table id="main-table" data-toggle="table">
+                <thead>
+                    <tr>
+                        <th data-sortable="true">FIPS Code</th>
+                        <th data-sortable="true">Court</th>
+                        <th data-sortable="true">Percent Complete</th>
+                        <th data-sortable="true">Count Complete</th>
+                        <th data-sortable="true">Total</th>
+                    </tr>
+                </thead>
+                {% for court in courts | sort(attribute='name') %}
+                    <tr class="court">
+                        <td class="fips-code">{{ court.fips_code }}</td>
+                        <td>{{ court.name[0:-23] }}</td>
+                        <td class="percentage-completed"></td>
+                        <td class="completed-count"></td>
+                        <td class="total-count"></td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+        <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.9.0/bootstrap-table.min.js"></script>
+        <script>
+            $(function() {
+                var tableData = $('#main-table').bootstrapTable('getData');
+                $.each(tableData, function() {
+                    var row = this;
+                    $.get('/status/' + row[0], function(data) {
+                        var percentageComplete = Math.floor((data.collected_count / data.total_count) * 100);
+                        if(data.total_count === 0) percentageComplete = 100;
+                        row[2] = percentageComplete;
+                        row[3] = data.collected_count;
+                        row[4] = data.total_count;
+                        $('#main-table').bootstrapTable('load', tableData);
+                    });
+                });
+            });
+        </script>
+    </body>
+</html>
