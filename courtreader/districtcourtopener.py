@@ -34,7 +34,7 @@ class DistrictCourtOpener:
         captcha_solution = raw_input('Enter CAPTCHA:')
         driver.find_element_by_name('recaptcha_response_field') \
               .send_keys(captcha_solution)
-        time.sleep(3)
+        time.sleep(1)
         driver.find_element_by_name('captchaVerificationForm') \
               .submit()
         cookie = driver.get_cookie('JSESSIONID')['value']
