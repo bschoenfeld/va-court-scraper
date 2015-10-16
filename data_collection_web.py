@@ -1,5 +1,6 @@
 import StringIO
 import csv
+import datetime
 import os
 import pymongo
 from flask import Flask, Response, render_template, jsonify
@@ -11,8 +12,11 @@ def index():
     district_db_client = pymongo.MongoClient(os.environ['DISTRICT_DB'])
     district_db = district_db_client.va_district_court_cases
     courts = list(district_db.courts.find())
+    ten_minutes_ago = datetime.datetime.utcnow() + datetime.timedelta(minutes=-10)
+    one_day_ago = datetime.datetime.utcnow() + datetime.timedelta(days=-1)
+    scrapers = list(district_db.scrapers.find({'last_update': {'$gt': one_day_ago}}))
     print courts
-    return render_template('data_collection.html', courts=courts)
+    return render_template('data_collection.html', courts=courts, scrapers=scrapers, ten_minutes_ago=ten_minutes_ago)
 
 @app.route("/status/<fips_code>")
 def status(fips_code):

@@ -21,6 +21,12 @@
         </nav>
 
         <div class="container">
+            {% for scraper in scrapers | sort(attribute='last_update', reverse=True) %}
+                <div {% if scraper.last_update < ten_minutes_ago %}class="text-muted"{% endif %}>
+                    {{ scraper.ec2_id }} - {{ scraper.fips_code }} - {{ scraper.last_update }}
+                </div>
+            {% endfor %}
+
             <table id="main-table" data-toggle="table">
                 <thead>
                     <tr>
