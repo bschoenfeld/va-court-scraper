@@ -71,9 +71,22 @@ class CircuitCourtReader:
             self.opener.change_court(fips_code, \
                                      self.courts[fips_code]['full_name'])
             self.fips_code = fips_code
+            sleep(1)
 
     def get_case_details_by_number(self, fips_code, case_number):
         self.change_court(fips_code)
-        sleep(1)
         soup = self.opener.do_case_number_search(fips_code, case_number)
         return circuitcourtparser.parse_case_details(soup)
+
+    def get_cases_by_name(self, fips_code, name):
+        self.change_court(fips_code)
+        cases = []
+        soup = self.opener.do_name_search(fips_code, name, 'R')
+        all_found = circuitcourtparser.parse_name_search(soup, name, cases)
+        while not all_found:
+            sleep(1)
+            soup = self.opener.continue_name_search(fips_code, 'R')
+            all_found = circuitcourtparser.parse_name_search(soup, name, cases)
+        for case in cases:
+            case['fips_code'] = fips_code
+        return cases

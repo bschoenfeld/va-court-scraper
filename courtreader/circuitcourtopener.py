@@ -38,3 +38,34 @@ class CircuitCourtOpener:
         url = self.url('CaseDetail.do')
         page = self.opener.open(url, data)
         return BeautifulSoup(page.read(), 'html.parser')
+
+    def do_name_search(self, code, name, category):
+        data = {
+            'category': category,
+            'lastName': name,
+            'courtId': code,
+            'submitValue': 'N'
+        }
+        data = urllib.urlencode(data)
+        url = self.url('Search.do')
+        page = self.opener.open(url, data)
+        return BeautifulSoup(page.read(), 'html.parser')
+
+    def continue_name_search(self, code, category):
+        data = {
+            'courtId': code,
+            'pagelink': 'Next',
+            'lastCaseProcessed': '',
+            'firstCaseProcessed': '',
+            'lastNameProcessed': '',
+            'firstNameProcessed': '',
+            'category': category,
+            'firstCaseSerialNumber': 0,
+            'lastCaseSerialNumber': 0,
+            'searchType': '',
+            'emptyList': ''
+        }
+        data = urllib.urlencode(data)
+        url = self.url('Search.do')
+        page = self.opener.open(url, data)
+        return BeautifulSoup(page.read(), 'html.parser')

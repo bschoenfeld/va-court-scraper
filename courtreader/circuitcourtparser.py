@@ -75,3 +75,32 @@ def parse_case_details(soup):
     except:
         handle_parse_exception(soup)
         raise
+
+def parse_name_search(soup, name, cases):
+    try:
+        for row in soup.find(class_='nameList').find_all('tr'):
+            cols = row.find_all('td')
+            if len(cols) > 4:
+                if name not in cols[1].string:
+                    return True
+                cases.append({
+                    'case_number': cols[0].span.a.string.strip(),
+                    'name': cols[1].string.strip(),
+                    'charge': cols[2].string.strip(),
+                    'date': cols[3].string.strip(),
+                    'status': cols[4].string.strip()
+                })
+            elif len(cols) > 3:
+                if name not in cols[1].get_text() and name not in \
+                        cols[2].get_text():
+                    return True
+                cases.append({
+                    'case_number': cols[0].span.a.string.strip(),
+                    'name': cols[1].get_text(),
+                    'other_name': cols[2].get_text(),
+                    'status': cols[3].string.strip()
+                })
+        return False
+    except:
+        handle_parse_exception(soup)
+        raise
