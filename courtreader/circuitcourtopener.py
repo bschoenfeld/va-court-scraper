@@ -9,12 +9,17 @@ class CircuitCourtOpener:
         self.opener = Opener('circuit')
 
     def url(self, url):
-        return CircuitCourtOpener.url_root + url;
+        return CircuitCourtOpener.url_root + url
 
     def open_welcome_page(self):
         url = self.url('circuit.jsp')
         page = self.opener.open(url)
         return BeautifulSoup(page.read(), 'html.parser')
+
+    def log_off(self):
+        data = urllib.urlencode({'searchType': ''})
+        url = self.url('Logoff.do')
+        self.opener.open(url, data)
 
     def change_court(self, code, court):
         data = urllib.urlencode({

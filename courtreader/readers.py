@@ -65,9 +65,11 @@ class CircuitCourtReader:
         self.courts = circuitcourtparser.parse_court_names(soup)
         return self.courts
 
+    def log_off(self):
+        self.opener.log_off()
+
     def change_court(self, fips_code):
         if fips_code != self.fips_code:
-            print 'Changing court'
             self.opener.change_court(fips_code, \
                                      self.courts[fips_code]['full_name'])
             self.fips_code = fips_code
