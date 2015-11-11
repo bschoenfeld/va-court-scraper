@@ -1,8 +1,13 @@
+import deathbycaptcha
+import logging
+import os
 import time
 import urllib
 from bs4 import BeautifulSoup
 from opener import Opener
 from selenium import webdriver
+
+log = logging.getLogger('logentries')
 
 class DistrictCourtOpener:
     url_root = 'https://eapps.courts.state.va.us/gdcourts/'
@@ -11,7 +16,7 @@ class DistrictCourtOpener:
         self.opener = Opener('district')
 
     def url(self, url):
-        return DistrictCourtOpener.url_root + url;
+        return DistrictCourtOpener.url_root + url
 
     def open_welcome_page(self):
         url = self.url('caseSearch.do?welcomePage=welcomePage')
@@ -27,13 +32,29 @@ class DistrictCourtOpener:
         return BeautifulSoup(page_content, 'html.parser')
 
     def solve_captcha(self, url):
+        log.info('Solving CAPTCHA')
+        captcha_solver = deathbycaptcha.SocketClient(os.environ['DBC_USER'], \
+                                                     os.environ['DBC_PASSWORD'])
         driver = webdriver.Chrome()
         driver.implicitly_wait(3)
         driver.get(url)
-        captcha = driver.find_element_by_id("recaptcha_challenge_image")
-        captcha_solution = raw_input('Enter CAPTCHA:')
-        driver.find_element_by_name('recaptcha_response_field') \
-              .send_keys(captcha_solution)
+        captcha = driver.find_element_by_id('recaptcha_challenge_image')
+        image_src = captcha.get_attribute('src')
+        image_filename = str(os.getpid()) + '_captcha.png'
+        urllib.urlretrieve(image_src, image_filename)
+        try:
+            captcha_solution = captcha_solver.decode(image_filename, 60)
+            if captcha_solution:
+                log.info('CAPTCHA SOLVED')
+                print "CAPTCHA %s solved: %s" % (captcha_solution["captcha"],
+                                                 captcha_solution["text"])
+                #captcha_solution = raw_input('Enter CAPTCHA:')
+                driver.find_element_by_name('recaptcha_response_field') \
+                      .send_keys(captcha_solution["text"])
+                os.remove(image_filename)
+        except deathbycaptcha.AccessDeniedException:
+            log.error('deathbycaptcha access denied')
+            print 'deathbycaptcha access denied'
         time.sleep(1)
         driver.find_element_by_name('captchaVerificationForm') \
               .submit()
