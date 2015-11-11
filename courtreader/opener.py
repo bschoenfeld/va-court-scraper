@@ -16,10 +16,10 @@ class Opener:
         self.opener.addheaders = [('User-Agent', Opener.user_agent)]
 
         # Try to load cookies
-        if os.path.isfile(self.name + '.cookie'):
-            with open(self.name + '.cookie', 'r') as f:
-                for cookie in pickle.loads(f.read()):
-                    self.cookieJar.set_cookie(cookie)
+        #if os.path.isfile(self.name + '.cookie'):
+        #    with open(self.name + '.cookie', 'r') as f:
+        #        for cookie in pickle.loads(f.read()):
+        #            self.cookieJar.set_cookie(cookie)
 
     def set_cookie(self, name, value):
         for cookie in self.cookieJar:
