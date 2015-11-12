@@ -187,7 +187,6 @@ class DistrictCourtOpener:
             data['lastRowName'] = prev_cases[-1]['defendant']
             data['lastRowCaseNumber'] = prev_cases[-1]['case_number']
         data = urllib.urlencode(data)
-        print data
         url = self.url('nameSearch.do')
         content = self.opener.open(url, data)
         soup = BeautifulSoup(content, 'html.parser')

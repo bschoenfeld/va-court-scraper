@@ -42,7 +42,6 @@ def parse_name_search(soup):
                 'defendant': defendant,
                 'charge': charge
             })
-            print case_number, defendant
         return cases
     except:
         handle_parse_exception(soup)
