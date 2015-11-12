@@ -3,36 +3,49 @@ from courtutils.courtlogger import get_logger
 import datetime
 import pymongo
 import os
+import sys
 import time
 
 # configure logging
 log = get_logger()
 log.info('Worker running')
 
-def get_db_connection():
-    return pymongo.MongoClient(os.environ['MONGO_DB'])['temp-15-11-08']
+court = sys.argv[1]
 
-def get_circuit_court_reader():
-    reader = readers.CircuitCourtReader()
+def get_db_connection():
+    return pymongo.MongoClient(os.environ['MONGO_DB'])['va_court_search']
+
+def get_court_reader():
+    reader = None
+    if court == 'c': reader = readers.CircuitCourtReader()
+    if court == 'd': reader = readers.DistrictCourtReader()
     reader.connect()
-    log.info('Worker connected to court site')
+    log.info('Worker connected to court')
     return reader
 
+def get_next_task(db):
+    if court == 'c': return db.circuit_court_tasks.find_one_and_delete({})
+    if court == 'd': return db.district_court_tasks.find_one_and_delete({})
+
 # Fill in cases
-circuit_court = None
+court_reader = None
 db = get_db_connection()
 while True:
-    task = db.tasks.find_one_and_delete({})
+    task = get_next_task(db)
     if task is not None:
         log.info(task)
-        if circuit_court is None:
-            circuit_court = get_circuit_court_reader()
-        cases = circuit_court.get_cases_by_name(task['court_fips'], task['term'])
+        if court_reader is None:
+            court_reader = get_court_reader()
+        cases = court_reader.get_cases_by_name(task['court_fips'], task['term'])
         if len(cases) > 0:
+            for case in cases:
+                case['fips_code'] = fips_code
+                if court == 'c': case['court_type'] = 'circuit'
+                if court == 'd': case['court_type'] = 'district'
             db.searches.insert_many(cases)
         log.info('Found ' + str(len(cases)) + ' cases')
-    elif circuit_court is not None:
-        circuit_court.log_off()
-        circuit_court = None
+    elif court_reader is not None:
+        court_reader.log_off()
+        court_reader = None
         log.info('Worker disconnected from court site')
     time.sleep(2)

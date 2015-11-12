@@ -23,6 +23,38 @@ def parse_court_names(soup):
         handle_parse_exception(soup)
         raise
 
+def parse_name_search(soup):
+    try:
+        no_results = re.compile(r'No results found for the search criteria')
+        if soup.find('td', text=no_results) is not None:
+            return []
+        cases = []
+        rows = soup.find('table', {'class':'tableborder'}).find_all('tr')
+        for row in rows:
+            cells = row.find_all('td')
+            if cells[0]['class'][0] == 'gridheader':
+                continue
+            case_number = cells[1].a.text.strip()
+            defendant = cells[2].string.strip()
+            charge = cells[5].string.strip()
+            cases.append({
+                'case_number': case_number,
+                'defendant': defendant,
+                'charge': charge
+            })
+            print case_number, defendant
+        return cases
+    except:
+        handle_parse_exception(soup)
+        raise
+
+def next_names_button_found(soup):
+    try:
+        return soup.find('input', {'title': 'Next'}) is not None
+    except:
+        handle_parse_exception(soup)
+        raise
+
 def parse_hearing_date_search(soup):
     try:
         no_results = re.compile(r'No results found for the search criteria')

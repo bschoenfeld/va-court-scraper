@@ -1,9 +1,12 @@
 import circuitcourtparser
 import districtcourtparser
+import logging
 import sys
 from circuitcourtopener import CircuitCourtOpener
 from districtcourtopener import DistrictCourtOpener
 from time import sleep
+
+log = logging.getLogger('logentries')
 
 class DistrictCourtReader:
     def __init__(self):
@@ -21,10 +24,10 @@ class DistrictCourtReader:
             name = self.court_names[fips_code]
             self.opener.change_court(name, fips_code)
             self.fips_code = fips_code
+            sleep(1)
 
     def get_case_details_by_number(self, fips_code, case_number):
         self.change_court(fips_code)
-        sleep(1)
         soup = self.opener.do_case_number_search(fips_code, case_number)
         return districtcourtparser.parse_case_details(soup)
 
@@ -54,6 +57,31 @@ class DistrictCourtReader:
         sleep(1)
         soup = self.opener.open_case_details(case)
         return districtcourtparser.parse_case_details(soup)
+
+    def get_cases_by_name(self, fips_code, name):
+        self.change_court(fips_code)
+        self.opener.open_name_search(fips_code)
+        sleep(1)
+        cases = []
+        count = 0
+        found_cases = None
+        while True:
+            soup = self.opener.do_name_search(fips_code, name, count, found_cases)
+            found_cases = districtcourtparser.parse_name_search(soup)
+            cases.extend(found_cases)
+            if not districtcourtparser.next_names_button_found(soup):
+                break
+            log.info('Next Names Page')
+            print 'Next Names Page'
+            count += 1
+            sleep(2)
+        print cases
+        print len(cases)
+        #while not all_found:
+        #    sleep(1)
+        #    soup = self.opener.continue_name_search(fips_code, 'R')
+        #    all_found = circuitcourtparser.parse_name_search(soup, name, cases)
+        return cases
 
 class CircuitCourtReader:
     def __init__(self):
@@ -89,6 +117,4 @@ class CircuitCourtReader:
             sleep(1)
             soup = self.opener.continue_name_search(fips_code, 'R')
             all_found = circuitcourtparser.parse_name_search(soup, name, cases)
-        for case in cases:
-            case['fips_code'] = fips_code
         return cases

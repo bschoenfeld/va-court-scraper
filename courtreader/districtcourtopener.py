@@ -142,3 +142,53 @@ class DistrictCourtOpener:
         url = self.url(case['details_url'])
         page = self.opener.open(url)
         return BeautifulSoup(page.read(), 'html.parser')
+
+    def open_name_search(self, code):
+        url = self.url('nameSearch.do')
+        url += '?fromSidebar=true&formAction=searchLanding&searchDivision=T'
+        url += '&searchFipsCode=' + code
+        url += '&curentFipsCode=' + code
+        self.opener.open(url)
+
+    def do_name_search(self, code, name, count, prev_cases=None):
+        data = {
+            'formAction':'newSearch',
+            'displayCaseNumber':'',
+            'formBean':'',
+            'localFipsCode':code,
+            'caseActive':'',
+            'localLastName':'',
+            'forward':'',
+            'back':'',
+            'localnamesearchlastName':name,
+            'lastName':name,
+            'localnamesearchfirstName':'',
+            'firstName':'',
+            'localnamesearchmiddleName':'',
+            'middleName':'',
+            'localnamesearchsuffix':'',
+            'suffix':'',
+            'localnamesearchsearchCategory':'A',
+            'searchCategory':'A',
+            'searchFipsCode':code,
+            'searchDivision':'T',
+            'searchType':'name',
+            'firstRowName':'',
+            'firstRowCaseNumber':'',
+            'lastRowName':'',
+            'lastRowCaseNumber':'',
+            'clientSearchCounter':count
+        }
+        if prev_cases:
+            data['formAction'] = 'next'
+            data['unCheckedCases'] = ''
+            data['firstRowName'] = prev_cases[0]['defendant']
+            data['firstRowCaseNumber'] = prev_cases[0]['case_number']
+            data['lastRowName'] = prev_cases[-1]['defendant']
+            data['lastRowCaseNumber'] = prev_cases[-1]['case_number']
+        data = urllib.urlencode(data)
+        print data
+        url = self.url('nameSearch.do')
+        content = self.opener.open(url, data)
+        soup = BeautifulSoup(content, 'html.parser')
+        return soup

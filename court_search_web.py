@@ -12,27 +12,34 @@ log = get_logger()
 log.info('Web running')
 
 # Connect to database
-client = pymongo.MongoClient(os.environ['MONGO_DB'])
-db = client['temp-15-11-08']
+def get_db():
+    return pymongo.MongoClient(os.environ['MONGO_DB'])['va_court_search']
 
-# Connect to District Court Reader
-reader = readers.CircuitCourtReader()
-courts = reader.connect()
-log.info('Web connected to court site')
+def insert_tasks(courts, court_tasks, name):
+    court_codes = [c['fips_code'] for c in courts.find()]
+    for code in court_codes:
+        court_tasks.insert_one({'type': 'name',
+                                'court_fips': code,
+                                'term': name})
 
 @app.route('/search')
 def search():
+    court_reader = readers.DistrictCourtReader()
+    court_reader.connect()
+    cases = court_reader.get_cases_by_name('019', 'GREENE')
+    print cases
     return render_template('search.html')
 
-@app.route('/search/<name>', methods=['GET', 'POST'])
-def search_name(name):
-    if request.method == 'POST':
-        for court in courts:
-            db.tasks.insert_one({'type': 'name',
-                                 'court_fips': court,
-                                 'term': name.upper()})
-        return ''
+@app.route('/search/<name>')
+def lookup_search_name(name):
     return render_template('search_results.html')
+
+@app.route('/search/<name>', methods=['POST'])
+def add_search_name_tasks(name):
+    db = get_db()
+    insert_tasks(db.circuit_courts, db.circuit_court_tasks, name.upper())
+    insert_tasks(db.district_courts, db.district_court_tasks, name.upper())
+    return ''
 
 if __name__ == "__main__":
     # Bind to PORT if defined, otherwise default to 5000.
