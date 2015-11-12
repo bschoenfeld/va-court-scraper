@@ -33,15 +33,16 @@ db = get_db_connection()
 while True:
     task = get_next_task(db)
     if task is not None:
+        if court == 'c': task['court_type'] = 'circuit'
+        if court == 'd': task['court_type'] = 'district'
         log.info(task)
         if court_reader is None:
             court_reader = get_court_reader()
         cases = court_reader.get_cases_by_name(task['court_fips'], task['term'])
         if len(cases) > 0:
             for case in cases:
-                case['fips_code'] = fips_code
-                if court == 'c': case['court_type'] = 'circuit'
-                if court == 'd': case['court_type'] = 'district'
+                case['fips_code'] = task['court_fips']
+                case['court_type'] = task['court_type']
             db.searches.insert_many(cases)
         log.info('Found ' + str(len(cases)) + ' cases')
     elif court_reader is not None:

@@ -24,10 +24,6 @@ def insert_tasks(courts, court_tasks, name):
 
 @app.route('/search')
 def search():
-    court_reader = readers.DistrictCourtReader()
-    court_reader.connect()
-    cases = court_reader.get_cases_by_name('019', 'GREENE')
-    print cases
     return render_template('search.html')
 
 @app.route('/search/<name>')
