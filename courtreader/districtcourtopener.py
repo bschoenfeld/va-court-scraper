@@ -14,6 +14,9 @@ class DistrictCourtOpener:
 
     def __init__(self):
         self.opener = Opener('district')
+        self.driver = webdriver.Chrome()
+        self.driver.implicitly_wait(3)
+        self.user_driver = True
 
     def url(self, url):
         return DistrictCourtOpener.url_root + url
@@ -35,10 +38,8 @@ class DistrictCourtOpener:
         log.info('Solving CAPTCHA')
         captcha_solver = deathbycaptcha.SocketClient(os.environ['DBC_USER'], \
                                                      os.environ['DBC_PASSWORD'])
-        driver = webdriver.Chrome()
-        driver.implicitly_wait(3)
-        driver.get(url)
-        captcha = driver.find_element_by_id('recaptcha_challenge_image')
+        self.driver.get(url)
+        captcha = self.driver.find_element_by_id('recaptcha_challenge_image')
         image_src = captcha.get_attribute('src')
         image_filename = str(os.getpid()) + '_captcha.png'
         urllib.urlretrieve(image_src, image_filename)
@@ -49,19 +50,19 @@ class DistrictCourtOpener:
                 print "CAPTCHA %s solved: %s" % (captcha_solution["captcha"],
                                                  captcha_solution["text"])
                 #captcha_solution = raw_input('Enter CAPTCHA:')
-                driver.find_element_by_name('recaptcha_response_field') \
+                self.driver.find_element_by_name('recaptcha_response_field') \
                       .send_keys(captcha_solution["text"])
                 os.remove(image_filename)
         except deathbycaptcha.AccessDeniedException:
             log.error('deathbycaptcha access denied')
             print 'deathbycaptcha access denied'
         time.sleep(1)
-        driver.find_element_by_name('captchaVerificationForm') \
+        self.driver.find_element_by_name('captchaVerificationForm') \
               .submit()
-        cookie = driver.get_cookie('JSESSIONID')['value']
+        cookie = self.driver.get_cookie('JSESSIONID')['value']
         self.opener.set_cookie('JSESSIONID', cookie)
         self.opener.save_cookies()
-        driver.quit()
+        #self.driver.quit()
 
     def change_court(self, name, code):
         data = urllib.urlencode({
@@ -148,9 +149,28 @@ class DistrictCourtOpener:
         url += '?fromSidebar=true&formAction=searchLanding&searchDivision=T'
         url += '&searchFipsCode=' + code
         url += '&curentFipsCode=' + code
-        self.opener.open(url)
+        if self.user_driver:
+            self.driver.get(url)
+        else:
+            self.opener.open(url)
+
+    def do_name_search_with_driver(self, code, name, count, prev_cases):
+        if prev_cases:
+            xpath = "//input[@value='Next'][@type='submit']"
+            self.driver.find_element_by_xpath(xpath).click()
+        else:
+            self.driver.find_element_by_name('localnamesearchlastName') \
+                .send_keys(name)
+            xpath = "//input[@value='Search'][@type='submit']"
+            self.driver.find_element_by_xpath(xpath).click()
+        time.sleep(1)
+        source = self.driver.page_source
+        soup = BeautifulSoup(source, 'html.parser')
+        return soup
 
     def do_name_search(self, code, name, count, prev_cases=None):
+        if self.user_driver:
+            return self.do_name_search_with_driver(code, name, count, prev_cases)
         data = {
             'formAction':'newSearch',
             'displayCaseNumber':'',

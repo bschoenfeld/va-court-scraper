@@ -68,7 +68,6 @@ class DistrictCourtReader:
             soup = self.opener.do_name_search(fips_code, name, count, found_cases)
             found_cases = districtcourtparser.parse_name_search(soup)
             cases.extend(found_cases)
-            break # next button doesn't work! WHY?!?
             if not districtcourtparser.next_names_button_found(soup):
                 break
             log.info('Next Names Page')

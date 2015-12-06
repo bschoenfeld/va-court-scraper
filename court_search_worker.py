@@ -44,7 +44,9 @@ while True:
                 case['fips_code'] = task['court_fips']
                 case['court_type'] = task['court_type']
             db.searches.insert_many(cases)
-        log.info('Found ' + str(len(cases)) + ' cases')
+        log_msg = 'Found ' + str(len(cases)) + ' cases'
+        log.info(log_msg)
+        print log_msg
     elif court_reader is not None:
         court_reader.log_off()
         court_reader = None
