@@ -30,6 +30,10 @@ def index():
 def login():
     return render_template('login.html')
 
+@app.route('/password')
+def password():
+    return render_template('password.html')
+
 @app.route('/search')
 def search():
     return render_template('search.html')
