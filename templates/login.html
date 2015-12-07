@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Login - Virginia Court Search</title>
+        <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" rel="stylesheet">
+        <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+        <style>
+            .navbar {
+                border-radius: 0px;
+            }
+
+            #forgot-password-button-group, #register-button-group, #go-to-signin-group {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <nav class="navbar navbar-inverse" role="navigation">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">Virginia Court Search</a>
+            </div>
+        </nav>
+
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 col-md-offset-3">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            Virginia Court Search Sign In
+                        </div>
+                        <div class="panel-body">
+                            <div class="form-group">
+                                <input type="email" class="form-control" placeholder="Email">
+                            </div>
+                            <div class="form-group" id="password-form-group">
+                                <input type="password" class="form-control" placeholder="Password">
+                                <div class="text-right">
+                                    <button class="btn btn-link" onclick="forgotPassword()">
+                                        Forgot Password?
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group" id="sign-in-button-group">
+                                <button type="submit" class="btn btn-block btn-primary">
+                                    Sign In
+                                </button>
+                            </div>
+                            <div class="form-group" id="forgot-password-button-group">
+                                <button type="submit" class="btn btn-block btn-danger">
+                                    Email Password Reset Link
+                                </button>
+                            </div>
+                            <div class="form-group" id="register-button-group">
+                                <button type="submit" class="btn btn-block btn-success">
+                                    Register
+                                </button>
+                            </div>
+
+                            <hr/>
+                            <div class="text-center" id="go-to-registration-group">
+                                Don't have an account?
+                                <button type="submit" class="btn btn-link" onclick="register()">
+                                    Register for free
+                                </button>
+                            </div>
+                            <div class="text-center" id="go-to-signin-group">
+                                <button class="btn btn-link" onclick="signIn()">
+                                    Sign In
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+        <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+        <script>
+            function signIn() {
+                $('#password-form-group').show();
+                $('#sign-in-button-group').show();
+                $('#go-to-registration-group').show();
+                $('#go-to-signin-group').hide();
+                $('#forgot-password-button-group').hide();
+                $('#register-button-group').hide();
+            }
+
+            function forgotPassword() {
+                $('#password-form-group').hide();
+                $('#sign-in-button-group').hide();
+                $('#go-to-registration-group').hide();
+                $('#forgot-password-button-group').show();
+                $('#go-to-signin-group').show();
+            }
+
+            function register() {
+                $('#password-form-group').hide();
+                $('#sign-in-button-group').hide();
+                $('#go-to-registration-group').hide();
+                $('#register-button-group').show();
+                $('#go-to-signin-group').show();
+            }
+        </script>
+    </body>
+</html>
