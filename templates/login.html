@@ -38,23 +38,23 @@
                             <div class="form-group" id="password-form-group">
                                 <input type="password" class="form-control" placeholder="Password">
                                 <div class="text-right">
-                                    <button class="btn btn-link" onclick="forgotPassword()">
+                                    <button class="btn btn-link" onclick="showForgotPassword()">
                                         Forgot Password?
                                     </button>
                                 </div>
                             </div>
                             <div class="form-group" id="sign-in-button-group">
-                                <button type="submit" class="btn btn-block btn-primary">
+                                <button type="submit" id="sign-in-button" class="btn btn-block btn-primary">
                                     Sign In
                                 </button>
                             </div>
                             <div class="form-group" id="forgot-password-button-group">
-                                <button type="submit" class="btn btn-block btn-danger">
-                                    Email Password Reset Link
+                                <button type="submit" id="forgot-password-button" class="btn btn-block btn-danger">
+                                    Send Password Reset Email
                                 </button>
                             </div>
                             <div class="form-group" id="register-button-group">
-                                <button type="submit" class="btn btn-block btn-success">
+                                <button type="submit" id="register-button" class="btn btn-block btn-primary">
                                     Register
                                 </button>
                             </div>
@@ -62,12 +62,12 @@
                             <hr/>
                             <div class="text-center" id="go-to-registration-group">
                                 Don't have an account?
-                                <button type="submit" class="btn btn-link" onclick="register()">
+                                <button type="submit" class="btn btn-link" onclick="showRegistration()">
                                     Register for free
                                 </button>
                             </div>
                             <div class="text-center" id="go-to-signin-group">
-                                <button class="btn btn-link" onclick="signIn()">
+                                <button class="btn btn-link" onclick="showSignIn()">
                                     Sign In
                                 </button>
                             </div>
@@ -80,7 +80,7 @@
         <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
         <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
         <script>
-            function signIn() {
+            function showSignIn() {
                 $('#password-form-group').show();
                 $('#sign-in-button-group').show();
                 $('#go-to-registration-group').show();
@@ -89,7 +89,7 @@
                 $('#register-button-group').hide();
             }
 
-            function forgotPassword() {
+            function showForgotPassword() {
                 $('#password-form-group').hide();
                 $('#sign-in-button-group').hide();
                 $('#go-to-registration-group').hide();
@@ -97,13 +97,48 @@
                 $('#go-to-signin-group').show();
             }
 
-            function register() {
+            function showRegistration() {
                 $('#password-form-group').hide();
                 $('#sign-in-button-group').hide();
                 $('#go-to-registration-group').hide();
                 $('#register-button-group').show();
                 $('#go-to-signin-group').show();
             }
+
+            function setButtonLoading(button, text, loading) {
+                $(button).html(text)
+                $(button).prop('disabled', loading);
+            }
+
+            $(function() {
+                $('#sign-in-button').click(function() {
+                    var button = this;
+                    setButtonLoading(button, 'Signing In...', true);
+                    setTimeout(function () {
+                        setButtonLoading(button, 'Sign In', false);
+                    }, 1000);
+                });
+
+                $('#register-button').click(function() {
+                    var button = this;
+                    setButtonLoading(button, 'Registering...', true);
+                    setTimeout(function () {
+                        setButtonLoading(button, 'Register', false);
+                    }, 1000);
+                });
+
+                $('#forgot-password-button').click(function() {
+                    var button = this;
+                    setButtonLoading(button, 'Sending Email...', true);
+                    setTimeout(function () {
+                        setButtonLoading(button, 'Send Password Reset Email', false);
+                    }, 1000);
+                });
+
+                if(location.search.indexOf('register') !== -1) {
+                    showRegistration();
+                }
+            });
         </script>
     </body>
 </html>
