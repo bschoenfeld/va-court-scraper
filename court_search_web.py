@@ -1,5 +1,6 @@
 from courtreader import readers
 from courtutils.courtlogger import get_logger
+from courtemail.email import send_welcome_email
 from flask import Flask, render_template, request
 import datetime
 import pymongo
@@ -33,6 +34,11 @@ def login():
 @app.route('/password')
 def password():
     return render_template('password.html')
+
+@app.route('/test-email')
+def test_email():
+    send_welcome_email('ben.schoenfeld@gmail.com')
+    return render_template('index.html')
 
 @app.route('/search')
 def search():
