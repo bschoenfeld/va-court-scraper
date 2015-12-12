@@ -1,7 +1,7 @@
 from courtreader import readers
 from courtutils.courtlogger import get_logger
 from courtemail.email import send_welcome_email
-from flask import Flask, render_template, request
+from flask import Flask, render_template, make_response, request
 import datetime
 import pymongo
 import os
@@ -23,6 +23,9 @@ def insert_tasks(courts, court_tasks, name):
                                 'court_fips': code,
                                 'term': name})
 
+def user_registered(email):
+    return email == 'ben.schoenfeld@gmail.com'
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -35,10 +38,21 @@ def login():
 def password():
     return render_template('password.html')
 
-@app.route('/test-email')
-def test_email():
-    send_welcome_email('ben.schoenfeld@gmail.com')
-    return render_template('index.html')
+@app.route('/register', methods=['POST'])
+def register():
+    email = request.form['email']
+    if user_registered(email):
+        return 'Email address already registered', 409
+    #send_welcome_email(request.form['email'])
+    return email
+
+@app.route('/reset-password', methods=['POST'])
+def reset_password():
+    email = request.form['email']
+    if not user_registered(email):
+        return 'Email address is not registered', 409
+    #send_welcome_email(request.form['email'])
+    return email
 
 @app.route('/search')
 def search():

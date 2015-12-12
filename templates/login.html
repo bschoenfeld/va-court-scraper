@@ -12,7 +12,7 @@
                 border-radius: 0px;
             }
 
-            #forgot-password-button-group, #register-button-group, #go-to-signin-group {
+            #password-reset-form, #registration-form {
                 display: none;
             }
         </style>
@@ -32,45 +32,80 @@
                             Virginia Court Search Sign In
                         </div>
                         <div class="panel-body">
-                            <div class="form-group">
-                                <input type="email" class="form-control" placeholder="Email">
-                            </div>
-                            <div class="form-group" id="password-form-group">
-                                <input type="password" class="form-control" placeholder="Password">
-                                <div class="text-right">
-                                    <button class="btn btn-link" onclick="showForgotPassword()">
-                                        Forgot Password?
+                            <form id="sign-in-form">
+                                <div class="form-group email-form-group">
+                                    <input type="email" class="form-control email" name="email" placeholder="Email">
+                                </div>
+
+                                <div class="form-group password-form-group">
+                                    <input type="password" class="form-control password" name="password" placeholder="Password">
+                                    <div class="text-right">
+                                        <button type="button" class="btn btn-link" onclick="showForgotPassword()">
+                                            Forgot Password?
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-block btn-primary">
+                                        Sign In
                                     </button>
                                 </div>
-                            </div>
-                            <div class="form-group" id="sign-in-button-group">
-                                <button type="submit" id="sign-in-button" class="btn btn-block btn-primary">
-                                    Sign In
-                                </button>
-                            </div>
-                            <div class="form-group" id="forgot-password-button-group">
-                                <button type="submit" id="forgot-password-button" class="btn btn-block btn-danger">
-                                    Send Password Reset Email
-                                </button>
-                            </div>
-                            <div class="form-group" id="register-button-group">
-                                <button type="submit" id="register-button" class="btn btn-block btn-primary">
-                                    Register
-                                </button>
-                            </div>
 
-                            <hr/>
-                            <div class="text-center" id="go-to-registration-group">
-                                Don't have an account?
-                                <button type="submit" class="btn btn-link" onclick="showRegistration()">
-                                    Register for free
-                                </button>
-                            </div>
-                            <div class="text-center" id="go-to-signin-group">
-                                <button class="btn btn-link" onclick="showSignIn()">
-                                    Sign In
-                                </button>
-                            </div>
+                                <div class="text-center text-danger error-message"></div>
+
+                                <hr/>
+                                <div class="text-center" id="go-to-registration-group">
+                                    Don't have an account?
+                                    <button type="button" class="btn btn-link" onclick="showRegistration()">
+                                        Register for free
+                                    </button>
+                                </div>
+                            </form>
+
+                            <form id="password-reset-form">
+                                <div class="form-group email-form-group">
+                                    <input type="email" class="form-control email" name="email" placeholder="Email">
+                                </div>
+
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-block btn-danger">
+                                        Send Password Reset Email
+                                    </button>
+                                </div>
+
+                                <div class="text-center text-danger error-message"></div>
+
+                                <hr/>
+                                <div class="text-center" id="go-to-signin-group">
+                                    <button type="button" class="btn btn-link" onclick="showSignIn()">
+                                        Sign In
+                                    </button>
+                                </div>
+                            </form>
+
+                            <form id="registration-form">
+                                <div class="form-group email-form-group">
+                                    <input type="email" class="form-control email" name="email" placeholder="Email">
+                                </div>
+
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-block btn-primary">
+                                        Register
+                                    </button>
+                                </div>
+
+                                <div class="text-center text-danger error-message"></div>
+
+                                <hr/>
+                                <div class="text-center" id="go-to-signin-group">
+                                    <button type="button" class="btn btn-link" onclick="showSignIn()">
+                                        Sign In
+                                    </button>
+                                </div>
+                            </form>
+
+                            <div class="text-center text-success email-success"></div>
                         </div>
                     </div>
                 </div>
@@ -81,28 +116,30 @@
         <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
         <script>
             function showSignIn() {
-                $('#password-form-group').show();
-                $('#sign-in-button-group').show();
-                $('#go-to-registration-group').show();
-                $('#go-to-signin-group').hide();
-                $('#forgot-password-button-group').hide();
-                $('#register-button-group').hide();
+                $('#sign-in-form').show();
+                $('#password-reset-form').hide();
+                $('#registration-form').hide();
             }
 
             function showForgotPassword() {
-                $('#password-form-group').hide();
-                $('#sign-in-button-group').hide();
-                $('#go-to-registration-group').hide();
-                $('#forgot-password-button-group').show();
-                $('#go-to-signin-group').show();
+                $('#sign-in-form').hide();
+                $('#password-reset-form').show();
+                $('#registration-form').hide();
             }
 
             function showRegistration() {
-                $('#password-form-group').hide();
-                $('#sign-in-button-group').hide();
-                $('#go-to-registration-group').hide();
-                $('#register-button-group').show();
-                $('#go-to-signin-group').show();
+                $('#sign-in-form').hide();
+                $('#password-reset-form').hide();
+                $('#registration-form').show();
+            }
+
+            function showEmailSuccess(email) {
+                $('#sign-in-form').hide();
+                $('#password-reset-form').hide();
+                $('#registration-form').hide();
+                var msg = 'We sent an email to ' + email;
+                msg += ' with a link that will let you set your password';
+                $('.email-success').html(msg);
             }
 
             function setButtonLoading(button, text, loading) {
@@ -110,29 +147,84 @@
                 $(button).prop('disabled', loading);
             }
 
+            function isEmail(email) {
+              var regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;
+              return regex.test(email);
+            }
+
+            function getEmail(form) {
+                var email = $(form + ' .email').val();
+                if(!isEmail(email)){
+                    email = null;
+                }
+                if(email) {
+                    $(form + ' .email-form-group').removeClass('has-error');
+                } else {
+                    $(form + ' .email-form-group').addClass('has-error');
+                }
+                return email;
+            }
+
+            function getPassword(form) {
+                var password = $(form + ' .password').val();
+                if(password) {
+                    $(form + ' .password-form-group').removeClass('has-error');
+                } else {
+                    $(form + ' .password-form-group').addClass('has-error');
+                }
+                return password;
+            }
+
             $(function() {
-                $('#sign-in-button').click(function() {
-                    var button = this;
+                $('#sign-in-form').submit(function(event) {
+                    event.preventDefault();
+                    var button = '#sign-in-form :submit';
+                    var email = getEmail('#sign-in-form');
+                    var password = getPassword('#sign-in-form');
+                    if(!email || !password) {
+                        return;
+                    }
+
                     setButtonLoading(button, 'Signing In...', true);
                     setTimeout(function () {
                         setButtonLoading(button, 'Sign In', false);
                     }, 1000);
                 });
 
-                $('#register-button').click(function() {
-                    var button = this;
+                $("#registration-form").submit(function(event) {
+                    event.preventDefault();
+                    var button = '#registration-form :submit';
+                    var email = getEmail('#registration-form');
+                    if(!email) {
+                        return;
+                    }
+
                     setButtonLoading(button, 'Registering...', true);
-                    setTimeout(function () {
+                    $.post('/register', {email: email}, function(){
+                        showEmailSuccess(email);
+                    }).fail(function(response) {
+                        $('#registration-form .error-message').html(response.responseText);
+                    }).always(function(){
                         setButtonLoading(button, 'Register', false);
-                    }, 1000);
+                    });
                 });
 
-                $('#forgot-password-button').click(function() {
-                    var button = this;
+                $("#password-reset-form").submit(function(event) {
+                    event.preventDefault();
+                    var button = '#password-reset-form :submit';
+                    var email = getEmail('#password-reset-form');
+                    if(!email) {
+                        return;
+                    }
+
                     setButtonLoading(button, 'Sending Email...', true);
-                    setTimeout(function () {
+                    $.post('/reset-password', {email: email}, function(){
+                        showEmailSuccess(email);
+                    }).fail(function(response) {
+                        $('#password-reset-form .error-message').html(response.responseText);
+                    }).always(function(){
                         setButtonLoading(button, 'Send Password Reset Email', false);
-                    }, 1000);
+                    });
                 });
 
                 if(location.search.indexOf('register') !== -1) {
