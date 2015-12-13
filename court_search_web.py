@@ -1,6 +1,6 @@
 from courtreader import readers
 from courtutils.courtlogger import get_logger
-from courtemail.email import send_welcome_email
+from courtemail.email import send_welcome_email, verify_link
 from flask import Flask, render_template, make_response, request
 import datetime
 import pymongo
@@ -36,14 +36,18 @@ def login():
 
 @app.route('/password')
 def password():
-    return render_template('password.html')
+    email = request.args.get('email')
+    expiration = request.args.get('expires')
+    token = request.args.get('token')
+    valid_request = verify_link('password', email, expiration, token)
+    return render_template('password.html', email=email, valid_request=valid_request)
 
 @app.route('/register', methods=['POST'])
 def register():
     email = request.form['email']
     if user_registered(email):
         return 'Email address already registered', 409
-    #send_welcome_email(request.form['email'])
+    send_welcome_email(request.form['email'])
     return email
 
 @app.route('/reset-password', methods=['POST'])
