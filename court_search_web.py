@@ -1,27 +1,26 @@
 from courtreader import readers
-from courtutils.courtlogger import get_logger
-from courtemail.email import send_welcome_email, verify_link
-from flask import Flask, render_template, make_response, request
+from courtutils.database import Database
+from courtutils.email import send_welcome_email, verify_link
+from courtutils.logger import get_logger
+from courtutils.user import User
+from flask import Flask, render_template, make_response, redirect, request, url_for
+from flask.ext.login import LoginManager, login_required, login_user
 import datetime
-import pymongo
 import os
 
 app = Flask(__name__)
+
+login_manager = LoginManager()
+login_manager.init_app(app)
 
 # configure logging
 log = get_logger()
 log.info('Web running')
 
-# Connect to database
-def get_db():
-    return pymongo.MongoClient(os.environ['MONGO_DB'])['va_court_search']
-
-def insert_tasks(courts, court_tasks, name):
-    court_codes = [c['fips_code'] for c in courts.find()]
-    for code in court_codes:
-        court_tasks.insert_one({'type': 'name',
-                                'court_fips': code,
-                                'term': name})
+@login_manager.user_loader
+def load_user(user_id):
+    print 'loading user'
+    return User.get(user_id)
 
 def user_registered(email):
     return email == 'ben.schoenfeld@gmail.com'
@@ -30,9 +29,25 @@ def user_registered(email):
 def index():
     return render_template('index.html')
 
+@app.route('/home')
+@login_required
+def home():
+    return render_template('home.html')
+
 @app.route('/login')
 def login():
     return render_template('login.html')
+
+@app.route('/login', methods=['POST'])
+def do_login():
+    login_user(User.login(request.args.get('email')))
+    return redirect(url_for('home'))
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
 
 @app.route('/password')
 def password():
@@ -68,9 +83,8 @@ def lookup_search_name(name):
 
 @app.route('/search/<name>', methods=['POST'])
 def add_search_name_tasks(name):
-    db = get_db()
-    insert_tasks(db.circuit_courts, db.circuit_court_tasks, name.upper())
-    insert_tasks(db.district_courts, db.district_court_tasks, name.upper())
+    Database.insert_tasks('circuit', name.upper())
+    Database.insert_tasks('district', name.upper())
     return ''
 
 if __name__ == "__main__":

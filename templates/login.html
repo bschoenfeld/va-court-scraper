@@ -186,9 +186,14 @@
                     }
 
                     setButtonLoading(button, 'Signing In...', true);
-                    setTimeout(function () {
+                    $.post('/login', {email: email, password: password}, function(){
+                        //showEmailSuccess(email);
+                        alert('Logged In');
+                    }).fail(function(response) {
+                        $('#sign-in-form .error-message').html(response.responseText);
+                    }).always(function(){
                         setButtonLoading(button, 'Sign In', false);
-                    }, 1000);
+                    });
                 });
 
                 $("#registration-form").submit(function(event) {
