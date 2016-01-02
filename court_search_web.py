@@ -22,9 +22,6 @@ def load_user(user_id):
     print 'loading user'
     return User.get(user_id)
 
-def user_registered(email):
-    return email == 'ben.schoenfeld@gmail.com'
-
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -40,8 +37,15 @@ def login():
 
 @app.route('/login', methods=['POST'])
 def do_login():
-    login_user(User.login(request.args.get('email')))
-    return redirect(url_for('home'))
+    email = request.form['email']
+    password = request.form['password']
+    if not User.registered(email):
+        return 'Email address is not registered', 409
+    user = User.login(email, password)
+    if user is None:
+        return 'Wrong password', 409
+    login_user(user)
+    return url_for('home')
 
 @app.route('/logout')
 @login_required
@@ -55,20 +59,37 @@ def password():
     expiration = request.args.get('expires')
     token = request.args.get('token')
     valid_request = verify_link('password', email, expiration, token)
-    return render_template('password.html', email=email, valid_request=valid_request)
+    return render_template('password.html',
+        email=email, expiration=expiration, token=token,
+        valid_request=valid_request)
+
+@app.route('/password', methods=['POST'])
+def set_password():
+    email = request.form['email']
+    expiration = request.form['expires']
+    token = request.form['token']
+    print email, expiration, token
+    valid_request = verify_link('password', email, expiration, token)
+    if not valid_request:
+        return 'This password reset link has expired', 409
+    if not User.registered(email):
+        return 'Email address is not registered', 409
+    password = request.form['password']
+    User.update_password(email, password)
+    return email
 
 @app.route('/register', methods=['POST'])
 def register():
     email = request.form['email']
-    if user_registered(email):
+    if User.registered(email):
         return 'Email address already registered', 409
-    send_welcome_email(request.form['email'])
+    User.create(email)
     return email
 
 @app.route('/reset-password', methods=['POST'])
 def reset_password():
     email = request.form['email']
-    if not user_registered(email):
+    if not User.registered(email):
         return 'Email address is not registered', 409
     #send_welcome_email(request.form['email'])
     return email

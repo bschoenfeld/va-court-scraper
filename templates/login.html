@@ -143,7 +143,7 @@
             }
 
             function setButtonLoading(button, text, loading) {
-                $(button).html(text)
+                $(button).html(text);
                 $(button).prop('disabled', loading);
             }
 
@@ -186,12 +186,14 @@
                     }
 
                     setButtonLoading(button, 'Signing In...', true);
-                    $.post('/login', {email: email, password: password}, function(){
-                        //showEmailSuccess(email);
-                        alert('Logged In');
+                    $.post('/login', {email: email, password: password}, function(response){
+                        window.location.href = response;
                     }).fail(function(response) {
-                        $('#sign-in-form .error-message').html(response.responseText);
-                    }).always(function(){
+                        var msg = 'Sorry, something went wrong...';
+                        if(response.status !== 500) {
+                            msg = response.responseText
+                        }
+                        $('#sign-in-form .error-message').html(msg);
                         setButtonLoading(button, 'Sign In', false);
                     });
                 });
@@ -208,7 +210,11 @@
                     $.post('/register', {email: email}, function(){
                         showEmailSuccess(email);
                     }).fail(function(response) {
-                        $('#registration-form .error-message').html(response.responseText);
+                        var msg = 'Sorry, something went wrong...';
+                        if(response.status !== 500) {
+                            msg = response.responseText
+                        }
+                        $('#registration-form .error-message').html(msg);
                     }).always(function(){
                         setButtonLoading(button, 'Register', false);
                     });
@@ -226,7 +232,11 @@
                     $.post('/reset-password', {email: email}, function(){
                         showEmailSuccess(email);
                     }).fail(function(response) {
-                        $('#password-reset-form .error-message').html(response.responseText);
+                        var msg = 'Sorry, something went wrong...';
+                        if(response.status !== 500) {
+                            msg = response.responseText
+                        }
+                        $('#password-reset-form .error-message').html(msg);
                     }).always(function(){
                         setButtonLoading(button, 'Send Password Reset Email', false);
                     });
