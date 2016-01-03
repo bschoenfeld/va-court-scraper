@@ -1,6 +1,6 @@
 from courtreader import readers
 from courtutils.database import Database
-from courtutils.email import send_welcome_email, verify_link
+from courtutils.email import send_password_reset_email, verify_link
 from courtutils.logger import get_logger
 from courtutils.user import User
 from flask import Flask, render_template, make_response, redirect, request, url_for
@@ -91,7 +91,7 @@ def reset_password():
     email = request.form['email']
     if not User.registered(email):
         return 'Email address is not registered', 409
-    #send_welcome_email(request.form['email'])
+    send_password_reset_email(request.form['email'])
     return email
 
 @app.route('/search')

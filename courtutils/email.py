@@ -29,7 +29,7 @@ def create_link(email_address, route):
     return uri
 
 def verify_link(route, email_address, expiration, token):
-    if datetime.fromtimestamp(float(expiration)) < datetime.utcnow(): 
+    if datetime.fromtimestamp(float(expiration)) < datetime.utcnow():
         return False
     uri = generate_uri(route,
         urllib.quote(email_address),
@@ -42,5 +42,14 @@ def send_welcome_email(email_address):
     swu = sendwithus.api(api_key)
     swu.send(
         email_id='tem_58MQPDcuQvGKoXG3aVp4Zb',
+        recipient={'address': email_address},
+        email_data={'setPasswordLink': set_password_link})
+
+def send_password_reset_email(email_address):
+    api_key = os.environ['SEND_WITH_US']
+    set_password_link = create_link(email_address, 'password')
+    swu = sendwithus.api(api_key)
+    swu.send(
+        email_id='tem_shSnhmqCSMAwdLbPhuwY4U',
         recipient={'address': email_address},
         email_data={'setPasswordLink': set_password_link})
