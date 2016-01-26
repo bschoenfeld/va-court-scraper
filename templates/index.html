@@ -1,182 +1,157 @@
-<!doctype html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Virginia Court Search</title>
-        <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" rel="stylesheet">
-        <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
-        <style>
-            .navbar {
-                border-radius: 0px;
-            }
+{% extends "layout.html" %}
+{% block style %}
+    <style>
+        .navbar {
+            border-radius: 0px;
+        }
 
-            h4 {
-                margin-bottom: 30px;
-            }
+        h4 {
+            margin-bottom: 30px;
+        }
 
-            #disclaimer {
-                margin-top: 30px;
-            }
+        #disclaimer {
+            margin-top: 30px;
+        }
 
-            .footer {
-                margin-top: 50px;
-            }
+        .footer {
+            margin-top: 50px;
+        }
 
-            #section-header {
-                background-image: url('/static/court-search-blur-background.jpeg');
-                background-size: cover;
-                background-position: center;
-                height: 400px;
-                margin-top: -25px;
-            }
+        #section-header {
+            background-image: url('/static/court-search-blur-background.jpeg');
+            background-size: cover;
+            background-position: center;
+            height: 400px;
+            margin-top: -25px;
+        }
 
-            #section-header .container {
-                position: absolute;
-                width: 100%;
-                margin-top: 80px;
-                padding: 40px;
-                background: rgba(255, 255, 255, 0.25);
-            }
+        #section-header .container {
+            position: absolute;
+            width: 100%;
+            margin-top: 80px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.25);
+        }
 
-            #section-header .heading {
-                font-size: 40px;
-                font-weight: lighter;
-                letter-spacing: 2px;
-            }
+        #section-header .heading {
+            font-size: 40px;
+            font-weight: lighter;
+            letter-spacing: 2px;
+        }
 
-            #section-header .sub-heading {
-                font-size: 18px;
-            }
+        #section-header .sub-heading {
+            font-size: 18px;
+        }
 
-            #section-features .container {
-                width: 100%;
-                padding: 40px;
-                background: #222;
-                color: #fff;
-            }
+        #section-features .container {
+            width: 100%;
+            padding: 40px;
+            background: #222;
+            color: #fff;
+        }
 
-            #section-features .heading {
-                font-size: 24px;
-                margin: 5px;
-            }
+        #section-features .heading {
+            font-size: 24px;
+            margin: 5px;
+        }
 
-            #section-features .btn {
-                margin-top: 15px;
-            }
+        #section-features .btn {
+            margin-top: 15px;
+        }
 
-            #section-pricing .container {
-                width: 100%;
-                padding: 40px;
-                color: #333;
-            }
+        #section-pricing .container {
+            width: 100%;
+            padding: 40px;
+            color: #333;
+        }
 
-            #section-pricing .heading {
-                font-size: 24px;
-                margin: 15px;
-            }
+        #section-pricing .heading {
+            font-size: 24px;
+            margin: 15px;
+        }
 
-            #section-pricing .row {
-                font-size: 18px;
-            }
+        #section-pricing .row {
+            font-size: 18px;
+        }
 
-            #section-footer {
-                margin: 20px;
-            }
-        </style>
-    </head>
-    <body>
-        <nav class="navbar navbar-inverse" role="navigation">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="/">Virginia Court Search</a>
+        #section-footer {
+            margin: 20px;
+        }
+    </style>
+{% endblock %}
 
-                <ul class="nav navbar-nav navbar-right pull-right">
-                    <li><a href="/login">Sign In</a></li>
-                </ul>
+{% block body %}
+    <section id="section-header">
+        <div class="container text-center">
+            <div class="heading">
+                Virginia Court Search
             </div>
-        </nav>
-
-        <section id="section-header">
-            <div class="container text-center">
-                <div class="heading">
-                    Virginia Court Search
-                </div>
-                <div class="sub-heading">
-                    Search Circuit and District Courts Statewide
-                </div>
+            <div class="sub-heading">
+                Search Circuit and District Courts Statewide
             </div>
-        </section>
+        </div>
+    </section>
 
-        <section id="section-features">
-            <div class="container text-center">
-                <div class="heading">
-                    A portal to Virginia's Online Case Management System
-                </div>
-                <div class="sub-heading">
-                    Automatically search criminal, civil, and traffic cases in
-                    circuit and district courts in all jurisdictions
-                </div>
-                <div class="row">
-                    <div class="col-md-6 col-md-offset-3 col-lg-4 col-lg-offset-4">
-                        <button class="btn btn-lg btn-block btn-success">Try It Now</div>
-                    </div>
+    <section id="section-features">
+        <div class="container text-center">
+            <div class="heading">
+                A portal to Virginia's Online Case Management System
+            </div>
+            <div class="sub-heading">
+                Automatically search criminal, civil, and traffic cases in
+                circuit and district courts in all jurisdictions
+            </div>
+            <div class="row">
+                <div class="col-md-6 col-md-offset-3 col-lg-4 col-lg-offset-4">
+                    <button class="btn btn-lg btn-block btn-success">Try It Now</div>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <section id="section-pricing">
-            <div class="container text-center">
-                <div class="heading">
-                    Monthly Plans
-                </div>
-                <div class="row">
-                    <div class="col-sm-6 col-md-4 col-md-offset-2 text-center">
-                        <div class="panel panel-primary">
-                            <div class="panel-heading">
-                                Basic
-                            </div>
-                            <div class="panel-body">
-                                <div>10 Searches</div>
-                                <div>Free</div>
-                            </div>
+    <section id="section-pricing">
+        <div class="container text-center">
+            <div class="heading">
+                Monthly Plans
+            </div>
+            <div class="row">
+                <div class="col-sm-6 col-md-4 col-md-offset-2 text-center">
+                    <div class="panel panel-primary">
+                        <div class="panel-heading">
+                            Basic
                         </div>
-                    </div>
-                    <div class="col-sm-6 col-md-4 text-center">
-                        <div class="panel panel-primary">
-                            <div class="panel-heading">
-                                Professional
-                            </div>
-                            <div class="panel-body">
-                                <div>Unlimited Searches</div>
-                                <div>$20</div>
-                            </div>
+                        <div class="panel-body">
+                            <div>10 Searches</div>
+                            <div>Free</div>
                         </div>
                     </div>
                 </div>
-
-                <div class="row">
-                    <div class="col-md-6 col-md-offset-3 col-lg-4 col-lg-offset-4">
-                        <a href="/login?register=true" class="btn btn-lg btn-block btn-primary">
-                            Register
-                        </a>
+                <div class="col-sm-6 col-md-4 text-center">
+                    <div class="panel panel-primary">
+                        <div class="panel-heading">
+                            Professional
+                        </div>
+                        <div class="panel-body">
+                            <div>Unlimited Searches</div>
+                            <div>$20</div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </section>
 
-        <section id="section-footer">
-            <div class="text-center">
-                <a href="mailto:info@vacourtsearch.com">info@vacourtsearch.com</a>
+            <div class="row">
+                <div class="col-md-6 col-md-offset-3 col-lg-4 col-lg-offset-4">
+                    <a href="/login?register=true" class="btn btn-lg btn-block btn-primary">
+                        Register
+                    </a>
+                </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-        <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
-        <script>
-            $(function() {
-
-            });
-        </script>
-    </body>
-</html>
+    <section id="section-footer">
+        <div class="text-center">
+            <a href="mailto:info@vacourtsearch.com">info@vacourtsearch.com</a>
+        </div>
+    </section>
+{% endblock %}

@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Virginia Court Search</title>
+        <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" rel="stylesheet">
+        <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+        <style>
+            .navbar {
+                border-radius: 0px;
+            }
+        </style>
+
+        {% block style %}{% endblock %}
+    </head>
+    <body>
+        <nav class="navbar navbar-inverse" role="navigation">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">Virginia Court Search</a>
+
+                <ul class="nav navbar-nav navbar-right pull-right">
+                    {% if not current_user.is_authenticated %}
+                        <li><a href="/login">Sign In</a></li>
+                    {% else %}
+                        <li><p class="navbar-text">{{ current_user.id }}</p></li>
+                        <li><a href="/logout">Sign Out</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </nav>
+
+        {% block body %}{% endblock %}
+
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+        <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+        <script>
+            $(function() {
+
+            });
+        </script>
+    </body>
+</html>
