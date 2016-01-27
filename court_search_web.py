@@ -4,7 +4,7 @@ from courtutils.email import send_password_reset_email, verify_link
 from courtutils.logger import get_logger
 from courtutils.user import User
 from flask import Flask, render_template, make_response, redirect, request, url_for
-from flask.ext.login import LoginManager, login_required, login_user, logout_user
+from flask.ext.login import LoginManager, login_required, login_user, logout_user, current_user
 import datetime
 import os
 
@@ -24,6 +24,8 @@ def load_user(user_id):
 
 @app.route('/')
 def index():
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
     return render_template('index.html')
 
 @app.route('/home')
@@ -33,6 +35,8 @@ def home():
 
 @app.route('/login')
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
     return render_template('login.html')
 
 @app.route('/login', methods=['POST'])
