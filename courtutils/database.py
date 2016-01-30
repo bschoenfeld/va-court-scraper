@@ -22,6 +22,32 @@ class Database():
         return cls.client.users.find_one({'email': email, 'password': password})
 
     @classmethod
+    def get_circuit_courts(cls):
+        return cls.client.circuit_courts.find(None, {'_id':0})
+
+    @classmethod
+    def get_district_courts(cls):
+        return cls.client.district_courts.find(None, {'_id':0})
+
+    @classmethod
+    def find_courts(cls, court_type, lat, lng, miles):
+        search = {
+            'location': {
+                '$nearSphere': {
+                    '$geometry': {
+                        'type': 'Point',
+                        'coordinates': [lng, lat]
+                    },
+                    '$maxDistance': miles * 1609
+                }
+            }
+        }
+        if court_type == 'circuit':
+            return cls.client.circuit_courts.find(search, {'_id':0})
+        else:
+            return cls.client.district_courts.find(search, {'_id':0})
+
+    @classmethod
     def insert_tasks(cls, court_system, name):
         courts = cls.client[court_system + '_courts']
         tasks = cls.client[court_system + '_court_tasks']

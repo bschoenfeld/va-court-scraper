@@ -3,7 +3,7 @@ from courtutils.database import Database
 from courtutils.email import send_password_reset_email, verify_link
 from courtutils.logger import get_logger
 from courtutils.user import User
-from flask import Flask, render_template, make_response, redirect, request, url_for
+from flask import Flask, render_template, make_response, jsonify, redirect, request, url_for
 from flask.ext.login import LoginManager, login_required, login_user, logout_user, current_user
 import datetime
 import os
@@ -56,6 +56,21 @@ def do_login():
 def logout():
     logout_user()
     return redirect(url_for('index'))
+
+@app.route('/courtmap')
+@login_required
+def court_map():
+    circuit_courts = list(Database.get_circuit_courts())
+    district_courts = list(Database.get_district_courts())
+    return render_template('courtmap.html',
+        circuit_courts=circuit_courts,
+        district_courts=district_courts)
+
+@app.route('/court_list/<court_type>/<lat>/<lng>/<miles>')
+@login_required
+def court_list(court_type, lat, lng, miles):
+    courts = list(Database.find_courts(court_type, float(lat), float(lng), int(miles)))
+    return jsonify(courts=courts)
 
 @app.route('/password')
 def password():

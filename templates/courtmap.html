@@ -1,0 +1,81 @@
+{% extends "layout.html" %}
+{% block style %}
+<style type="text/css">
+      #map { height: 500px; }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="row">
+        <div class="col-xs-6">
+            <select class="form-control" id="courts">
+                <option value="">Select Court</option>
+                <optgroup label="Circuit Courts" id="circuit-courts">
+                </optgroup>
+                <optgroup label="District Courts" id="district-courts">
+                </optgroup>
+            </select>
+        </div>
+        <div class="col-xs-4">
+            <select class="form-control">
+                <option value="">Within</option>
+                <option value="20">20 Miles</option>
+                <option value="50">50 Miles</option>
+                <option value="100">100 Miles</option>
+            </select>
+        </div>
+        <div class="col-xs-2">
+            <button class="btn btn-block">
+                Find
+            </button>
+        </div>
+    </div>
+    <div id="map"></div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    var map;
+    var circuitCourts = {{ circuit_courts|tojson }};
+    var districtCourts = {{ district_courts|tojson }};
+
+    function addCourtsToSelect(courts, selectId) {
+        var names = [];
+        $.each(courts, function() {
+            names.push(this.name);
+            var marker = new google.maps.Marker({
+                position: new google.maps.LatLng(
+                    this.location.coordinates[1],
+                    this.location.coordinates[0]),
+                title: this.name
+            });
+            marker.setMap(map);
+        });
+        names.sort();
+        var $el = $(selectId);
+        $.each(names, function() {
+            $el.append($("<option></option>")
+               .attr("value", this).text(this));
+        });
+    }
+
+    function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+            center: {lat: 37.5, lng: -79},
+            zoom: 8
+        });
+        addCourtsToSelect(circuitCourts, '#circuit-courts');
+        addCourtsToSelect(districtCourts, '#district-courts');
+    }
+
+    $(function() {
+        console.log(circuitCourts);
+        console.log(districtCourts);
+    });
+</script>
+
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyApqcChB-VAfVx3KqzfW2NvYAfHFyrxRuc&callback=initMap">
+</script>
+{% endblock %}
