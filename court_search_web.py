@@ -66,10 +66,10 @@ def court_map():
         circuit_courts=circuit_courts,
         district_courts=district_courts)
 
-@app.route('/court_list/<court_type>/<lat>/<lng>/<miles>')
+@app.route('/court_list/<court_type>/<court_name>/<miles>')
 @login_required
-def court_list(court_type, lat, lng, miles):
-    courts = list(Database.find_courts(court_type, float(lat), float(lng), int(miles)))
+def court_list(court_type, court_name, miles):
+    courts = list(Database.find_courts(court_type, court_name, int(miles)))
     return jsonify(courts=courts)
 
 @app.route('/password')

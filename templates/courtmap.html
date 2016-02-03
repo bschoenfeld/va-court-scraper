@@ -18,15 +18,17 @@
             </select>
         </div>
         <div class="col-xs-4">
-            <select class="form-control">
+            <select class="form-control" id="within">
                 <option value="">Within</option>
                 <option value="20">20 Miles</option>
+                <option value="30">30 Miles</option>
+                <option value="40">40 Miles</option>
                 <option value="50">50 Miles</option>
                 <option value="100">100 Miles</option>
             </select>
         </div>
         <div class="col-xs-2">
-            <button class="btn btn-block">
+            <button class="btn btn-block" onclick="find()">
                 Find
             </button>
         </div>
@@ -41,7 +43,9 @@
     var circuitCourts = {{ circuit_courts|tojson }};
     var districtCourts = {{ district_courts|tojson }};
 
-    function addCourtsToSelect(courts, selectId) {
+    var circuitCourtMarkers = [];
+    var districtCourtMarkers = [];
+    function addCourtsToSelect(courts, selectId, markers) {
         var names = [];
         $.each(courts, function() {
             names.push(this.name);
@@ -51,6 +55,7 @@
                     this.location.coordinates[0]),
                 title: this.name
             });
+            markers.push(marker);
             marker.setMap(map);
         });
         names.sort();
@@ -61,13 +66,53 @@
         });
     }
 
+    function find() {
+        var courtType = $(':selected', $('#courts')).parent().attr('label');
+        if(courtType === 'Circuit Courts') {
+            courtType = 'circuit';
+        } else {
+            courtType = 'district';
+        }
+        var court = $('#courts').val();
+        var within = $('#within').val();
+        if(!court || !within) return;
+        var courtListUrl = '/court_list/' + courtType + '/' + court + '/' + within;
+        $.get(courtListUrl, function(response) {
+            mapCourts(response.courts, courtType);
+        });
+    }
+
+    function mapCourts(courts, courtType) {
+        var courtsToShow = [];
+        $.each(courts, function() {
+            courtsToShow.push(this.name);
+        });
+        console.log(courtsToShow);
+        var markersToHide = circuitCourtMarkers;
+        var markersToShow = districtCourtMarkers;
+        if(courtType === 'circuit') {
+            markersToHide = districtCourtMarkers;
+            markersToShow = circuitCourtMarkers;
+        }
+        $.each(markersToHide, function(){
+            this.setMap(null);
+        });
+        $.each(markersToShow, function(){
+            if(courtsToShow.indexOf(this.title) === -1) {
+                this.setMap(null);
+            } else {
+                this.setMap(map);
+            }
+        });
+    }
+
     function initMap() {
         map = new google.maps.Map(document.getElementById('map'), {
             center: {lat: 37.5, lng: -79},
             zoom: 8
         });
-        addCourtsToSelect(circuitCourts, '#circuit-courts');
-        addCourtsToSelect(districtCourts, '#district-courts');
+        addCourtsToSelect(circuitCourts, '#circuit-courts', circuitCourtMarkers);
+        addCourtsToSelect(districtCourts, '#district-courts', districtCourtMarkers);
     }
 
     $(function() {

@@ -30,22 +30,25 @@ class Database():
         return cls.client.district_courts.find(None, {'_id':0})
 
     @classmethod
-    def find_courts(cls, court_type, lat, lng, miles):
+    def find_courts(cls, court_type, court_name, miles):
+        court_collection = cls.client.district_courts
+        if court_type == 'circuit':
+            court_collection = cls.client.circuit_courts
+        court = court_collection.find_one({'name': court_name})
+        if court is None: return []
+        coordinates = court['location']['coordinates']
         search = {
             'location': {
                 '$nearSphere': {
                     '$geometry': {
                         'type': 'Point',
-                        'coordinates': [lng, lat]
+                        'coordinates': coordinates
                     },
                     '$maxDistance': miles * 1609
                 }
             }
         }
-        if court_type == 'circuit':
-            return cls.client.circuit_courts.find(search, {'_id':0})
-        else:
-            return cls.client.district_courts.find(search, {'_id':0})
+        return court_collection.find(search, {'_id':0})
 
     @classmethod
     def insert_tasks(cls, court_system, name):
