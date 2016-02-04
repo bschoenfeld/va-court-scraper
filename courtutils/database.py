@@ -80,15 +80,8 @@ class Database():
                               'term': name})
 
     @classmethod
-    def insert_task(cls, search_id, court_system, fips_code, case_type, name):
-        tasks = cls.client[court_system + '_court_tasks']
-        tasks.insert_one({
-            'search_id': search_id,
-            'type': 'name',
-            'court_fips': fips_code,
-            'case_type': case_type,
-            'term': name
-        })
+    def insert_created_tasks(cls, court_system, tasks):
+        cls.client[court_system + '_court_tasks'].insert_many(tasks)
 
     @classmethod
     def insert_search(cls):

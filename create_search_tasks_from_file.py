@@ -20,7 +20,7 @@ def get_courts_to_search(row, courts_by_name):
 
 search_id = Database.insert_search()
 search_terms = 0
-search_tasks = 0
+search_tasks = []
 with open(sys.argv[1]) as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
@@ -29,8 +29,12 @@ with open(sys.argv[1]) as csvfile:
         search_terms += 1
         print name, len(courts_to_search), 'courts'
         for fips_code in courts_to_search:
-            search_tasks += 1
-            Database.insert_task(search_id, 'circuit', \
-                fips_code, 'civil', name.upper())
-        break
-Database.update_search(search_id, search_terms, search_tasks)
+            search_tasks.append({
+                'search_id': search_id,
+                'type': 'name',
+                'court_fips': fips_code,
+                'case_type': 'civil',
+                'term': name.upper()
+            })
+Database.insert_created_tasks('circuit', search_tasks)
+Database.update_search(search_id, search_terms, len(search_tasks))
