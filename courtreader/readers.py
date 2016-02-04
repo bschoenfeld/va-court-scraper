@@ -57,7 +57,7 @@ class DistrictCourtReader:
         soup = self.opener.open_case_details(case)
         return districtcourtparser.parse_case_details(soup)
 
-    def get_cases_by_name(self, fips_code, name):
+    def get_cases_by_name(self, fips_code, case_type, name):
         self.change_court(fips_code)
         self.opener.open_name_search(fips_code)
         sleep(1)
@@ -101,13 +101,16 @@ class CircuitCourtReader:
         soup = self.opener.do_case_number_search(fips_code, case_number)
         return circuitcourtparser.parse_case_details(soup)
 
-    def get_cases_by_name(self, fips_code, name):
+    def get_cases_by_name(self, fips_code, case_type, name):
+        category_code = 'R'
+        if case_type == 'civil':
+            category_code = 'CIVIL'
         self.change_court(fips_code)
         cases = []
-        soup = self.opener.do_name_search(fips_code, name, 'R')
+        soup = self.opener.do_name_search(fips_code, name, category_code)
         all_found = circuitcourtparser.parse_name_search(soup, name, cases)
         while not all_found:
             sleep(1)
-            soup = self.opener.continue_name_search(fips_code, 'R')
+            soup = self.opener.continue_name_search(fips_code, category_code)
             all_found = circuitcourtparser.parse_name_search(soup, name, cases)
         return cases

@@ -16,7 +16,7 @@ class DistrictCourtOpener:
         self.opener = Opener('district')
         self.driver = webdriver.Chrome()
         self.driver.implicitly_wait(3)
-        self.user_driver = True
+        self.use_driver = True
 
     def url(self, url):
         return DistrictCourtOpener.url_root + url
@@ -149,7 +149,7 @@ class DistrictCourtOpener:
         url += '?fromSidebar=true&formAction=searchLanding&searchDivision=T'
         url += '&searchFipsCode=' + code
         url += '&curentFipsCode=' + code
-        if self.user_driver:
+        if self.use_driver:
             self.driver.get(url)
         else:
             self.opener.open(url)
@@ -169,7 +169,7 @@ class DistrictCourtOpener:
         return soup
 
     def do_name_search(self, code, name, count, prev_cases=None):
-        if self.user_driver:
+        if self.use_driver:
             return self.do_name_search_with_driver(code, name, count, prev_cases)
         data = {
             'formAction':'newSearch',
