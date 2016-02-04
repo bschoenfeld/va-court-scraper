@@ -23,21 +23,30 @@ def get_court_reader():
     log.info('Worker connected to court')
     return reader
 
-def get_next_task(db):
-    if court == 'c': return db.circuit_court_tasks.find_one_and_delete({})
-    if court == 'd': return db.district_court_tasks.find_one_and_delete({})
+def get_next_task(db, court_fips):
+    collection = db.circuit_court_tasks if court == 'c' \
+                    else db.district_court_tasks
+    task = None
+    if court_fips is not None:
+        print 'Looking for task in', court_fips
+        task = collection.find_one_and_delete({'court_fips': court_fips})
+    if task is not None:
+        return task
+    return collection.find_one_and_delete({})
 
 # Fill in cases
 court_reader = None
+current_court_fips = None
 db = get_db_connection()
 while True:
-    task = get_next_task(db)
+    task = get_next_task(db, current_court_fips)
     if task is not None:
+        current_court_fips = task['court_fips']
         if court == 'c': task['court_type'] = 'circuit'
         if court == 'd': task['court_type'] = 'district'
         completed_task_col = task['court_type'] + '_court_completed_tasks'
         log.info(task)
-        print 'SEARCH', task['term']
+        print 'SEARCH', task['term'], task['court_fips']
         previously_completed_task = db[completed_task_col].find_one({
             'court_fips': task['court_fips'],
             'court_type': task['court_type'],
@@ -46,6 +55,7 @@ while True:
             'completed': {'$exists': True}
         })
         if previously_completed_task is not None:
+            log.info('PREV SEARCH FOUND')
             print 'PREV SEARCH FOUND'
             task['previous_search'] = previously_completed_task['search_id']
         else:
@@ -72,4 +82,4 @@ while True:
         court_reader.log_off()
         court_reader = None
         log.info('Worker disconnected from court site')
-    time.sleep(2)
+    time.sleep(1)
