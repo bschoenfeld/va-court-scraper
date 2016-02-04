@@ -33,11 +33,11 @@ class CircuitCourtOpener:
         url = self.url('MainMenu.do')
         self.opener.open(url, data)
 
-    def do_case_number_search(self, code, case_number):
+    def do_case_number_search(self, code, case_number, category):
         data = {
             'courtId':code,
             'caseNo':case_number,
-            'categorySelected':'R'
+            'categorySelected':category
         }
         data = urllib.urlencode(data)
         url = self.url('CaseDetail.do')

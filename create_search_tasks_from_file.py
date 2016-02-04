@@ -34,7 +34,8 @@ with open(sys.argv[1]) as csvfile:
                 'type': 'name',
                 'court_fips': fips_code,
                 'case_type': 'civil',
-                'term': name.upper()
+                'term': name.upper(),
+                'case_details': True
             })
 Database.insert_created_tasks('circuit', search_tasks)
 Database.update_search(search_id, search_terms, len(search_tasks))

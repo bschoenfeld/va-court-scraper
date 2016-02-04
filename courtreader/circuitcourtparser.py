@@ -76,6 +76,26 @@ def parse_case_details(soup):
         handle_parse_exception(soup)
         raise
 
+def parse_civil_case_details(soup):
+    try:
+        case_details = {}
+        if soup.find(text=re.compile('Case not found')) is not None:
+            case_details['error'] = 'case_not_found'
+            return case_details
+        tables = soup.find_all('table')
+        details_table = tables[4]
+        get_data_from_table(case_details, details_table)
+
+        for li in soup.find_all('li'):
+            line = [x.encode('ascii', 'ignore') for x in li.stripped_strings]
+            case_details[line[0].replace(':','')] = line[1] \
+                if len(line) > 1 else ''
+
+        return case_details
+    except:
+        handle_parse_exception(soup)
+        raise
+
 def parse_name_search(soup, name, cases):
     try:
         for row in soup.find(class_='nameList').find_all('tr'):

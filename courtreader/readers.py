@@ -109,10 +109,15 @@ class CircuitCourtReader:
             self.fips_code = fips_code
             sleep(1)
 
-    def get_case_details_by_number(self, fips_code, case_number):
+    def get_case_details_by_number(self, fips_code, case_type, case_number):
         self.manage_opener()
+        category_code = 'R'
+        if case_type == 'civil':
+            category_code = 'CIVIL'
         self.change_court(fips_code)
-        soup = self.opener.do_case_number_search(fips_code, case_number)
+        soup = self.opener.do_case_number_search(fips_code, case_number, category_code)
+        if case_type == 'civil':
+            return circuitcourtparser.parse_civil_case_details(soup)
         return circuitcourtparser.parse_case_details(soup)
 
     def get_cases_by_name(self, fips_code, case_type, name):

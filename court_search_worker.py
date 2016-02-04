@@ -41,6 +41,8 @@ db = get_db_connection()
 while True:
     task = get_next_task(db, current_court_fips)
     if task is not None:
+        if court_reader is None:
+            court_reader = get_court_reader()
         current_court_fips = task['court_fips']
         if court == 'c': task['court_type'] = 'circuit'
         if court == 'd': task['court_type'] = 'district'
@@ -58,9 +60,34 @@ while True:
             log.info('PREV SEARCH FOUND')
             print 'PREV SEARCH FOUND'
             task['previous_search'] = previously_completed_task['search_id']
+            if 'completed_details' not in previously_completed_task:
+                cases = db.cases.find({
+                    'fips_code': task['court_fips'],
+                    'court_type': task['court_type'],
+                    'case_type': task['case_type'],
+                    'search_term': task['term'],
+                    'details': {'$exists': False}
+                })
+                for case in cases:
+                    print 'Getting details', case['case_number']
+                    case_details = court_reader \
+                        .get_case_details_by_number(task['court_fips'], \
+                                                    task['case_type'], \
+                                                    case['case_number'])
+                    db.cases.find_one_and_update({
+                        '_id': case['_id']
+                    }, {
+                        '$set': {
+                            'details': case_details,
+                            'details_fetched': datetime.utcnow()
+                        }
+                    })
+                db[completed_task_col].find_one_and_update({
+                    '_id': previously_completed_task['_id']
+                }, {
+                    '$set': {'completed_details': datetime.utcnow()}
+                })
         else:
-            if court_reader is None:
-                court_reader = get_court_reader()
             cases = court_reader.get_cases_by_name(task['court_fips'], \
                                                    task['case_type'], \
                                                    task['term'])
@@ -71,8 +98,18 @@ while True:
                     case['case_type'] = task['case_type']
                     case['search_term'] = task['term']
                     case['search_id'] = task['search_id']
+                    case['fetched'] = datetime.utcnow()
+                    if task['case_details'] == True:
+                        print 'Getting details', case['case_number']
+                        case['details'] = court_reader \
+                            .get_case_details_by_number(task['court_fips'], \
+                                                        task['case_type'], \
+                                                        case['case_number'])
+                        case['details_fetched'] = datetime.utcnow()
                 db.cases.insert_many(cases)
             task['completed'] = datetime.utcnow()
+            if task['case_details'] == True:
+                task['completed_details'] = datetime.utcnow()
             task['cases_found'] = len(cases)
             log_msg = 'Found ' + str(len(cases)) + ' cases'
             log.info(log_msg)
