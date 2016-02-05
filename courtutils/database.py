@@ -69,13 +69,14 @@ class Database():
         return court_collection.find_one(search, {'_id':0})
 
     @classmethod
-    def insert_tasks(cls, court_system, case_type, name):
-        courts = cls.client[court_system + '_courts']
-        tasks = cls.client[court_system + '_court_tasks']
+    def insert_tasks(cls, court_type, case_type, name):
+        courts = cls.client[court_type + '_courts']
+        tasks = cls.client[court_type + '_court_tasks']
         court_codes = [c['fips_code'] for c in courts.find()]
         for code in court_codes:
             tasks.insert_one({'type': 'name',
                               'court_fips': code,
+                              'court_type': court_type,
                               'case_type': case_type,
                               'term': name})
 

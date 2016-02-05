@@ -33,6 +33,7 @@ with open(sys.argv[1]) as csvfile:
                 'search_id': search_id,
                 'type': 'name',
                 'court_fips': fips_code,
+                'court_type': 'circuit',
                 'case_type': 'civil',
                 'term': name.upper(),
                 'case_details': True

@@ -8,4 +8,5 @@ def get_logger():
     log.setLevel(logging.INFO)
     log.addHandler(LogentriesHandler(os.environ['LOG_ENTRIES'], \
                     format=logging.Formatter(FORMAT)))
+    log.addHandler(logging.StreamHandler())
     return log
