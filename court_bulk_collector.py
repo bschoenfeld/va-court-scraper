@@ -38,6 +38,10 @@ def get_cases_on_date(db, reader, court_fips, case_type, date, dateStr):
         log.info(case['case_number'] + ' ' + \
                     case['defendant'] + ' ' + \
                     case['details']['Filed'])
+        keys = case['details'].keys()
+        for key in keys:
+            if not case['details'][key]:
+                del case['details'][key]
         db.circuit_court_detailed_cases.find_one_and_replace({
             'court_fips': case['court_fips'],
             'case_number': case['case_number']
@@ -54,8 +58,8 @@ def run_collector():
     task = db.circuit_court_date_tasks.find_one_and_delete({})
     if task is None:
         reader.log_off()
-        log.info('Nothing to do. Sleeping for 5 minutes.')
-        sleep(10)
+        log.info('Nothing to do. Sleeping for 30 seconds.')
+        sleep(30)
         return
 
     try:
@@ -101,4 +105,4 @@ while(True):
     except Exception, err:
         log.error(traceback.format_exc())
         log.info('Unexpect error. Sleeping for 5 minutes.')
-        sleep(10)
+        sleep(300)
