@@ -19,15 +19,13 @@ current_court_fips = None
 db = get_db_connection()
 
 court_fips = '013'
-case_type = 'R'
+case_type = 'criminal'
 year = 2015
 
 reader = readers.CircuitCourtReader()
 reader.connect()
 
-date = datetime(year, 12, 31)
-while date.year == year:
-    dateStr = date.strftime('%m/%d/%Y')
+def get_cases_on_date(dateStr):
     log.info('Getting cases on ' + dateStr)
     cases = reader.get_cases_by_date(court_fips, case_type, dateStr)
     for case in cases:
@@ -36,8 +34,26 @@ while date.year == year:
                             case_type, \
                             case['case_number'])
         case['details_fetched'] = datetime.utcnow()
+        case['court_fips'] = court_fips
         print case['case_number'], case['defendant'], case['details']['Filed']
-        break
+        db.circuit_court_detailed_cases.find_one_and_replace({
+            'court_fips': case['court_fips'],
+            'case_number': case['case_number']
+        }, case, upsert=True)
+
+date = datetime(year, 12, 31)
+while date.year == year:
+    date_search = {
+        'court_fips': court_fips,
+        'case_type': case_type,
+        'date': date
+    }
+    dateStr = date.strftime('%m/%d/%Y')
+    if db.circuit_court_dates_collected.find_one(date_search) != None:
+        log.info(dateStr + ' already searched')
+    else:
+        get_cases_on_date(dateStr)
+        db.circuit_court_dates_collected.insert_one(date_search)
     date += timedelta(days=-1)
 
 reader.log_off()
