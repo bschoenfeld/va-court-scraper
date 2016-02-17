@@ -144,8 +144,10 @@ class CircuitCourtReader:
         cases = []
         soup = self.opener.do_date_search(fips_code, date, category_code)
         all_found = circuitcourtparser.parse_date_search(soup, cases)
+        print 'FINAL PAGE', all_found
         while not all_found:
             sleep(1)
             soup = self.opener.continue_date_search(fips_code, category_code)
             all_found = circuitcourtparser.parse_date_search(soup, cases)
+            print 'FINAL PAGE', all_found
         return cases

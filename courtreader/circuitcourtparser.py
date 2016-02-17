@@ -128,7 +128,7 @@ def parse_name_search(soup, name, cases):
 def parse_date_search(soup, cases):
     try:
         case_numbers = [case['case_number'] for case in cases]
-        previous_case_number_count = len(case_numbers)
+        previous_cases_count = len(cases)
         for row in soup.find(class_='nameList').find_all('tr'):
             cols = row.find_all('td')
             if len(cols) < 4:
@@ -143,7 +143,7 @@ def parse_date_search(soup, cases):
                 'case_number': case_number,
                 'defendant': cols[1].string.strip()
             })
-        return previous_case_number_count == len(case_numbers)
+        return previous_cases_count == len(cases)
     except:
         handle_parse_exception(soup)
         raise
