@@ -1,10 +1,12 @@
 from courtreader import readers
 from courtutils.logger import get_logger
 from datetime import datetime, timedelta
+from time import sleep
 import pymongo
 import os
 import sys
 import time
+import traceback
 
 # configure logging
 log = get_logger()
@@ -13,19 +15,7 @@ log.info('Worker running')
 def get_db_connection():
     return pymongo.MongoClient(os.environ['MONGO_DB'])['va_court_search']
 
-# Fill in cases
-court_reader = None
-current_court_fips = None
-db = get_db_connection()
-
-court_fips = sys.argv[1]
-year = int(sys.argv[2])
-case_type = 'criminal'
-
-reader = readers.CircuitCourtReader()
-reader.connect()
-
-def get_cases_on_date(date, dateStr):
+def get_cases_on_date(db, reader, court_fips, case_type, date, dateStr):
     log.info('Getting cases on ' + dateStr)
     cases = reader.get_cases_by_date(court_fips, case_type, dateStr)
     for case in cases:
@@ -53,19 +43,62 @@ def get_cases_on_date(date, dateStr):
             'case_number': case['case_number']
         }, case, upsert=True)
 
-date = datetime(year, 12, 31)
-while date.year == year:
-    date_search = {
-        'court_fips': court_fips,
-        'case_type': case_type,
-        'date': date
-    }
-    dateStr = date.strftime('%m/%d/%Y')
-    if db.circuit_court_dates_searched.find_one(date_search) != None:
-        log.info(dateStr + ' already searched')
-    else:
-        get_cases_on_date(date, dateStr)
-        db.circuit_court_dates_searched.insert_one(date_search)
-    date += timedelta(days=-1)
+def run_collector():
+    court_reader = None
+    current_court_fips = None
+    db = get_db_connection()
 
-reader.log_off()
+    reader = readers.CircuitCourtReader()
+    reader.connect()
+
+    task = db.circuit_court_date_tasks.find_one_and_delete({})
+    if task is None:
+        reader.log_off()
+        log.info('Nothing to do. Sleeping for 5 minutes.')
+        sleep(10)
+        return
+
+    try:
+        court_fips = task['court_fips']
+        start_date = task['start_date']
+        end_date = task['end_date']
+        case_type = 'criminal'
+
+        log.info('Start ' + court_fips + ' ' + \
+                    start_date.strftime('%m/%d/%Y') + '-' + \
+                    end_date.strftime('%m/%d/%Y'))
+        date = start_date
+
+        while date >= end_date:
+            date_search = {
+                'court_fips': court_fips,
+                'case_type': case_type,
+                'date': date
+            }
+            dateStr = date.strftime('%m/%d/%Y')
+            if db.circuit_court_dates_searched.find_one(date_search) != None:
+                log.info(dateStr + ' already searched')
+            else:
+                get_cases_on_date(db, reader, court_fips, case_type, date, dateStr)
+                db.circuit_court_dates_searched.insert_one(date_search)
+            date += timedelta(days=-1)
+
+        reader.log_off()
+    except Exception, err:
+        log.error(traceback.format_exc())
+        log.warn('Putting task back')
+        db.circuit_court_date_tasks.insert_one(task)
+        reader.log_off()
+    except KeyboardInterrupt:
+        log.warn('Putting task back')
+        db.circuit_court_date_tasks.insert_one(task)
+        reader.log_off()
+        raise
+
+while(True):
+    try:
+        run_collector()
+    except Exception, err:
+        log.error(traceback.format_exc())
+        log.info('Unexpect error. Sleeping for 5 minutes.')
+        sleep(10)
