@@ -134,3 +134,18 @@ class CircuitCourtReader:
             soup = self.opener.continue_name_search(fips_code, category_code)
             all_found = circuitcourtparser.parse_name_search(soup, name, cases)
         return cases
+
+    def get_cases_by_date(self, fips_code, case_type, date):
+        self.manage_opener()
+        category_code = 'R'
+        if case_type == 'civil':
+            category_code = 'CIVIL'
+        self.change_court(fips_code)
+        cases = []
+        soup = self.opener.do_date_search(fips_code, date, category_code)
+        all_found = circuitcourtparser.parse_date_search(soup, cases)
+        while not all_found:
+            sleep(1)
+            soup = self.opener.continue_date_search(fips_code, category_code)
+            all_found = circuitcourtparser.parse_date_search(soup, cases)
+        return cases

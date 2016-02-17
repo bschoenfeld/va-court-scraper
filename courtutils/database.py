@@ -101,3 +101,7 @@ class Database():
             }
         })
         return id
+
+    @classmethod
+    def get_all_cases(cls):
+        return cls.client['cases'].find()

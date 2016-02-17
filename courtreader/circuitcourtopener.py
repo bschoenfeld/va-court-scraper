@@ -74,3 +74,34 @@ class CircuitCourtOpener:
         url = self.url('Search.do')
         page = self.opener.open(url, data)
         return BeautifulSoup(page.read(), 'html.parser')
+
+    def do_date_search(self, code, date, category):
+        data = {
+            'hearSelect':'',
+            'selectDate':date,
+            'categorySelected':category,
+            'hearDateSelected':date,
+            'submitValue':'',
+            'courtId':code
+        }
+        data = urllib.urlencode(data)
+        url = self.url('hearSearch.do')
+        page = self.opener.open(url, data)
+        return BeautifulSoup(page.read(), 'html.parser')
+
+    def continue_date_search(self, code, category):
+        data = {
+            'courtId': code,
+            'pagelink': 'Next',
+            'lastCaseProcessed': '',
+            'firstCaseProcessed': '',
+            'category': category,
+            'firstCaseSerialNumber': 0,
+            'lastCaseSerialNumber': 0,
+            'searchType': '',
+            'emptyList': ''
+        }
+        data = urllib.urlencode(data)
+        url = self.url('hearSearch.do')
+        page = self.opener.open(url, data)
+        return BeautifulSoup(page.read(), 'html.parser')

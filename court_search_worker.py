@@ -138,7 +138,6 @@ while True:
             task['cases_found'] = len(cases)
             log_msg = 'Found ' + str(len(cases)) + ' cases'
             log.info(log_msg)
-            print log_msg
         col = get_completed_task_collection(task)
         col.find_one_and_replace({'_id': task['_id']}, task)
     elif court_reader is not None:

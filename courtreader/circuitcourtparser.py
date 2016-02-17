@@ -124,3 +124,42 @@ def parse_name_search(soup, name, cases):
     except:
         handle_parse_exception(soup)
         raise
+
+def parse_date_search(soup, cases):
+    try:
+        case_numbers = [case['case_number'] for case in cases]
+        for row in soup.find(class_='nameList').find_all('tr'):
+            cols = row.find_all('td')
+            if len(cols) < 4:
+                continue
+            case_number = cols[0].span.a.string
+            if case_number is None:
+                continue
+            case_number = case_number.strip()
+            if case_number in case_numbers:
+                return True
+            if len(cols) > 4:
+                case_number = cols[0].span.a.string.strip()
+                if case_number in case_numbers:
+                    return True
+                cases.append({
+                    'case_number': case_number,
+                    'name': cols[1].string.strip(),
+                    'charge': cols[2].string.strip(),
+                    'date': cols[3].string.strip(),
+                    'status': cols[4].string.strip()
+                })
+            elif len(cols) > 3:
+                case_number = cols[0].span.a.string.strip()
+                if case_number in case_numbers:
+                    return True
+                cases.append({
+                    'case_number': case_number,
+                    'name': cols[1].get_text(),
+                    'other_name': cols[2].get_text(),
+                    'status': cols[3].string.strip()
+                })
+        return False
+    except:
+        handle_parse_exception(soup)
+        raise
