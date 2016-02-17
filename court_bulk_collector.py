@@ -18,9 +18,9 @@ court_reader = None
 current_court_fips = None
 db = get_db_connection()
 
-court_fips = '013'
+court_fips = sys.argv[1]
+year = int(sys.argv[2])
 case_type = 'criminal'
-year = 2015
 
 reader = readers.CircuitCourtReader()
 reader.connect()
