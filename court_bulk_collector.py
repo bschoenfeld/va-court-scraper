@@ -35,13 +35,17 @@ def get_cases_on_date(db, reader, court_fips, case_type, date, dateStr):
                             case_type, \
                             case['case_number'])
         case['details_fetched'] = datetime.utcnow()
-        log.info(case['case_number'] + ' ' + \
-                    case['defendant'] + ' ' + \
-                    case['details']['Filed'])
-        keys = case['details'].keys()
-        for key in keys:
-            if not case['details'][key]:
-                del case['details'][key]
+        if 'error' in case['details']:
+            log.warn('Could not collect case details for ' + \
+                case['case_number'] + ' in ' + case['court_fips'])
+        else:
+            log.info(case['case_number'] + ' ' + \
+                        case['defendant'] + ' ' + \
+                        case['details']['Filed'])
+            keys = case['details'].keys()
+            for key in keys:
+                if not case['details'][key]:
+                    del case['details'][key]
         db.circuit_court_detailed_cases.find_one_and_replace({
             'court_fips': case['court_fips'],
             'case_number': case['case_number']
