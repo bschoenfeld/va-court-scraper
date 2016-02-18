@@ -93,6 +93,8 @@ def run_collector():
         log.warn('Putting task back')
         db.circuit_court_date_tasks.insert_one(task)
         reader.log_off()
+        log.info('Unexpect error. Sleeping for 5 minutes.')
+        sleep(300)
     except KeyboardInterrupt:
         log.warn('Putting task back')
         db.circuit_court_date_tasks.insert_one(task)
