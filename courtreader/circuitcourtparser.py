@@ -59,6 +59,9 @@ def parse_case_details(soup):
         if soup.find(text=re.compile('Case not found')) is not None:
             case_details['error'] = 'case_not_found'
             return case_details
+        if soup.find(text=re.compile('Please enter a valid Case Number')) is not None:
+            case_details['error'] = 'case_not_found'
+            return case_details
         tables = soup.find_all('table')
         details_table = tables[4]
         hearings_table = tables[6]
