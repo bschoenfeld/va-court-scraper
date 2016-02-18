@@ -17,6 +17,8 @@ if start_date < end_date:
     raise ValueError('Start Date must be after End Date so they decend')
 
 courts = list(Database.get_circuit_courts())
+if len(sys.argv) > 3:
+    courts = [court for court in courts if court['fips_code'] == sys.argv[3]]
 tasks = []
 for court in courts:
     tasks.append({
