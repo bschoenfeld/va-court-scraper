@@ -71,7 +71,7 @@ courts = list(Database.get_circuit_courts())
 courts_by_fips = {court['fips_code']:court for court in courts}
 
 db = get_db_connection()
-court_fips = '013'
+court_fips = sys.argv[1]
 
 cases = db.circuit_court_detailed_cases.find({
     'court_fips': court_fips
