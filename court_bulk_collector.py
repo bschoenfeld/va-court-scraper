@@ -107,3 +107,5 @@ while(True):
         log.error(traceback.format_exc())
         log.info('Unexpect error. Sleeping for 5 minutes.')
         sleep(300)
+    log.info('Sleeping for 10 seconds')
+    sleep(10)
