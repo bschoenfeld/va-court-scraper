@@ -134,14 +134,15 @@ def parse_date_search(soup, cases):
             if len(cols) < 4:
                 continue
             case_number = cols[0].span.a.string
-            if case_number is None:
+            defendant = cols[1].string
+            if case_number is None or defendant is None:
                 continue
             case_number = case_number.strip()
             if case_number in case_numbers:
                 return True
             cases.append({
                 'case_number': case_number,
-                'defendant': cols[1].string.strip()
+                'defendant': defendant.strip()
             })
         return previous_cases_count == len(cases)
     except:
