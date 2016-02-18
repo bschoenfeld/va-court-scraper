@@ -1,2 +1,4 @@
 nohup unbuffer python collect_circuit_court_case_details.py > circuit.log&
 nohup unbuffer python collect_district_court_case_details.py > district.log&
+
+nohup stdbuf -i0 -o0 -e0 python court_bulk_collector.py > scraper.log&
