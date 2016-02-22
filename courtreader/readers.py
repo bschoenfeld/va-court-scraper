@@ -84,7 +84,7 @@ class CircuitCourtReader:
 
     def manage_opener(self):
         self.searches_on_session += 1
-        if self.searches_on_session > 25:
+        if self.searches_on_session > 100:
             print 'RESETTING OPENER'
             self.log_off()
             sleep(2)
