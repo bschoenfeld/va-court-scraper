@@ -142,7 +142,7 @@ def parse_date_search(soup, cases):
                 continue
             case_number = case_number.strip()
             if case_number in case_numbers:
-                return True
+                continue
             cases.append({
                 'case_number': case_number,
                 'defendant': defendant.strip()
