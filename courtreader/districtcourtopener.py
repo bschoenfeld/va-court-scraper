@@ -42,7 +42,7 @@ class DistrictCourtOpener:
 
     def solve_captcha(self, url):
         self.open_driver()
-        
+
         log.info('Solving CAPTCHA')
         captcha_solver = deathbycaptcha.SocketClient(os.environ['DBC_USER'], \
                                                      os.environ['DBC_PASSWORD'])
@@ -52,8 +52,8 @@ class DistrictCourtOpener:
         image_filename = str(os.getpid()) + '_captcha.png'
         urllib.urlretrieve(image_src, image_filename)
         try:
-            #captcha_solution = captcha_solver.decode(image_filename, 60)
-            captcha_solution = {'captcha': 'manual', 'text': raw_input('Enter CAPTCHA:')}
+            captcha_solution = captcha_solver.decode(image_filename, 60)
+            #captcha_solution = {'captcha': 'manual', 'text': raw_input('Enter CAPTCHA:')}
             if captcha_solution:
                 log.info('CAPTCHA SOLVED')
                 print "CAPTCHA %s solved: %s" % (captcha_solution["captcha"],
