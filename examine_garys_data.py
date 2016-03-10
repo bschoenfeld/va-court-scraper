@@ -1,3 +1,4 @@
+from collections import Counter
 from courtreader import readers
 from courtutils.database import Database
 from courtutils.logger import get_logger
@@ -68,18 +69,20 @@ excluded_fields = [
 
 def get_db_connection():
     return pymongo.MongoClient(os.environ['MONGO_DB'])['va_court_search']
+db = get_db_connection()
 
 courts = list(Database.get_circuit_courts())
 courts_by_fips = {court['fips_code']:court for court in courts}
 
-s3 = boto3.resource('s3')
-db = get_db_connection()
+cases_by_court = {}
 
-def write_cases_to_file(cases, filename, details):
+def write_cases_to_file(cases, filename, details, exclude_cases):
     with open('./' + filename + '.csv', 'w') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=sorted(fieldnames))
         writer.writeheader()
         for case in cases:
+            if case['case_number'] in exclude_cases:
+                continue
             if 'error' in case['details']:
                 print 'Error getting case details', case['case_number']
                 continue
@@ -95,55 +98,54 @@ def write_cases_to_file(cases, filename, details):
                     del case[field]
             writer.writerow(case)
 
-def upload_cases(filename, details):
-    with open('./' + filename + '_details.csv', 'w') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=['Court', 'Cases'])
-        writer.writeheader()
-        for court in sorted(details.keys()):
-            writer.writerow({
-                'Court': court,
-                'Cases': details[court]
-            })
-
-    zipped_file = zipfile.ZipFile(filename + '.zip', 'w')
-    zipped_file.write(filename + '.csv', filename + '.csv', zipfile.ZIP_DEFLATED)
-    zipped_file.write(filename + '_details.csv', filename + '_details.csv', zipfile.ZIP_DEFLATED)
-    zipped_file.close()
-
-    s3.Object('virginia-court-data', filename + '.zip')\
-      .put(Body=open(filename + '.zip', 'rb'), ACL='public-read', ContentType='application/zip')
-
-    os.remove(filename + '.zip')
-    os.remove(filename + '.csv')
-    #os.remove(filename + '_details.csv')
-
-def export_and_upload_data_by_court(court_fips):
-    print courts_by_fips[court_fips]['name']
-
-    cases = db.circuit_court_detailed_cases.find({
-        'court_fips': court_fips
-    })
-
-    filename = 'criminal_circuit_court_cases_' + court_fips
-    write_cases_to_file(cases, filename)
-    upload_cases(filename)
-
-def export_and_upload_data_by_year(year):
+def export_data_by_year(year, court, exclude_cases):
     start = datetime(year, 1, 1)
     end = datetime(year + 1, 1, 1)
     print 'From', start, 'to', end
 
     cases = db.circuit_court_detailed_cases.find({
-        'details_fetched_for_hearing_date': {'$gte': start, '$lt': end}
+        'details_fetched_for_hearing_date': {'$gte': start, '$lt': end},
+        'court_fips': court
     })
 
-    filename = 'criminal_circuit_court_cases_' + str(year)
+    filename = 'criminal_circuit_court_cases_' + court + '_' + str(year)
     details = {}
-    write_cases_to_file(cases, filename, details)
-    upload_cases(filename, details)
+    write_cases_to_file(cases, filename, details, exclude_cases)
 
-if len(sys.argv) > 1:
-    export_and_upload_data_by_year(int(sys.argv[1]))
-else:
-    for court in courts:
-        export_and_upload_data_by_court(court['fips_code'])
+with open(sys.argv[1]) as csvfile:
+    reader = csv.DictReader(csvfile)
+    for row in reader:
+        fips = row['CASE_NUM'][:3]
+        case_number = row['CASE_NUM'][3:-2] + '-' + row['CASE_NUM'][-2:]
+        if fips not in cases_by_court:
+            cases_by_court[fips] = {}
+        cases_by_court[fips][case_number] = row
+
+for court in cases_by_court:
+    print ''
+    print '***', courts_by_fips[court]['name'], '***'
+    print 'Cases in Pilot File', len(cases_by_court[court])
+    all_cases = list(db.circuit_court_detailed_cases.find({
+        'court_fips': court
+    }, {
+        'case_number': True,
+        'details_fetched_for_hearing_date': True
+    }))
+
+    matched_cases = [case for case in all_cases if case['case_number'] in cases_by_court[court]]
+    print 'Cases in db and Pilot file', len(matched_cases)
+
+    all_case_numbers_in_db = [case['case_number'] for case in all_cases]
+    cases_not_in_db = list(set(cases_by_court[court].keys()) - set(all_case_numbers_in_db))
+    print 'Cases in Pilot file but not db', len(cases_not_in_db)
+
+    dates = [case['details_fetched_for_hearing_date'].year for case in matched_cases]
+    print 'Last hearing date for cases in VP file', Counter(dates)
+
+    cases_2012 = [case for case in all_cases if case['details_fetched_for_hearing_date'].year == 2012]
+    print '2012 cases in db', len(cases_2012)
+
+    unmatched_cases = [case for case in cases_2012 if case['case_number'] not in cases_by_court[court]]
+    print '2012 cases in db but not Pilot file', len(unmatched_cases)
+
+    export_data_by_year(2012, court, cases_by_court[court].keys())

@@ -29,3 +29,4 @@ for court in courts:
 
 db = get_db_connection()
 db.circuit_court_date_tasks.insert_many(tasks)
+print 'Created', len(tasks), 'tasks'
