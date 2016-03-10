@@ -114,7 +114,7 @@ class CircuitCourtReader:
             self.fips_code = fips_code
             sleep(1)
 
-    def get_case_details_by_number(self, fips_code, case_type, case_number):
+    def get_case_details_by_number(self, fips_code, case_type, case_number, case_details_url=None):
         self.manage_opener()
         category_code = 'R'
         if case_type == 'civil':
