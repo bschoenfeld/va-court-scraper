@@ -66,12 +66,15 @@ def parse_hearing_date_search(soup):
             if cells[0]['class'][0] == 'gridheader':
                 continue
             details_url = cells[1].a['href']
+            case_number = list(cells[1].a.stripped_strings)[0]
+            defendant_cell_content = list(cells[2].stripped_strings)
+            defendant = defendant_cell_content[0] if len(defendant_cell_content) > 0 else ''
             status_cell_content = list(cells[6].stripped_strings)
-            status = ''
-            if len(status_cell_content) > 0:
-                status = status_cell_content[0]
+            status = status_cell_content[0] if len(status_cell_content) > 0 else ''
             cases.append({
+                'case_number': case_number,
                 'details_url': details_url,
+                'defendant': defendant,
                 'status': status
             })
         return cases
@@ -100,8 +103,10 @@ def parse_case_details(soup):
             value = get_string_from_cell(value_cell)
             case_details[label] = value
         # Parse tables
-        case_details['Hearings'] = parse_table(soup, 'toggleHearing')
-        case_details['Services'] = parse_table(soup, 'toggleServices')
+        #case_details['Hearings'] = parse_table(soup, 'toggleHearing')
+        #case_details['Services'] = parse_table(soup, 'toggleServices')
+        if 'CaseNumber' not in case_details:
+            raise ValueError('Missing Case Number')
     except:
         handle_parse_exception(soup)
         raise

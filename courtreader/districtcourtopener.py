@@ -21,6 +21,10 @@ class DistrictCourtOpener:
     def url(self, url):
         return DistrictCourtOpener.url_root + url
 
+    def log_off(self):
+        if self.use_driver:
+            self.driver.quit()
+
     def open_welcome_page(self):
         url = self.url('caseSearch.do?welcomePage=welcomePage')
         page = self.opener.open(url)
@@ -44,12 +48,12 @@ class DistrictCourtOpener:
         image_filename = str(os.getpid()) + '_captcha.png'
         urllib.urlretrieve(image_src, image_filename)
         try:
-            captcha_solution = captcha_solver.decode(image_filename, 60)
+            #captcha_solution = captcha_solver.decode(image_filename, 60)
+            captcha_solution = {'captcha': 'manual', 'text': raw_input('Enter CAPTCHA:')}
             if captcha_solution:
                 log.info('CAPTCHA SOLVED')
                 print "CAPTCHA %s solved: %s" % (captcha_solution["captcha"],
                                                  captcha_solution["text"])
-                #captcha_solution = raw_input('Enter CAPTCHA:')
                 self.driver.find_element_by_name('recaptcha_response_field') \
                       .send_keys(captcha_solution["text"])
                 os.remove(image_filename)
@@ -139,8 +143,8 @@ class DistrictCourtOpener:
         soup = BeautifulSoup(content, 'html.parser')
         return soup
 
-    def open_case_details(self, case):
-        url = self.url(case['details_url'])
+    def open_case_details(self, details_url):
+        url = self.url(details_url)
         page = self.opener.open(url)
         return BeautifulSoup(page.read(), 'html.parser')
 

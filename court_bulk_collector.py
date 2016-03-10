@@ -12,6 +12,11 @@ import traceback
 log = get_logger()
 log.info('Worker running')
 
+court_type = sys.argv[1]
+if court_type != 'circuit' and court_type != 'district':
+    raise ValueError('Unknown court type')
+court_type += '_court_'
+
 def get_db_connection():
     return pymongo.MongoClient(os.environ['MONGO_DB'])['va_court_search']
 
@@ -21,7 +26,7 @@ def get_cases_on_date(db, reader, court_fips, case_type, date, dateStr):
     for case in cases:
         case['details_fetched_for_hearing_date'] = date
         case['court_fips'] = court_fips
-        case_details = db.circuit_court_detailed_cases.find_one({
+        case_details = db[court_type + 'detailed_cases'].find_one({
             'court_fips': case['court_fips'],
             'case_number': case['case_number'],
             'details_fetched_for_hearing_date': {'$gte': date}
@@ -33,20 +38,21 @@ def get_cases_on_date(db, reader, court_fips, case_type, date, dateStr):
         case['details'] = reader.get_case_details_by_number( \
                             court_fips, \
                             case_type, \
-                            case['case_number'])
+                            case['case_number'],
+                            case['details_url'] if 'details_url' in case else None)
         case['details_fetched'] = datetime.utcnow()
         if 'error' in case['details']:
             log.warn('Could not collect case details for ' + \
                 case['case_number'] + ' in ' + case['court_fips'])
         else:
+            print case
             log.info(case['case_number'] + ' ' + \
-                        case['defendant'] + ' ' + \
-                        case['details']['Filed'])
+                        case['defendant'])
             keys = case['details'].keys()
             for key in keys:
                 if not case['details'][key]:
                     del case['details'][key]
-        db.circuit_court_detailed_cases.find_one_and_replace({
+        db[court_type + 'detailed_cases'].find_one_and_replace({
             'court_fips': case['court_fips'],
             'case_number': case['case_number']
         }, case, upsert=True)
@@ -56,10 +62,11 @@ def run_collector():
     current_court_fips = None
     db = get_db_connection()
 
-    reader = readers.CircuitCourtReader()
+    reader = readers.CircuitCourtReader() if 'circuit' in court_type else \
+             readers.DistrictCourtReader()
     reader.connect()
 
-    task = db.circuit_court_date_tasks.find_one_and_delete({})
+    task = db[court_type + 'date_tasks'].find_one_and_delete({})
     if task is None:
         reader.log_off()
         log.info('Nothing to do. Sleeping for 30 seconds.')
@@ -84,23 +91,23 @@ def run_collector():
                 'date': date
             }
             dateStr = date.strftime('%m/%d/%Y')
-            if db.circuit_court_dates_searched.find_one(date_search) != None:
+            if db[court_type + 'dates_searched'].find_one(date_search) != None:
                 log.info(dateStr + ' already searched')
             else:
                 get_cases_on_date(db, reader, court_fips, case_type, date, dateStr)
-                db.circuit_court_dates_searched.insert_one(date_search)
+                db[court_type + 'dates_searched'].insert_one(date_search)
             date += timedelta(days=-1)
 
         reader.log_off()
     except Exception, err:
         log.error(traceback.format_exc())
         log.warn('Putting task back')
-        db.circuit_court_date_tasks.insert_one(task)
+        db[court_type + 'date_tasks'].insert_one(task)
         reader.log_off()
         raise
     except KeyboardInterrupt:
         log.warn('Putting task back')
-        db.circuit_court_date_tasks.insert_one(task)
+        db[court_type + 'date_tasks'].insert_one(task)
         reader.log_off()
         raise
 
