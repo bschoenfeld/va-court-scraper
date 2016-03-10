@@ -45,35 +45,33 @@ def get_cases_on_date(db, reader, court_fips, case_type, date, dateStr):
             log.warn('Could not collect case details for ' + \
                 case['case_number'] + ' in ' + case['court_fips'])
         else:
-            print case
             log.info(case['case_number'] + ' ' + \
                         case['defendant'])
             keys = case['details'].keys()
             for key in keys:
                 if not case['details'][key]:
                     del case['details'][key]
+            if 'details_url' in case:
+                del case['details_url']
         db[court_type + 'detailed_cases'].find_one_and_replace({
             'court_fips': case['court_fips'],
             'case_number': case['case_number']
         }, case, upsert=True)
 
-def run_collector():
+def run_collector(reader):
     court_reader = None
     current_court_fips = None
     db = get_db_connection()
 
-    reader = readers.CircuitCourtReader() if 'circuit' in court_type else \
-             readers.DistrictCourtReader()
-    reader.connect()
-
     task = db[court_type + 'date_tasks'].find_one_and_delete({})
     if task is None:
-        reader.log_off()
         log.info('Nothing to do. Sleeping for 30 seconds.')
         sleep(30)
         return
 
     try:
+        reader.connect()
+
         court_fips = task['court_fips']
         start_date = task['start_date']
         end_date = task['end_date']
@@ -103,18 +101,28 @@ def run_collector():
         log.error(traceback.format_exc())
         log.warn('Putting task back')
         db[court_type + 'date_tasks'].insert_one(task)
-        reader.log_off()
         raise
     except KeyboardInterrupt:
         log.warn('Putting task back')
         db[court_type + 'date_tasks'].insert_one(task)
-        reader.log_off()
         raise
 
+def get_reader():
+    return readers.CircuitCourtReader() if 'circuit' in court_type else \
+            readers.DistrictCourtReader()
+
+reader = None
 while(True):
     try:
-        run_collector()
+        if reader is None:
+            reader = get_reader()
+        run_collector(reader)
     except Exception, err:
+        try:
+            reader.log_off()
+        except:
+            pass
+        reader = None
         log.error(traceback.format_exc())
         log.info('Unexpect error. Sleeping for 5 minutes.')
         sleep(300)

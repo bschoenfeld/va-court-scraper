@@ -14,16 +14,18 @@ class DistrictCourtOpener:
 
     def __init__(self):
         self.opener = Opener('district')
-        self.driver = webdriver.Chrome()
-        self.driver.implicitly_wait(3)
         self.use_driver = True
 
     def url(self, url):
         return DistrictCourtOpener.url_root + url
 
     def log_off(self):
-        if self.use_driver:
-            self.driver.quit()
+        return None
+
+    def open_driver(self):
+        self.driver = webdriver.Chrome()
+        self.driver.implicitly_wait(3)
+        self.driver_open = True
 
     def open_welcome_page(self):
         url = self.url('caseSearch.do?welcomePage=welcomePage')
@@ -39,6 +41,8 @@ class DistrictCourtOpener:
         return BeautifulSoup(page_content, 'html.parser')
 
     def solve_captcha(self, url):
+        self.open_driver()
+        
         log.info('Solving CAPTCHA')
         captcha_solver = deathbycaptcha.SocketClient(os.environ['DBC_USER'], \
                                                      os.environ['DBC_PASSWORD'])
@@ -66,7 +70,7 @@ class DistrictCourtOpener:
         cookie = self.driver.get_cookie('JSESSIONID')['value']
         self.opener.set_cookie('JSESSIONID', cookie)
         self.opener.save_cookies()
-        #self.driver.quit()
+        self.driver.quit()
 
     def change_court(self, name, code):
         data = urllib.urlencode({

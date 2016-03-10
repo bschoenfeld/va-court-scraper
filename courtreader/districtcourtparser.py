@@ -103,7 +103,7 @@ def parse_case_details(soup):
             value = get_string_from_cell(value_cell)
             case_details[label] = value
         # Parse tables
-        #case_details['Hearings'] = parse_table(soup, 'toggleHearing')
+        case_details['Hearings'] = parse_table(soup, 'toggleHearing')
         #case_details['Services'] = parse_table(soup, 'toggleServices')
         if 'CaseNumber' not in case_details:
             raise ValueError('Missing Case Number')
@@ -116,7 +116,10 @@ def get_string_from_cell(cell, is_label=False):
     values = list(cell.stripped_strings)
     if len(values) < 1: return ''
     value = values[0].encode('ascii', 'ignore') \
-                     .strip()
+                     .strip() \
+                     .replace('\t', '') \
+                     .replace('\r', '') \
+                     .replace('\n', '')
     if is_label:
         value = value.replace(':', '') \
                      .replace('/', '') \
