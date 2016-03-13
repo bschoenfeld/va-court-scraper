@@ -4,6 +4,7 @@ from courtutils.logger import get_logger
 from datetime import datetime, timedelta
 import boto3
 import csv
+import hashlib
 import json
 import pymongo
 import os
@@ -91,9 +92,15 @@ def write_cases_to_file(cases, filename, metadata):
                 metadata['byCourt'][case['Court']] = 0
             metadata['byCourt'][case['Court']] += 1
             metadata['total'] += 1
+            print (str(metadata['total']) + '\r'),
             for detail in case['details']:
                 new_key = detail.replace(' ', '')
                 case[new_key] = case['details'][detail]
+                if new_key == 'Defendant' or new_key == 'AKA' or new_key == 'AKA2':
+                    hash = hashlib.sha256()
+                    hash.update(os.environ['ANON_DATA_SALT'])
+                    hash.update(case[new_key])
+                    case[new_key] = hash.hexdigest()
             for field in excluded_fields:
                 if field in case:
                     del case[field]
