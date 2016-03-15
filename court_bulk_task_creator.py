@@ -1,5 +1,5 @@
 from courtreader import readers
-from courtutils.database import Database
+from courtutils.databases.mongo import MongoDatabase
 from courtutils.logger import get_logger
 from datetime import datetime, timedelta
 import csv
@@ -8,23 +8,7 @@ import os
 import sys
 import time
 
-def get_db_connection():
-    return pymongo.MongoClient(os.environ['MONGO_DB'])['va_court_search']
-
-def get_courts(court_type):
-    if court_type == 'circuit':
-        return list(Database.get_circuit_courts())
-    else:
-        return list(Database.get_district_courts())
-
-def add_tasks(tasks, court_type):
-    db = get_db_connection()
-    if court_type == 'circuit':
-        db.circuit_court_date_tasks.insert_many(tasks)
-    else:
-        db.district_court_date_tasks.insert_many(tasks)
-    print 'Created', len(tasks), 'tasks'
-
+# get command line args
 start_date = datetime.strptime(sys.argv[1],'%m/%d/%Y')
 end_date = datetime.strptime(sys.argv[2],'%m/%d/%Y')
 if start_date < end_date:
@@ -34,9 +18,16 @@ court_type = sys.argv[3]
 if court_type != 'circuit' and court_type != 'district':
     raise ValueError('Unknown court type')
 
-courts = get_courts(court_type)
+# connect to database
+db = MongoDatabase('court-test-314', court_type)
+
+# get the courts to create tasks for
+# check command line args for a specific court
+courts = list(db.get_courts())
 if len(sys.argv) > 4:
     courts = [court for court in courts if court['fips_code'] == sys.argv[4]]
+
+# create the tasks
 tasks = []
 for court in courts:
     tasks.append({
@@ -45,4 +36,6 @@ for court in courts:
         'end_date': end_date
     })
 
-add_tasks(tasks, court_type)
+# add the tasks to the database
+db.add_date_tasks(tasks)
+print 'Created', len(tasks), 'tasks'
