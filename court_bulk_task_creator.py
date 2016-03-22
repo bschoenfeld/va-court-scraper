@@ -19,7 +19,7 @@ if court_type != 'circuit' and court_type != 'district':
     raise ValueError('Unknown court type')
 
 # connect to database
-db = MongoDatabase('court-test-314', court_type)
+db = MongoDatabase('va_court_search', court_type)
 
 # get the courts to create tasks for
 # check command line args for a specific court
