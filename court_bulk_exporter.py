@@ -14,6 +14,7 @@ import zipfile
 
 fieldnames = {
     'circuit': [
+        'HearingDateSearched',
         'court_fips',
         'CaseNumber',
         'Locality',
@@ -61,6 +62,19 @@ fieldnames = {
         'VAAlcoholSafetyAction',
         'ProgramType',
         'Military'
+    ],
+    'circuit_hearings': [
+        'Court',
+        'CaseNumber',
+        'Jury',
+        'Room',
+        'Number',
+        'Duration',
+        'Result',
+        'Plea',
+        'Time',
+        'Date',
+        'Type'
     ],
     'district': [
         "court_fips",
@@ -118,12 +132,17 @@ time_fields = [
 ]
 
 fields_to_anonomize = [
-    'Defendant', 'Name', 'AKA1', 'AKA2'
+    'Defendant', 'Name', 'AKA', 'AKA1', 'AKA2'
 ]
 
 court_type = sys.argv[1]
 if court_type != 'circuit' and court_type != 'district':
     raise ValueError('Unknown court type')
+
+anonymize = True
+if len(sys.argv) > 4 and sys.argv[4] == 'original':
+    anonymize = False
+print 'DATA NOT ANONYMIZED'
 
 # connect to database
 db = MongoDatabase('va_court_search', court_type)
@@ -157,13 +176,17 @@ def simplify_time(time_string):
 def write_cases_to_file(cases, court_type, filename, metadata):
     if 'total' not in metadata: metadata['total'] = 0
     if 'byCourt' not in metadata: metadata['byCourt'] = {}
-    with open('./' + filename + '.csv', 'w') as csvfile:
+    with open('./' + filename + '.csv', 'w') as csvfile, \
+         open('./' + filename + '_hearings.csv', 'w') as hearings_csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=sorted(fieldnames[court_type]))
+        hearings_writer = csv.DictWriter(hearings_csvfile, fieldnames=sorted(fieldnames[court_type + '_hearings']))
         writer.writeheader()
+        hearings_writer.writeheader()
         for case in cases:
             if 'error' in case['details']:
                 print 'Error getting case details', case['case_number']
                 continue
+            case['HearingDateSearched'] = case['details_fetched_for_hearing_date'].date()
             case['Court'] = courts_by_fips[case['court_fips']]['name']
             if case['Court'] not in metadata['byCourt']:
                 metadata['byCourt'][case['Court']] = 0
@@ -172,6 +195,10 @@ def write_cases_to_file(cases, court_type, filename, metadata):
             metadata['byCourt'][case['Court']] += 1
             metadata['total'] += 1
             print (str(metadata['total']) + '\r'),
+            for hearing in case['details']['Hearings']:
+                hearing['Court'] = case['court_fips']
+                hearing['CaseNumber'] = case['case_number']
+                hearings_writer.writerow(hearing)
             for detail in case['details']:
                 new_key = detail.replace(' ', '')
                 if new_key in time_fields:
@@ -181,7 +208,7 @@ def write_cases_to_file(cases, court_type, filename, metadata):
                     case[new_key] = case['details'][detail]
                 if 'Month' in case[new_key]:
                     print new_key, case[new_key]
-                if new_key in fields_to_anonomize:
+                if new_key in fields_to_anonomize and anonymize:
                     hash = hashlib.md5()
                     hash.update(os.environ['ANON_DATA_SALT'])
                     hash.update(case[new_key])
@@ -192,7 +219,8 @@ def write_cases_to_file(cases, court_type, filename, metadata):
             writer.writerow(case)
 
 def upload_cases(filename):
-    s3.Object('virginia-court-data', filename + '.zip')\
+    s3_key = filename + '.zip' if anonymize else filename + '_original.zip'
+    s3.Object('virginia-court-data', s3_key)\
       .put(Body=open(filename + '.zip', 'rb'), ACL='public-read', ContentType='application/zip')
     os.remove(filename + '.zip')
 
@@ -215,7 +243,9 @@ def export_and_upload_data_by_year(year, court_type):
         metadata['filesizeUncompressed'] += os.path.getsize(month_filename + '.csv')
 
         year_zipped_file.write(month_filename + '.csv', month_filename + '.csv', zipfile.ZIP_DEFLATED)
+        year_zipped_file.write(month_filename + '_hearings.csv', month_filename + '_hearings.csv', zipfile.ZIP_DEFLATED)
         os.remove(month_filename + '.csv')
+        os.remove(month_filename + '_hearings.csv')
     year_zipped_file.close()
     metadata['filesize'] = os.path.getsize(year_filename + '.zip')
     upload_cases(year_filename)
