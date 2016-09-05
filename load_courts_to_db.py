@@ -2,14 +2,18 @@ import os
 import pymongo
 from geopy.geocoders import GoogleV3
 from courtreader import readers
-#from courtutils.databases.mongo import MongoDatabase
-from courtutils.databases.postgres import PostgresDatabase
+
+MONGO = False
+POSTGRES = True
+
+if MONGO: from courtutils.databases.mongo import MongoDatabase
+if POSTGRES: from courtutils.databases.postgres import PostgresDatabase
 
 geolocator = GoogleV3(api_key=os.environ['GOOGLE_API_KEY'])
 
 print 'CIRCUIT COURT'
-#circuit_db = MongoDatabase('va_court_search', 'circuit')
-circuit_db = PostgresDatabase('va_court_search', 'circuit')
+if MONGO: circuit_db = MongoDatabase('va_court_search', 'circuit')
+if POSTGRES: circuit_db = PostgresDatabase('va_court_search', 'circuit')
 circuit_db.drop_courts()
 reader = readers.CircuitCourtReader()
 courts = reader.connect()
@@ -22,7 +26,7 @@ for fips_code, court in courts.iteritems():
     court_names.append(court['name'] + ' ' + fips_code)
 circuit_db.add_court_location_index()
 circuit_db.commit()
-exit()
+
 '''
 court_names.sort()
 for court_name in court_names:
@@ -30,7 +34,8 @@ for court_name in court_names:
 '''
 
 print 'DISTRICT COURT'
-district_db = MongoDatabase('va_court_search', 'district')
+if MONGO: district_db = MongoDatabase('va_court_search', 'district')
+if POSTGRES: district_db = PostgresDatabase('va_court_search', 'district')
 district_db.drop_courts()
 reader = readers.DistrictCourtReader()
 courts = reader.connect()
@@ -45,6 +50,7 @@ for fips_code, court in courts.iteritems():
     district_db.add_court(court, fips_code, location)
     court_names.append(court + ' ' + fips_code)
 district_db.add_court_location_index()
+district_db.commit()
 
 '''
 court_names.sort()

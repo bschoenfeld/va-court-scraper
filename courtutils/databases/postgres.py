@@ -25,22 +25,25 @@ class PostgresDatabase():
         self.engine = create_engine("postgresql://" + os.environ['POSTGRES_DB'])
         self.session = sessionmaker(bind=self.engine)()
         self.court_type = court_type
+        self.court_builder = CircuitCourt if court_type == 'circuit' else DistrictCourt
     
     def commit(self):
         self.session.commit()
     
     def add_court(self, name, fips, location):
-        if self.court_type == 'circuit':
-            court = CircuitCourt(name=name, fipscode=fips, location='POINT({} {})'.format(location.longitude, location.latitude))
-            self.session.add(court)
+        self.session.add( \
+            self.court_builder( \
+                name=name, \
+                fipscode=fips, \
+                location='POINT({} {})'.format( \
+                    location.longitude, location.latitude)))
     
     def add_court_location_index(self):
         pass
     
     def drop_courts(self):
-        if self.court_type == 'circuit':
-            CircuitCourt.__table__.drop(self.engine, checkfirst=True)
-            CircuitCourt.__table__.create(self.engine, checkfirst=False)
+        self.court_builder.__table__.drop(self.engine, checkfirst=True)
+        self.court_builder.__table__.create(self.engine, checkfirst=False)
         
     def get_courts(self):
         return self.client[self.court_type + '_courts'].find(None, {'_id':0})
