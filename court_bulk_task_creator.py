@@ -1,5 +1,4 @@
 from courtreader import readers
-from courtutils.databases.mongo import MongoDatabase
 from courtutils.logger import get_logger
 from datetime import datetime, timedelta
 import csv
@@ -7,6 +6,12 @@ import pymongo
 import os
 import sys
 import time
+
+MONGO = False
+POSTGRES = True
+
+if MONGO: from courtutils.databases.mongo import MongoDatabase
+if POSTGRES: from courtutils.databases.postgres import PostgresDatabase
 
 # get command line args
 start_date = datetime.strptime(sys.argv[1],'%m/%d/%Y')
@@ -19,19 +24,21 @@ if court_type != 'circuit' and court_type != 'district':
     raise ValueError('Unknown court type')
 
 # connect to database
-db = MongoDatabase('va_court_search', court_type)
+db = None
+if MONGO: db = MongoDatabase('va_court_search', 'circuit')
+if POSTGRES: db = PostgresDatabase('va_court_search', 'circuit')
 
 # get the courts to create tasks for
 # check command line args for a specific court
 courts = list(db.get_courts())
 if len(sys.argv) > 4:
-    courts = [court for court in courts if court['fips_code'] == sys.argv[4]]
+    courts = [court for court in courts if court['fips'] == sys.argv[4]]
 
 # create the tasks
 tasks = []
 for court in courts:
     tasks.append({
-        'court_fips': court['fips_code'],
+        'fips': court['fips'],
         'start_date': start_date,
         'end_date': end_date
     })
