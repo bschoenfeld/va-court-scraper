@@ -14,8 +14,8 @@ if MONGO: from courtutils.databases.mongo import MongoDatabase
 if POSTGRES: from courtutils.databases.postgres import PostgresDatabase
 
 # get command line args
-start_date = datetime.strptime(sys.argv[1],'%m/%d/%Y')
-end_date = datetime.strptime(sys.argv[2],'%m/%d/%Y')
+start_date = datetime.strptime(sys.argv[1], '%m/%d/%Y')
+end_date = datetime.strptime(sys.argv[2], '%m/%d/%Y')
 if start_date < end_date:
     raise ValueError('Start Date must be after End Date so they decend')
 
@@ -25,8 +25,8 @@ if court_type != 'circuit' and court_type != 'district':
 
 # connect to database
 db = None
-if MONGO: db = MongoDatabase('va_court_search', 'circuit')
-if POSTGRES: db = PostgresDatabase('va_court_search', 'circuit')
+if MONGO: db = MongoDatabase('va_court_search', court_type)
+if POSTGRES: db = PostgresDatabase(court_type)
 
 # get the courts to create tasks for
 # check command line args for a specific court
@@ -40,7 +40,14 @@ for court in courts:
     tasks.append({
         'fips': court['fips'],
         'start_date': start_date,
-        'end_date': end_date
+        'end_date': end_date,
+        'case_type': 'criminal'
+    })
+    tasks.append({
+        'fips': court['fips'],
+        'start_date': start_date,
+        'end_date': end_date,
+        'case_type': 'civil'
     })
 
 # add the tasks to the database

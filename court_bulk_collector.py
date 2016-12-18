@@ -8,42 +8,47 @@ import sys
 import time
 import traceback
 
+MONGO = False
+POSTGRES = True
+
+if MONGO: from courtutils.databases.mongo import MongoDatabase
+if POSTGRES: from courtutils.databases.postgres import PostgresDatabase
+
 # configure logging
 log = get_logger()
 log.info('Worker running')
 
-court_type = sys.argv[1]
-if court_type != 'circuit' and court_type != 'district':
+COURT_TYPE = sys.argv[1]
+if COURT_TYPE != 'circuit' and COURT_TYPE != 'district':
     raise ValueError('Unknown court type')
-court_type += '_court_'
 
 def get_db_connection():
-    return pymongo.MongoClient(os.environ['MONGO_DB'])['va_court_search']
+    if MONGO:
+        return MongoDatabase('va_court_search', COURT_TYPE)
+    if POSTGRES:
+        return PostgresDatabase(COURT_TYPE)
+    return None
 
-def get_cases_on_date(db, reader, court_fips, case_type, date, dateStr):
+def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
     log.info('Getting cases on ' + dateStr)
-    cases = reader.get_cases_by_date(court_fips, case_type, dateStr)
+    cases = reader.get_cases_by_date(fips, case_type, dateStr)
     for case in cases:
         case['details_fetched_for_hearing_date'] = date
-        case['court_fips'] = court_fips
-        case_details = db[court_type + 'detailed_cases'].find_one({
-            'court_fips': case['court_fips'],
-            'case_number': case['case_number'],
-            'details_fetched_for_hearing_date': {'$gte': date}
-        })
+        case['fips'] = fips
+        case_details = db.get_more_recent_case_details(case, case_type, date)
         if case_details != None:
             last_date = case_details['details_fetched_for_hearing_date'].strftime('%m/%d/%Y')
             log.info(case['case_number'] + ' details collected for hearing on ' + last_date)
             continue
         case['details'] = reader.get_case_details_by_number( \
-                            court_fips, \
+                            fips, \
                             case_type, \
                             case['case_number'],
                             case['details_url'] if 'details_url' in case else None)
         case['details_fetched'] = datetime.utcnow()
         if 'error' in case['details']:
             log.warn('Could not collect case details for ' + \
-                case['case_number'] + ' in ' + case['court_fips'])
+                case['case_number'] + ' in ' + case['fips'])
         else:
             log.info(case['case_number'] + ' ' + \
                         case['defendant'])
@@ -53,17 +58,12 @@ def get_cases_on_date(db, reader, court_fips, case_type, date, dateStr):
                     del case['details'][key]
             if 'details_url' in case:
                 del case['details_url']
-        db[court_type + 'detailed_cases'].find_one_and_replace({
-            'court_fips': case['court_fips'],
-            'case_number': case['case_number']
-        }, case, upsert=True)
+        db.replace_case_details(case, case_type)
 
 def run_collector(reader):
-    court_reader = None
-    current_court_fips = None
     db = get_db_connection()
 
-    task = db[court_type + 'date_tasks'].find_one_and_delete({})
+    task = db.get_and_delete_date_task()
     if task is None:
         log.info('Nothing to do. Sleeping for 30 seconds.')
         sleep(30)
@@ -72,59 +72,64 @@ def run_collector(reader):
     try:
         reader.connect()
 
-        court_fips = task['court_fips']
+        fips = task['fips']
         start_date = task['start_date']
         end_date = task['end_date']
-        case_type = 'criminal'
+        case_type = task['case_type']
 
-        log.info('Start ' + court_fips + ' ' + \
-                    start_date.strftime('%m/%d/%Y') + '-' + \
-                    end_date.strftime('%m/%d/%Y'))
+        log.info('Start %s %s %s-%s',
+                 fips,
+                 case_type,
+                 start_date.strftime('%m/%d/%Y'),
+                 end_date.strftime('%m/%d/%Y'))
         date = start_date
 
         while date >= end_date:
             date_search = {
-                'court_fips': court_fips,
+                'fips': fips,
                 'case_type': case_type,
                 'date': date
             }
-            dateStr = date.strftime('%m/%d/%Y')
-            if db[court_type + 'dates_searched'].find_one(date_search) != None:
-                log.info(dateStr + ' already searched')
+            date_str = date.strftime('%m/%d/%Y')
+            if db.get_date_search(date_search) != None:
+                log.info(date_str + ' already searched')
             else:
-                get_cases_on_date(db, reader, court_fips, case_type, date, dateStr)
-                db[court_type + 'dates_searched'].insert_one(date_search)
+                get_cases_on_date(db, reader, fips, case_type, date, date_str)
+                db.add_date_search(date_search)
             date += timedelta(days=-1)
 
         reader.log_off()
     except Exception, err:
         log.error(traceback.format_exc())
         log.warn('Putting task back')
-        db[court_type + 'date_tasks'].insert_one(task)
+        db.add_date_task(task)
         raise
     except KeyboardInterrupt:
         log.warn('Putting task back')
-        db[court_type + 'date_tasks'].insert_one(task)
+        db.add_date_task(task)
         raise
 
 def get_reader():
-    return readers.CircuitCourtReader() if 'circuit' in court_type else \
+    return readers.CircuitCourtReader() if 'circuit' in COURT_TYPE else \
             readers.DistrictCourtReader()
 
-reader = None
-while(True):
-    try:
-        if reader is None:
-            reader = get_reader()
-        run_collector(reader)
-    except Exception, err:
+def run():
+    reader = None
+    while True:
         try:
-            reader.log_off()
-        except:
-            pass
-        reader = None
-        log.error(traceback.format_exc())
-        log.info('Unexpect error. Sleeping for 5 minutes.')
-        sleep(300)
-    log.info('Sleeping for 10 seconds')
-    sleep(10)
+            if reader is None:
+                reader = get_reader()
+            run_collector(reader)
+        except Exception, err:
+            try:
+                reader.log_off()
+            except:
+                pass
+            reader = None
+            log.error(traceback.format_exc())
+            log.info('Unexpect error. Sleeping for 5 minutes.')
+            sleep(300)
+        log.info('Sleeping for 10 seconds')
+        sleep(10)
+
+run()

@@ -14,7 +14,7 @@ geolocator = GoogleV3(api_key=os.environ['GOOGLE_API_KEY'])
 print 'CIRCUIT COURT'
 circuit_db = None
 if MONGO: circuit_db = MongoDatabase('va_court_search', 'circuit')
-if POSTGRES: circuit_db = PostgresDatabase('va_court_search', 'circuit')
+if POSTGRES: circuit_db = PostgresDatabase('circuit')
 circuit_db.drop_courts()
 reader = readers.CircuitCourtReader()
 courts = reader.connect()
@@ -37,7 +37,7 @@ for court_name in court_names:
 print 'DISTRICT COURT'
 district_db = None
 if MONGO: district_db = MongoDatabase('va_court_search', 'district')
-if POSTGRES: district_db = PostgresDatabase('va_court_search', 'district')
+if POSTGRES: district_db = PostgresDatabase('district')
 district_db.drop_courts()
 reader = readers.DistrictCourtReader()
 courts = reader.connect()

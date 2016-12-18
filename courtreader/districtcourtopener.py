@@ -81,10 +81,10 @@ class DistrictCourtOpener:
         url = self.url('changeCourt.do')
         self.opener.open(url, data)
 
-    def open_hearing_date_search(self, code):
+    def open_hearing_date_search(self, code, search_division):
         url = self.url('caseSearch.do')
         url += '?fromSidebar=true&searchLanding=searchLanding'
-        url += '&searchType=hearingDate&searchDivision=T'
+        url += '&searchType=hearingDate&searchDivision=' + search_division
         url += '&searchFipsCode=' + code
         url += '&curentFipsCode=' + code
         self.opener.open(url)
@@ -120,18 +120,18 @@ class DistrictCourtOpener:
         soup = BeautifulSoup(content, 'html.parser')
         return soup
 
-    def open_case_number_search(self, code):
+    def open_case_number_search(self, code, search_division):
         url = self.url('criminalCivilCaseSearch.do')
-        url += '?fromSidebar=true&formAction=searchLanding&searchDivision=T'
+        url += '?fromSidebar=true&formAction=searchLanding&searchDivision=' + search_division
         url += '&searchFipsCode=' + code
         url += '&curentFipsCode=' + code
         self.opener.open(url)
 
-    def do_case_number_search(self, code, case_number):
+    def do_case_number_search(self, code, case_number, search_division):
         data = {
             'formAction':'submitCase',
             'searchFipsCode':code,
-            'searchDivision':'T',
+            'searchDivision':search_division,
             'searchType':'caseNumber',
             'displayCaseNumber':case_number,
             'localFipsCode':code,
@@ -152,9 +152,9 @@ class DistrictCourtOpener:
         page = self.opener.open(url)
         return BeautifulSoup(page.read(), 'html.parser')
 
-    def open_name_search(self, code):
+    def open_name_search(self, code, search_division):
         url = self.url('nameSearch.do')
-        url += '?fromSidebar=true&formAction=searchLanding&searchDivision=T'
+        url += '?fromSidebar=true&formAction=searchLanding&searchDivision=' + search_division
         url += '&searchFipsCode=' + code
         url += '&curentFipsCode=' + code
         if self.use_driver:
@@ -176,7 +176,7 @@ class DistrictCourtOpener:
         soup = BeautifulSoup(source, 'html.parser')
         return soup
 
-    def do_name_search(self, code, name, count, prev_cases=None):
+    def do_name_search(self, code, search_division, name, count, prev_cases=None):
         if self.use_driver:
             return self.do_name_search_with_driver(code, name, count, prev_cases)
         data = {
@@ -199,7 +199,7 @@ class DistrictCourtOpener:
             'localnamesearchsearchCategory':'A',
             'searchCategory':'A',
             'searchFipsCode':code,
-            'searchDivision':'T',
+            'searchDivision':search_division,
             'searchType':'name',
             'firstRowName':'',
             'firstRowCaseNumber':'',
