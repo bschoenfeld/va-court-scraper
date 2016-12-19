@@ -35,6 +35,7 @@ class CircuitCourtOpener:
 
     def do_case_number_search(self, code, case_number, category):
         data = {
+            'submitValue': '',
             'courtId':code,
             'caseNo':case_number,
             'categorySelected':category
@@ -43,6 +44,41 @@ class CircuitCourtOpener:
         url = self.url('CaseDetail.do')
         page = self.opener.open(url, data)
         return BeautifulSoup(page.read(), 'html.parser')
+
+    def do_case_number_pleadings_search(self, code, case_number, category):
+        data = {
+            'submitValue':'P',
+            'courtId':code,
+            'categorySelected':category,
+            'caseStatus':'A',
+            'caseNo':case_number
+        }
+        data = urllib.urlencode(data)
+        url = self.url('CaseDetail.do')
+        page = self.opener.open(url, data)
+        return BeautifulSoup(page.read(), 'html.parser')
+
+    def do_case_number_services_search(self, code, case_number, category):
+        data = {
+            'submitValue':'S',
+            'courtId':code,
+            'categorySelected':category,
+            'caseStatus':'A',
+            'caseNo':case_number
+        }
+        data = urllib.urlencode(data)
+        url = self.url('CaseDetail.do')
+        page = self.opener.open(url, data)
+        return BeautifulSoup(page.read(), 'html.parser')
+
+    def return_to_main_menu(self, code):
+        data = {
+            'courtId':code
+        }
+        data = urllib.urlencode(data)
+        url = self.url('MainMenu.do')
+        self.opener.open(url, data)
+        return
 
     def do_name_search(self, code, name, category):
         data = {

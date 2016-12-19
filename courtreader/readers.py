@@ -121,22 +121,28 @@ class CircuitCourtReader:
     def change_court(self, fips_code, case_type):
         if fips_code != self.fips_code or case_type != self.case_type:
             print 'Changing court'
-            self.opener.change_court(fips_code, \
-                                     self.courts[fips_code]['full_name'])
+            self.opener.change_court(fips_code, self.courts[fips_code]['full_name'])
             self.fips_code = fips_code
             self.case_type = case_type
             sleep(1)
 
-    def get_case_details_by_number(self, fips_code, case_type, case_number, case_details_url=None):
+    def get_case_details_by_number(self, fips, case_type, case_number, case_details_url=None):
         self.manage_opener()
         category_code = 'R'
         if case_type == 'civil':
             category_code = 'CIVIL'
-        self.change_court(fips_code, case_type)
-        soup = self.opener.do_case_number_search(fips_code, case_number, category_code)
+        self.change_court(fips, case_type)
+        soup = self.opener.do_case_number_search(fips, case_number, category_code)
+        pleadings_soup = self.opener.do_case_number_pleadings_search(fips, case_number, category_code)
+        services_soup = self.opener.do_case_number_services_search(fips, case_number, category_code)
+        self.opener.return_to_main_menu(fips)
         if case_type == 'civil':
-            return circuitcourtparser.parse_civil_case_details(soup)
-        return circuitcourtparser.parse_case_details(soup)
+            case_details = circuitcourtparser.parse_civil_case_details(soup)
+        else:
+            case_details = circuitcourtparser.parse_case_details(soup)
+        case_details['Pleadings'] = circuitcourtparser.parse_pleadings_table(pleadings_soup)
+        case_details['Services'] = circuitcourtparser.parse_services_table(services_soup)
+        return case_details
 
     def get_cases_by_name(self, fips_code, case_type, name):
         self.manage_opener()

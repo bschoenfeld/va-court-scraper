@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from geoalchemy2 import Geometry
+from pprint import pprint
 
 Base = declarative_base()
 
@@ -196,7 +197,7 @@ class PostgresDatabase():
         }
 
     def replace_case_details(self, case, case_type):
-        print case
+        pprint(case)
         case_builder = self.get_case_builder(case_type)
         self.session.query(case_builder).filter_by(
             fips=int(case['fips']),
@@ -209,7 +210,3 @@ class PostgresDatabase():
         ))
         self.session.commit()
 
-    def get_cases_by_hearing_date(self, start, end):
-        return self.client[self.court_type + '_court_detailed_cases'].find({
-            'details_fetched_for_hearing_date': {'$gte': start, '$lt': end}
-        })

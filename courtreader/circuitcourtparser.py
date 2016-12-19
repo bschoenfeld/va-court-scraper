@@ -37,9 +37,8 @@ def get_data_from_table(case, table):
         else:
             case[name] = ''
 
-def get_hearings_from_table(case, table):
-    case['Hearings'] = []
-
+def get_data_from_table_with_rows(table):
+    data = []
     rows = table.find_all('tr')
     col_names = [x.encode('ascii') for x in rows.pop(0).stripped_strings]
     col_names[0] = 'Number'
@@ -49,9 +48,16 @@ def get_hearings_from_table(case, table):
             val = col.get_text(strip=True) \
                      .encode('ascii', 'ignore')
             hearing[col_names[i]] = val
-        #hearing_dt = hearing['Date'] + hearing['Time']
-        #hearing['Datetime'] = datetime.strptime(hearing_dt, "%m/%d/%Y%I:%M%p")
-        case['Hearings'].append(hearing)
+        data.append(hearing)
+    return data
+
+def parse_pleadings_table(soup):
+    pleadings_table = soup.find(id='count')
+    return get_data_from_table_with_rows(pleadings_table)
+
+def parse_services_table(soup):
+    services_table = soup.find(id='count')
+    return get_data_from_table_with_rows(services_table)
 
 def parse_case_details(soup):
     try:
@@ -72,7 +78,9 @@ def parse_case_details(soup):
         get_data_from_table(case_details, details_table)
         get_data_from_table(case_details, final_disposition_table)
         get_data_from_table(case_details, sentencing_table)
-        get_hearings_from_table(case_details, hearings_table)
+        case_details['Hearings'] = get_data_from_table_with_rows(hearings_table)
+        #hearing_dt = hearing['Date'] + hearing['Time']
+        #hearing['Datetime'] = datetime.strptime(hearing_dt, "%m/%d/%Y%I:%M%p")
 
         return case_details
     except:
