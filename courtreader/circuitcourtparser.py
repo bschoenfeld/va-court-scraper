@@ -91,7 +91,7 @@ def parse_civil_case_details(soup):
 
         for li in soup.find_all('li'):
             line = [x.encode('ascii', 'ignore') for x in li.stripped_strings]
-            case_details[line[0].replace(':','')] = line[1] \
+            case_details[line[0].replace(':', '')] = line[1] \
                 if len(line) > 1 else ''
 
         return case_details

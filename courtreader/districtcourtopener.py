@@ -23,7 +23,7 @@ class DistrictCourtOpener:
         return None
 
     def open_driver(self):
-        self.driver = webdriver.Chrome()
+        self.driver = webdriver.Chrome('./chromedriver')
         self.driver.implicitly_wait(3)
         self.driver_open = True
 

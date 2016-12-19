@@ -54,7 +54,7 @@ def next_names_button_found(soup):
         handle_parse_exception(soup)
         raise
 
-def parse_hearing_date_search(soup):
+def parse_hearing_date_search(soup, case_type):
     try:
         no_results = re.compile(r'No results found for the search criteria')
         if soup.find('td', text=no_results) is not None:
@@ -69,14 +69,30 @@ def parse_hearing_date_search(soup):
             case_number = list(cells[1].a.stripped_strings)[0]
             defendant_cell_content = list(cells[2].stripped_strings)
             defendant = defendant_cell_content[0] if len(defendant_cell_content) > 0 else ''
-            status_cell_content = list(cells[6].stripped_strings)
-            status = status_cell_content[0] if len(status_cell_content) > 0 else ''
-            cases.append({
-                'case_number': case_number,
-                'details_url': details_url,
-                'defendant': defendant,
-                'status': status
-            })
+            if case_type == 'civil':
+                plaintiff_cell_content = list(cells[3].stripped_strings)
+                plaintiff = plaintiff_cell_content[0] if len(plaintiff_cell_content) > 0 else ''
+                civil_case_type_content = list(cells[4].stripped_strings)
+                civil_case_type = civil_case_type_content[0] if len(civil_case_type_content) > 0 else ''
+                hearing_time_content = list(cells[5].stripped_strings)
+                hearing_time = hearing_time_content[0] if len(hearing_time_content) > 0 else ''
+                cases.append({
+                    'case_number': case_number,
+                    'details_url': details_url,
+                    'defendant': defendant,
+                    'plaintiff': plaintiff,
+                    'civil_case_type': civil_case_type,
+                    'hearing_time': hearing_time
+                })
+            else:
+                status_cell_content = list(cells[6].stripped_strings)
+                status = status_cell_content[0] if len(status_cell_content) > 0 else ''
+                cases.append({
+                    'case_number': case_number,
+                    'details_url': details_url,
+                    'defendant': defendant,
+                    'status': status
+                })
         return cases
     except:
         handle_parse_exception(soup)
@@ -89,7 +105,7 @@ def next_button_found(soup):
         handle_parse_exception(soup)
         raise
 
-def parse_case_details(soup):
+def parse_case_details(soup, case_type):
     case_details = {}
     try:
         case_details['CourtName'] = soup.find(id='headerCourtName') \
@@ -103,8 +119,13 @@ def parse_case_details(soup):
             value = get_string_from_cell(value_cell)
             case_details[label] = value
         # Parse tables
+        if case_type == 'civil':
+            # the table names really are backwards here
+            case_details['Plaintiffs'] = parse_table(soup, 'toggleDef')
+            case_details['Defendants'] = parse_table(soup, 'togglePlaintiff')
+            case_details['Reports'] = parse_table(soup, 'toggleReports')
         case_details['Hearings'] = parse_table(soup, 'toggleHearing')
-        #case_details['Services'] = parse_table(soup, 'toggleServices')
+        case_details['Services'] = parse_table(soup, 'toggleServices')
         if 'CaseNumber' not in case_details:
             raise ValueError('Missing Case Number')
     except:
@@ -132,10 +153,16 @@ def parse_table(soup, table_id):
     table_headers = list(table_section.find(class_='gridheader') \
                                       .stripped_strings)
     for row in table_section.find_all(class_='gridrow'):
-        table_contents.append(dict(zip( \
-            table_headers, \
-            [cell.string.strip() \
-                if cell.string is not None else '' \
-                for cell in row.find_all('td')] \
-        )))
+        table_contents.append(parse_table_row(row, table_headers))
+    for row in table_section.find_all(class_='gridalternaterow'):
+        table_contents.append(parse_table_row(row, table_headers))
     return table_contents
+
+def parse_table_row(row, table_headers):
+    return dict(zip(
+        table_headers,
+        [cell.string.strip()
+         if cell.string is not None else ''
+         for cell in row.find_all('td')]
+    ))
+

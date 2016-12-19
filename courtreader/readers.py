@@ -38,7 +38,7 @@ class DistrictCourtReader:
             search_division = 'V'
         soup = self.opener.do_case_number_search(fips_code, case_number, search_division) \
             if case_details_url is None else self.opener.open_case_details(case_details_url)
-        return districtcourtparser.parse_case_details(soup)
+        return districtcourtparser.parse_case_details(soup, case_type)
 
     def get_cases_by_date(self, fips_code, case_type, date):
         self.change_court(fips_code, case_type)
@@ -56,7 +56,7 @@ class DistrictCourtReader:
 
         cases = []
         while True:
-            cases.extend(districtcourtparser.parse_hearing_date_search(soup))
+            cases.extend(districtcourtparser.parse_hearing_date_search(soup, case_type))
             print '\tFound ' + str(len(cases)) + ' cases\r',
             sys.stdout.flush()
             if not districtcourtparser.next_button_found(soup):
@@ -68,7 +68,7 @@ class DistrictCourtReader:
     def get_case_details(self, case):
         sleep(1)
         soup = self.opener.open_case_details(case)
-        return districtcourtparser.parse_case_details(soup)
+        return districtcourtparser.parse_case_details(soup, None)
 
     def get_cases_by_name(self, fips_code, case_type, name):
         self.change_court(fips_code, case_type)

@@ -187,7 +187,7 @@ class PostgresDatabase():
         result = self.session.query(case_builder).filter(
             case_builder.fips == int(case['fips']),
             case_builder.case_number == case['case_number'],
-            case_builder.details_fetched_for_hearing_date > date
+            case_builder.details_fetched_for_hearing_date >= date
         ).first()
         if result is None:
             return result
