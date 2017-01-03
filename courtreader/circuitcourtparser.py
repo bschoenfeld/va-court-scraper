@@ -37,18 +37,43 @@ def get_data_from_table(case, table):
         else:
             case[name] = ''
 
+DATES = [
+    'Filed',
+    'OffenseDate',
+    'ArrestDate',
+    'DispositonDate',
+    'AppealedDate',
+    'DateServed',
+    'HearDate'
+]
+
 def get_data_from_table_with_rows(table):
     data = []
     rows = table.find_all('tr')
     col_names = [x.encode('ascii') for x in rows.pop(0).stripped_strings]
-    col_names[0] = 'Number'
+    if '#' in col_names[0]:
+        col_names[0] = 'Number'
     for row in rows:
-        hearing = {}
+        item = {}
         for i, col in enumerate(row.find_all('td')):
+            key = col_names[i].encode('ascii', 'ignore') \
+                         .replace(':', '') \
+                         .replace('/', '') \
+                         .replace(' ', '')
             val = col.get_text(strip=True) \
                      .encode('ascii', 'ignore')
-            hearing[col_names[i]] = val
-        data.append(hearing)
+            if val == '':
+                continue
+            if key in DATES:
+                val = datetime.strptime(val, '%m/%d/%Y')
+            item[key] = val
+        if 'Time' in item:
+            dt = item['Date'] + ' ' + item['Time']
+            item['Date'] = datetime.strptime(dt, '%m/%d/%Y %I:%M%p')
+            del item['Time']
+        if 'Number' in item:
+            del item['Number']
+        data.append(item)
     return data
 
 def parse_pleadings_table(soup):
@@ -78,9 +103,12 @@ def parse_case_details(soup):
         get_data_from_table(case_details, details_table)
         get_data_from_table(case_details, final_disposition_table)
         get_data_from_table(case_details, sentencing_table)
+
+        for key in DATES:
+            if key in case_details:
+                case_details[key] = datetime.strptime(case_details[key], '%m/%d/%Y')
+
         case_details['Hearings'] = get_data_from_table_with_rows(hearings_table)
-        #hearing_dt = hearing['Date'] + hearing['Time']
-        #hearing['Datetime'] = datetime.strptime(hearing_dt, "%m/%d/%Y%I:%M%p")
 
         return case_details
     except:

@@ -75,307 +75,271 @@ def load(k, d):
 class Case():
     id = Column(Integer, primary_key=True)
     fips = Column(Integer)
-    case_number = Column(String)
     details_fetched_for_hearing_date = Column(Date)
+    CaseNumber = Column(String)
 
 class CircuitCriminalCase(Base, Case):
     prefix = CIRCUIT_CRIMINAL
     __tablename__ = prefix + 'Case'
-    hearings = relationship(prefix + 'Hearing', back_populates='case')
-    pleadings = relationship(prefix + 'Pleading', back_populates='case')
-    services = relationship(prefix + 'Service', back_populates='case')
+    Hearings = relationship(prefix + 'Hearing', back_populates='case')
+    Pleadings = relationship(prefix + 'Pleading', back_populates='case')
+    Services = relationship(prefix + 'Service', back_populates='case')
 
-    filed = Column(Date)
-    commencedBy = Column(String)
-    locality = Column(String)
+    Filed = Column(Date)
+    Commencedby = Column(String)
+    Locality = Column(String)
 
-    defendant = Column(String)
-    sex = Column(String)
-    race = Column(String)
-    dob = Column(String)
-    address = Column(String)
+    Defendant = Column(String)
+    AKA = Column(String)
+    Sex = Column(String)
+    Race = Column(String)
+    DOB = Column(String)
+    Address = Column(String)
 
-    charge = Column(String)
-    codeSection = Column(String)
-    chargeType = Column(String)
-    chargeClass = Column(String)
-    offenseDate = Column(Date)
-    arrestDate = Column(Date)
+    Charge = Column(String)
+    CodeSection = Column(String)
+    ChargeType = Column(String)
+    Class = Column(String)
+    OffenseDate = Column(Date)
+    ArrestDate = Column(Date)
 
-    dispositionCode = Column(String)
-    dispositonDate = Column(Date)
-    concludedBy = Column(String)
-    amendedCharge = Column(String)
-    amendedCodeSection = Column(String)
-    amendedChargeType = Column(String)
+    DispositionCode = Column(String)
+    DispositonDate = Column(Date)
+    ConcludedBy = Column(String)
+    AmendedCharge = Column(String)
+    AmendedCodeSection = Column(String)
+    AmendedChargeType = Column(String)
 
-    jail = Column(String)
-    concurrent = Column(String)
-    lifeDeath = Column(String)
-    sentenceTime = Column(String)
-    sentenceSuspended = Column(String)
-    operatorLicenseSuspensionTime = Column(String)
-    fine = Column(String)
-    costs = Column(String)
-    fineCostsPaid = Column(String)
-    programType = Column(String)
-    probationType = Column(String)
-    probationTime = Column(String)
-    probationStarts = Column(String)
-    courtDmvSurrender = Column(String)
-    driverImprovementClinic = Column(String)
-    drivingRestrictions = Column(String)
-    drivingRestrictionEffectiveDate = Column(String)
-    alcoholSafetyAction = Column(String)
-    restitutionPaid = Column(String)
-    restitutionAmount = Column(String)
-    military = Column(String)
-    trafficFatality = Column(String)
+    JailPenitentiary = Column(String)
+    ConcurrentConsecutive = Column(String)
+    LifeDeath = Column(String)
+    SentenceTime = Column(String)
+    SentenceSuspended = Column(String)
+    OperatorLicenseSuspensionTime = Column(String)
+    Fine = Column(String)
+    Costs = Column(String)
+    FineCostsPaid = Column(String)
+    ProgramType = Column(String)
+    ProbationType = Column(String)
+    ProbationTime = Column(String)
+    ProbationStarts = Column(String)
+    CourtDmvSurrender = Column(String)
+    DriverImprovementClinic = Column(String)
+    DrivingRestrictions = Column(String)
+    DrivingRestrictionEffectiveDate = Column(String)
+    AlcoholSafetyAction = Column(String)
+    RestitutionPaid = Column(String)
+    RestitutionAmount = Column(String)
+    Military = Column(String)
+    TrafficFatality = Column(String)
 
-    appealedDate = Column(Date)
+    AppealedDate = Column(Date)
 
     @staticmethod
     def create(case):
         details = case['details']
-        case = CircuitCriminalCase(
-            fips=int(case['fips']),
-            case_number=case['case_number'],
-            details_fetched_for_hearing_date=case['details_fetched_for_hearing_date'],
-
-            filed=load('Filed', details),
-            commencedBy=load('CommencedBy', details),
-            locality=load('Locality', details),
-
-            defendant=load('Defendant', details),
-            sex=load('Sex', details),
-            race=load('Race', details),
-            dob=load('DOB', details),
-            address=load('Address', details),
-
-            charge=load('Charge', details),
-            codeSection=load('CodeSection', details),
-            chargeType=load('ChargeType', details),
-            chargeClass=load('ChargeClass', details),
-            offenseDate=load('OffenseDate', details),
-            arrestDate=load('ArrestDate', details),
-
-            dispositionCode=load('DispositionCode', details),
-            dispositonDate=load('DispositonDate', details),
-            concludedBy=load('ConcludedBy', details),
-            amendedCharge=load('AmendedCharge', details),
-            amendedCodeSection=load('AmendedCodeSection', details),
-            amendedChargeType=load('AmendedChargeType', details),
-
-            jail=load('JailPenitentiary', details),
-            concurrent=load('ConcurrentConsecutive', details),
-            lifeDeath=load('LifeDeath', details),
-            sentenceTime=load('SentenceTime', details),
-            sentenceSuspended=load('SentenceSuspended', details),
-            operatorLicenseSuspensionTime=load('OperatorLicenseSuspensionTime', details),
-            fine=load('Fine', details),
-            costs=load('Costs', details),
-            fineCostsPaid=load('FineCostsPaid', details),
-            programType=load('ProgramType', details),
-            probationType=load('ProbationType', details),
-            probationTime=load('ProbationTime', details),
-            probationStarts=load('ProbationStarts', details),
-            courtDmvSurrender=load('CourtDmvSurrender', details),
-            driverImprovementClinic=load('DriverImprovementClinic', details),
-            drivingRestrictions=load('DrivingRestrictions', details),
-            drivingRestrictionEffectiveDate=load('DrivingRestrictionEffectiveDate', details),
-            alcoholSafetyAction=load('AlcoholSafetyAction', details),
-            restitutionPaid=load('RestitutionPaid', details),
-            restitutionAmount=load('RestitutionAmount', details),
-            military=load('Military', details),
-            trafficFatality=load('TrafficFatality', details),
-
-            appealedDate=load('AppealedDate', details)
-        )
+        hearings = []
+        pleadings = []
+        services = []
 
         if 'Hearings' in details:
-            case.hearings = [
-                CircuitCriminalHearing(
-                    date=load('Date', hearing),
-                    hearing_type=load('Type', hearing),
-                    room=load('Room', hearing),
-                    result=load('Result', hearing),
-                    duration=load('Duration', hearing),
-                    jury=load('Jury', hearing),
-                    plea=load('Plea', hearing),
-                ) for hearing in details['Hearings']
-            ]
-        return case
+            hearings = details['Hearings']
+            del details['Hearings']
+        if 'Pleadings' in details:
+            pleadings = details['Pleadings']
+            del details['Pleadings']
+        if 'Services' in details:
+            services = details['Services']
+            del details['Services']
+
+        db_case = CircuitCriminalCase(**details)
+        db_case.fips = int(case['fips'])
+        db_case.details_fetched_for_hearing_date = case['details_fetched_for_hearing_date']
+
+        db_case.Hearings = [
+            CircuitCriminalHearing(**hearing)
+            for hearing in hearings
+        ]
+        db_case.Pleadings = [
+            CircuitCriminalPleading(**pleading)
+            for pleading in pleadings
+        ]
+        db_case.Services = [
+            CircuitCriminalService(**service)
+            for service in services
+        ]
+        return db_case
 
 class CircuitCivilCase(Base, Case):
     prefix = CIRCUIT_CIVIL
     __tablename__ = prefix + 'Case'
-    hearings = relationship(prefix + 'Hearing', back_populates='case')
-    pleadings = relationship(prefix + 'Pleading', back_populates='case')
-    services = relationship(prefix + 'Service', back_populates='case')
+    Hearings = relationship(prefix + 'Hearing', back_populates='case')
+    Pleadings = relationship(prefix + 'Pleading', back_populates='case')
+    Services = relationship(prefix + 'Service', back_populates='case')
 
 class DistrictCriminalCase(Base, Case):
     prefix = DISTRICT_CRIMINAL
     __tablename__ = prefix + 'Case'
-    hearings = relationship(prefix + 'Hearing', back_populates='case')
-    services = relationship(prefix + 'Service', back_populates='case')
+    Hearings = relationship(prefix + 'Hearing', back_populates='case')
+    Services = relationship(prefix + 'Service', back_populates='case')
 
 class DistrictCivilCase(Base, Case):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Case'
-    hearings = relationship(prefix + 'Hearing', back_populates='case')
-    services = relationship(prefix + 'Service', back_populates='case')
-    reports = relationship(prefix + 'Report', back_populates='case')
-    plaintiffs = relationship(prefix + 'Plaintiff', back_populates='case')
-    defendants = relationship(prefix + 'Defendant', back_populates='case')
+    Hearings = relationship(prefix + 'Hearing', back_populates='case')
+    Services = relationship(prefix + 'Service', back_populates='case')
+    Reports = relationship(prefix + 'Report', back_populates='case')
+    Plaintiffs = relationship(prefix + 'Plaintiff', back_populates='case')
+    Defendants = relationship(prefix + 'Defendant', back_populates='case')
 
 #
 # Hearing Tables
 #
 class Hearing():
     id = Column(Integer, primary_key=True)
-    date = Column(Date)
-    hearing_type = Column(String)
-    room = Column(String)
-    result = Column(String)
+    Date = Column(Date)
+    Type = Column(String)
+    Room = Column(String)
+    Result = Column(String)
 
 class CircuitCriminalHearing(Base, Hearing):
     prefix = CIRCUIT_CRIMINAL
     __tablename__ = prefix + 'Hearing'
     case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='hearings')
-    duration = Column(String)
-    jury = Column(String)
-    plea = Column(String)
+    case = relationship(prefix + 'Case', back_populates='Hearings')
+    Duration = Column(String)
+    Jury = Column(String)
+    Plea = Column(String)
 
 class CircuitCivilHearing(Base, Hearing):
     prefix = CIRCUIT_CIVIL
     __tablename__ = prefix + 'Hearing'
     case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='hearings')
-    duration = Column(String)
-    jury = Column(String)
+    case = relationship(prefix + 'Case', back_populates='Hearings')
+    Duration = Column(String)
+    Jury = Column(String)
 
 class DistrictCriminalHearing(Base, Hearing):
     prefix = DISTRICT_CRIMINAL
     __tablename__ = prefix + 'Hearing'
     case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='hearings')
-    plea = Column(String)
-    continuance_code = Column(String)
+    case = relationship(prefix + 'Case', back_populates='Hearings')
+    Plea = Column(String)
+    ContinuanceCode = Column(String)
 
 class DistrictCivilHearing(Base, Hearing):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Hearing'
     case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='hearings')
+    case = relationship(prefix + 'Case', back_populates='Hearings')
 
 #
 # Pleading Tables
 #
 class Pleading():
     id = Column(Integer, primary_key=True)
-    filed_date = Column(Date)
-    pleading_type = Column(String)
-    party = Column(String)
-    judge = Column(String)
-    book = Column(String)
-    page = Column(String)
-    remarks = Column(String)
+    Filed = Column(Date)
+    Type = Column(String)
+    Party = Column(String)
+    Judge = Column(String)
+    Book = Column(String)
+    Page = Column(String)
+    Remarks = Column(String)
 
 class CircuitCriminalPleading(Base, Pleading):
     prefix = CIRCUIT_CRIMINAL
     __tablename__ = prefix + 'Pleading'
     case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='pleadings')
+    case = relationship(prefix + 'Case', back_populates='Pleadings')
 
 class CircuitCivilPleading(Base, Pleading):
     prefix = CIRCUIT_CIVIL
     __tablename__ = prefix + 'Pleading'
     case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='pleadings')
+    case = relationship(prefix + 'Case', back_populates='Pleadings')
 
 #
 # Service Tables
 #
 class Service():
     id = Column(Integer, primary_key=True)
-    name = Column(String)
-    service_type = Column(String)
-    how_served = Column(String)
+    Name = Column(String)
+    Type = Column(String)
+    HowServed = Column(String)
 
 class CircuitCriminalService(Base, Service):
     prefix = CIRCUIT_CRIMINAL
     __tablename__ = prefix + 'Service'
     case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='services')
-    hear_date = Column(Date)
-    date_served = Column(Date)
+    case = relationship(prefix + 'Case', back_populates='Services')
+    HearDate = Column(Date)
+    DateServed = Column(Date)
 
 class CircuitCivilService(Base, Service):
     prefix = CIRCUIT_CIVIL
     __tablename__ = prefix + 'Service'
     case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='services')
-    hear_date = Column(Date)
-    date_served = Column(Date)
+    case = relationship(prefix + 'Case', back_populates='Services')
+    HearDate = Column(Date)
+    DateServed = Column(Date)
 
 class DistrictCriminalService(Base, Service):
     prefix = DISTRICT_CRIMINAL
     __tablename__ = prefix + 'Service'
     case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='services')
-    date_issued = Column(Date)
-    date_returned = Column(Date)
-    plaintiff = Column(String)
+    case = relationship(prefix + 'Case', back_populates='Services')
+    DateIssued = Column(Date)
+    DateReturned = Column(Date)
+    Plaintiff = Column(String)
 
 class DistrictCivilService(Base, Service):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Service'
     case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='services')
-    date_issued = Column(Date)
-    date_returned = Column(Date)
-    plaintiff = Column(String)
+    case = relationship(prefix + 'Case', back_populates='Services')
+    DateIssued = Column(Date)
+    DateReturned = Column(Date)
+    Plaintiff = Column(String)
 
 #
 # Report Tables
 #
 class Report():
     id = Column(Integer, primary_key=True)
-    report_type = Column(String)
-    agency = Column(String)
-    date_ordered = Column(Date)
-    date_due = Column(Date)
-    date_received = Column(Date)
+    Type = Column(String)
+    Agency = Column(String)
+    Date_Ordered = Column(Date)
+    Date_Due = Column(Date)
+    Date_Received = Column(Date)
 
 class DistrictCivilReport(Base, Report):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Report'
     case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='reports')
+    case = relationship(prefix + 'Case', back_populates='Reports')
 
 #
 # Party Tables
 #
 class Party():
     id = Column(Integer, primary_key=True)
-    name = Column(String)
+    Name = Column(String)
     dba = Column(String)
-    address = Column(String)
-    judgement = Column(String)
-    attorney = Column(String)
+    Address = Column(String)
+    Judgement = Column(String)
+    Attorney = Column(String)
 
 class DistrictCivilPlaintiff(Base, Party):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Plaintiff'
     case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='plaintiffs')
+    case = relationship(prefix + 'Case', back_populates='Plaintiffs')
 
 class DistrictCivilDefendant(Base, Party):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Defendant'
     case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='defendants')
+    case = relationship(prefix + 'Case', back_populates='Defendants')
 
 
 TABLES = [
@@ -536,7 +500,7 @@ class PostgresDatabase():
         case_builder = self.get_case_builder(case_type)
         result = self.session.query(case_builder).filter(
             case_builder.fips == int(case['fips']),
-            case_builder.case_number == case['case_number'],
+            case_builder.CaseNumber == case['case_number'],
             case_builder.details_fetched_for_hearing_date >= date
         ).first()
         if result is None:
@@ -550,7 +514,7 @@ class PostgresDatabase():
         case_builder = self.get_case_builder(case_type)
         self.session.query(case_builder).filter_by(
             fips=int(case['fips']),
-            case_number=case['case_number']
+            CaseNumber=case['case_number']
         ).delete()
         self.session.add(case_builder.create(case))
         self.session.commit()
