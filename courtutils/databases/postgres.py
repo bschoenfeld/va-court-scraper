@@ -54,21 +54,6 @@ CIRCUIT_CIVIL = 'CircuitCivil'
 DISTRICT_CRIMINAL = 'DistrictCriminal'
 DISTRICT_CIVIL = 'DistrictCivil'
 
-DATES = [
-    'Filed',
-    'OffenseDate',
-    'ArrestDate',
-    'DispositonDate',
-    'AppealedDate',
-    'Date'
-]
-
-def load(k, d):
-    if k not in d or d[k] == '':
-        return None
-    if k in DATES:
-        return datetime.strptime(d[k], '%m/%d/%Y')
-    return d[k]
 #
 # Case Tables
 #
@@ -176,6 +161,75 @@ class CircuitCivilCase(Base, Case):
     Hearings = relationship(prefix + 'Hearing', back_populates='case')
     Pleadings = relationship(prefix + 'Pleading', back_populates='case')
     Services = relationship(prefix + 'Service', back_populates='case')
+    Plaintiffs = relationship(prefix + 'Plaintiff', back_populates='case')
+    Defendants = relationship(prefix + 'Defendant', back_populates='case')
+
+    Filed = Column(Date)
+    FilingType = Column(String)
+    FilingFeePaid = Column(Boolean)
+    NumberofPlaintiffs = Column(Integer)
+    NumberofDefendants = Column(Integer)
+    CommencedBy = Column(String)
+    Bond = Column(String)
+    ComplexCase = Column(String)
+
+    DateOrderedToMediation = Column(Date)
+
+    Judgment = Column(String)
+    FinalOrderDate = Column(Date)
+    AppealedDate = Column(Date)
+    ConcludedBy = Column(String)
+
+    @staticmethod
+    def create(case):
+        details = case['details']
+        hearings = []
+        pleadings = []
+        services = []
+        plaintiffs = []
+        defendants = []
+
+        if 'Hearings' in details:
+            hearings = details['Hearings']
+            del details['Hearings']
+        if 'Pleadings' in details:
+            pleadings = details['Pleadings']
+            del details['Pleadings']
+        if 'Services' in details:
+            services = details['Services']
+            del details['Services']
+        if 'Plaintiffs' in details:
+            plaintiffs = details['Plaintiffs']
+            del details['Plaintiffs']
+        if 'Defendants' in details:
+            defendants = details['Defendants']
+            del details['Defendants']
+
+        db_case = CircuitCivilCase(**details)
+        db_case.fips = int(case['fips'])
+        db_case.details_fetched_for_hearing_date = case['details_fetched_for_hearing_date']
+
+        db_case.Hearings = [
+            CircuitCivilHearing(**hearing)
+            for hearing in hearings
+        ]
+        db_case.Pleadings = [
+            CircuitCivilPleading(**pleading)
+            for pleading in pleadings
+        ]
+        db_case.Services = [
+            CircuitCivilService(**service)
+            for service in services
+        ]
+        db_case.Plaintiffs = [
+            CircuitCivilPlaintiff(**plaintiff)
+            for plaintiff in plaintiffs
+        ]
+        db_case.Defendants = [
+            CircuitCivilDefendant(**defendant)
+            for defendant in defendants
+        ]
+        return db_case
 
 class DistrictCriminalCase(Base, Case):
     prefix = DISTRICT_CRIMINAL
@@ -321,7 +375,25 @@ class DistrictCivilReport(Base, Report):
 #
 # Party Tables
 #
-class Party():
+class CircuitCivilParty():
+    id = Column(Integer, primary_key=True)
+    Name = Column(String)
+    TradingAs = Column(String)
+    Attorney = Column(String)
+
+class CircuitCivilPlaintiff(Base, CircuitCivilParty):
+    prefix = CIRCUIT_CIVIL
+    __tablename__ = prefix + 'Plaintiff'
+    case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
+    case = relationship(prefix + 'Case', back_populates='Plaintiffs')
+
+class CircuitCivilDefendant(Base, CircuitCivilParty):
+    prefix = CIRCUIT_CIVIL
+    __tablename__ = prefix + 'Defendant'
+    case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
+    case = relationship(prefix + 'Case', back_populates='Defendants')
+
+class DistrictCivilParty():
     id = Column(Integer, primary_key=True)
     Name = Column(String)
     dba = Column(String)
@@ -329,13 +401,13 @@ class Party():
     Judgement = Column(String)
     Attorney = Column(String)
 
-class DistrictCivilPlaintiff(Base, Party):
+class DistrictCivilPlaintiff(Base, DistrictCivilParty):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Plaintiff'
     case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
     case = relationship(prefix + 'Case', back_populates='Plaintiffs')
 
-class DistrictCivilDefendant(Base, Party):
+class DistrictCivilDefendant(Base, DistrictCivilParty):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Defendant'
     case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
@@ -381,6 +453,8 @@ TABLES = [
     DistrictCivilReport,
     DistrictCivilPlaintiff,
     DistrictCivilDefendant,
+    CircuitCivilPlaintiff,
+    CircuitCivilDefendant
 ]
 
 #
@@ -510,6 +584,7 @@ class PostgresDatabase():
         }
 
     def replace_case_details(self, case, case_type):
+        #pprint(case)
         case_builder = self.get_case_builder(case_type)
         self.session.query(case_builder).filter_by(
             fips=int(case['fips']),

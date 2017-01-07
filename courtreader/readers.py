@@ -140,8 +140,8 @@ class CircuitCourtReader:
             case_details = circuitcourtparser.parse_civil_case_details(soup)
         else:
             case_details = circuitcourtparser.parse_case_details(soup)
-        case_details['Pleadings'] = circuitcourtparser.parse_pleadings_table(pleadings_soup)
-        case_details['Services'] = circuitcourtparser.parse_services_table(services_soup)
+        case_details['Pleadings'] = circuitcourtparser.parse_pleadings_table(pleadings_soup, case_type)
+        case_details['Services'] = circuitcourtparser.parse_services_table(services_soup, case_type)
         return case_details
 
     def get_cases_by_name(self, fips_code, case_type, name):

@@ -42,7 +42,9 @@ DATES = [
     'AppealedDate',
     'DateServed',
     'HearDate',
-    'DOB'
+    'DOB',
+    'DateOrderedToMediation',
+    'FinalOrderDate'
 ]
 
 TIME_SPANS = [
@@ -64,10 +66,14 @@ BOOL = [
     'DrivingRestrictions',
     'VAAlcoholSafetyAction',
     'RestitutionPaid',
-    'TrafficFatality'
+    'TrafficFatality',
+    'FilingFeePaid'
 ]
 
-def get_data_from_table_with_rows(table):
+def get_data_from_table_with_rows(table, court_type):
+    date_format = '%m/%d/%Y'
+    if court_type == 'civil':
+        date_format = '%m/%d/%y'
     data = []
     rows = table.find_all('tr')
     col_names = [x.encode('ascii') for x in rows.pop(0).stripped_strings]
@@ -85,11 +91,11 @@ def get_data_from_table_with_rows(table):
             if val == '':
                 continue
             if key in DATES:
-                val = datetime.strptime(val, '%m/%d/%Y')
+                val = datetime.strptime(val, date_format)
             item[key] = val
         if 'Time' in item:
             full_dt = '{} {}'.format(item['Date'], item['Time'])
-            item['Date'] = datetime.strptime(full_dt, '%m/%d/%Y %I:%M%p')
+            item['Date'] = datetime.strptime(full_dt, date_format + ' %I:%M%p')
             del item['Time']
         if 'Number' in item:
             del item['Number']
@@ -98,13 +104,13 @@ def get_data_from_table_with_rows(table):
         data.append(item)
     return data
 
-def parse_pleadings_table(soup):
+def parse_pleadings_table(soup, court_type):
     pleadings_table = soup.find(id='count')
-    return get_data_from_table_with_rows(pleadings_table)
+    return get_data_from_table_with_rows(pleadings_table, court_type)
 
-def parse_services_table(soup):
+def parse_services_table(soup, court_type):
     services_table = soup.find(id='count')
-    return get_data_from_table_with_rows(services_table)
+    return get_data_from_table_with_rows(services_table, court_type)
 
 def parse_case_details(soup):
     try:
@@ -158,7 +164,7 @@ def parse_case_details(soup):
             if 'Sentencing' in case_details['ProbationStarts']:
                 case_details['ProbationStarts'] = 'Sentencing'
 
-        case_details['Hearings'] = get_data_from_table_with_rows(hearings_table)
+        case_details['Hearings'] = get_data_from_table_with_rows(hearings_table, 'criminal')
 
         return case_details
     except:
@@ -175,10 +181,45 @@ def parse_civil_case_details(soup):
         details_table = tables[4]
         get_data_from_table(case_details, details_table)
 
+        hearings_table = tables[12]
+        case_details['Hearings'] = get_data_from_table_with_rows(hearings_table, 'civil')
+
+        case_details['Plaintiffs'] = []
+        case_details['Defendants'] = []
+
         for li in soup.find_all('li'):
             line = [x.encode('ascii', 'ignore') for x in li.stripped_strings]
-            case_details[line[0].replace(':', '')] = line[1] \
-                if len(line) > 1 else ''
+            if len(line) < 2:
+                continue
+            key = line[0].replace(':', '')
+            if 'Plaintiff' in key or 'Defendant' in key:
+                party = {'Name': line[1]}
+                trading_as = line[2].replace('Trading as:', '')
+                if trading_as != '':
+                    party['TradingAs'] = trading_as
+                attorney = line[3].replace('Attorney:', '')
+                if attorney != '':
+                    party['Attorney'] = attorney
+
+                if 'Plaintiff' in key:
+                    case_details['Plaintiffs'].append(party)
+                if 'Defendant' in key:
+                    case_details['Defendants'].append(party)
+            else:
+                case_details[key] = line[1]
+
+        for key in DATES:
+            if key in case_details:
+                case_details[key] = datetime.strptime(case_details[key], '%m/%d/%y')
+
+        for key in BOOL:
+            if key in case_details:
+                case_details[key] = True if case_details[key].upper() == 'YES' else False
+
+        if 'NumberofDefendants' in case_details:
+            case_details['NumberofDefendants'] = int(case_details['NumberofDefendants'])
+        if 'NumberofPlaintiffs' in case_details:
+            case_details['NumberofPlaintiffs'] = int(case_details['NumberofPlaintiffs'])
 
         return case_details
     except:
