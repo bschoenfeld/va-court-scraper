@@ -23,6 +23,10 @@ court_type = sys.argv[3]
 if court_type != 'circuit' and court_type != 'district':
     raise ValueError('Unknown court type')
 
+case_type = sys.argv[4]
+if case_type != 'criminal' and case_type != 'civil':
+    raise ValueError('Unknown case type')
+
 # connect to database
 db = None
 if MONGO: db = MongoDatabase('va_court_search', court_type)
@@ -31,8 +35,8 @@ if POSTGRES: db = PostgresDatabase(court_type)
 # get the courts to create tasks for
 # check command line args for a specific court
 courts = list(db.get_courts())
-if len(sys.argv) > 4:
-    courts = [court for court in courts if court['fips'] == sys.argv[4]]
+if len(sys.argv) > 5:
+    courts = [court for court in courts if court['fips'] == sys.argv[5]]
 
 # create the tasks
 tasks = []
@@ -41,13 +45,7 @@ for court in courts:
         'fips': court['fips'],
         'start_date': start_date,
         'end_date': end_date,
-        'case_type': 'criminal'
-    })
-    tasks.append({
-        'fips': court['fips'],
-        'start_date': start_date,
-        'end_date': end_date,
-        'case_type': 'civil'
+        'case_type': case_type
     })
 
 # add the tasks to the database

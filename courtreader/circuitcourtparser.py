@@ -26,25 +26,45 @@ def get_data_from_table(case, table):
     table_cells = table.find_all('td')
     for cell in table_cells:
         strings = list(cell.stripped_strings)
-        if len(strings) < 1:
+        if len(strings) < 2:
             continue
         name = strings[0].encode('ascii', 'ignore') \
                          .replace(':', '') \
                          .replace('/', '') \
                          .replace(' ', '')
-        if len(strings) > 1:
-            case[name] = strings[1].encode('ascii', 'ignore')
-        else:
-            case[name] = ''
+        case[name] = strings[1].encode('ascii', 'ignore')
 
 DATES = [
     'Filed',
     'OffenseDate',
     'ArrestDate',
-    'DispositonDate',
+    'DispositionDate',
     'AppealedDate',
     'DateServed',
-    'HearDate'
+    'HearDate',
+    'DOB'
+]
+
+TIME_SPANS = [
+    'SentenceTime',
+    'SentenceSuspended',
+    'OperatorLicenseSuspensionTime',
+    'ProbationTime'
+]
+
+MONETARY = [
+    'Costs',
+    'FineAmount',
+    'RestitutionAmount'
+]
+
+BOOL = [
+    'FinesCostPaid',
+    'DriverImprovementClinic',
+    'DrivingRestrictions',
+    'VAAlcoholSafetyAction',
+    'RestitutionPaid',
+    'TrafficFatality'
 ]
 
 def get_data_from_table_with_rows(table):
@@ -68,11 +88,13 @@ def get_data_from_table_with_rows(table):
                 val = datetime.strptime(val, '%m/%d/%Y')
             item[key] = val
         if 'Time' in item:
-            dt = item['Date'] + ' ' + item['Time']
-            item['Date'] = datetime.strptime(dt, '%m/%d/%Y %I:%M%p')
+            full_dt = '{} {}'.format(item['Date'], item['Time'])
+            item['Date'] = datetime.strptime(full_dt, '%m/%d/%Y %I:%M%p')
             del item['Time']
         if 'Number' in item:
             del item['Number']
+        if 'Jury' in item:
+            item['Jury'] = True if item['Jury'].upper() == 'YES' else False
         data.append(item)
     return data
 
@@ -103,10 +125,38 @@ def parse_case_details(soup):
         get_data_from_table(case_details, details_table)
         get_data_from_table(case_details, final_disposition_table)
         get_data_from_table(case_details, sentencing_table)
+        get_data_from_table(case_details, appeal_table)
+
+        if 'DOB' in case_details:
+            case_details['DOB'] = case_details['DOB'].replace('****', '1000')
 
         for key in DATES:
             if key in case_details:
                 case_details[key] = datetime.strptime(case_details[key], '%m/%d/%Y')
+
+        for key in TIME_SPANS:
+            if key in case_details:
+                case_details[key] = simplify_time_str_to_days(case_details[key])
+
+        for key in MONETARY:
+            if key in case_details:
+                case_details[key] = float(case_details[key].replace('$', ''))
+
+        for key in BOOL:
+            if key in case_details:
+                case_details[key] = True if case_details[key].upper() == 'YES' else False
+
+        if 'ConcurrentConsecutive' in case_details:
+            if 'Consecutively' in case_details['ConcurrentConsecutive']:
+                case_details['ConcurrentConsecutive'] = 'Consecutive'
+            if 'Concurrently' in case_details['ConcurrentConsecutive']:
+                case_details['ConcurrentConsecutive'] = 'Concurrent'
+
+        if 'ProbationStarts' in case_details:
+            if 'Release' in case_details['ProbationStarts']:
+                case_details['ProbationStarts'] = 'Release'
+            if 'Sentencing' in case_details['ProbationStarts']:
+                case_details['ProbationStarts'] = 'Sentencing'
 
         case_details['Hearings'] = get_data_from_table_with_rows(hearings_table)
 
@@ -187,3 +237,25 @@ def parse_date_search(soup, cases):
     except:
         handle_parse_exception(soup)
         raise
+
+def simplify_time_str_to_days(time_string):
+    time_string = time_string.replace(' Year(s)', 'Years ') \
+                             .replace(' Month(s)', 'Months ') \
+                             .replace(' Day(s)', 'Days ')
+    days = 0
+    string_parts = time_string.split(' ')
+    for string_part in string_parts:
+        if 'Years' in string_part:
+            days += int(string_part.replace('Years', '')) * 365
+        elif string_part == '12Months':
+            days += 365
+        elif 'Months' in string_part:
+            days += int(string_part.replace('Months', '')) * 30
+        elif 'Days' in string_part:
+            days += int(string_part.replace('Days', ''))
+        elif 'Hours' in string_part:
+            hours = int(string_part.replace('Hours', ''))
+            if hours > 0:
+                days += 1
+    simplified_time = str(days) if days > 0 else ''
+    return simplified_time

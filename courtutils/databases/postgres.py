@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Date, Integer, String, ForeignKey
+from sqlalchemy import create_engine, Boolean, Column, Date, Integer, Float, String, ForeignKey
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
@@ -93,7 +93,7 @@ class CircuitCriminalCase(Base, Case):
     AKA = Column(String)
     Sex = Column(String)
     Race = Column(String)
-    DOB = Column(String)
+    DOB = Column(Date)
     Address = Column(String)
 
     Charge = Column(String)
@@ -104,7 +104,7 @@ class CircuitCriminalCase(Base, Case):
     ArrestDate = Column(Date)
 
     DispositionCode = Column(String)
-    DispositonDate = Column(Date)
+    DispositionDate = Column(Date)
     ConcludedBy = Column(String)
     AmendedCharge = Column(String)
     AmendedCodeSection = Column(String)
@@ -113,25 +113,25 @@ class CircuitCriminalCase(Base, Case):
     JailPenitentiary = Column(String)
     ConcurrentConsecutive = Column(String)
     LifeDeath = Column(String)
-    SentenceTime = Column(String)
-    SentenceSuspended = Column(String)
-    OperatorLicenseSuspensionTime = Column(String)
-    Fine = Column(String)
-    Costs = Column(String)
-    FineCostsPaid = Column(String)
+    SentenceTime = Column(Integer)
+    SentenceSuspended = Column(Integer)
+    OperatorLicenseSuspensionTime = Column(Integer)
+    FineAmount = Column(Float)
+    Costs = Column(Float)
+    FineCostsPaid = Column(Boolean)
     ProgramType = Column(String)
     ProbationType = Column(String)
-    ProbationTime = Column(String)
+    ProbationTime = Column(Integer)
     ProbationStarts = Column(String)
-    CourtDmvSurrender = Column(String)
-    DriverImprovementClinic = Column(String)
-    DrivingRestrictions = Column(String)
+    CourtDMVSurrender = Column(String)
+    DriverImprovementClinic = Column(Boolean)
+    DrivingRestrictions = Column(Boolean)
     DrivingRestrictionEffectiveDate = Column(String)
-    AlcoholSafetyAction = Column(String)
-    RestitutionPaid = Column(String)
+    AlcoholSafetyAction = Column(Boolean)
+    RestitutionPaid = Column(Boolean)
     RestitutionAmount = Column(String)
     Military = Column(String)
-    TrafficFatality = Column(String)
+    TrafficFatality = Column(Boolean)
 
     AppealedDate = Column(Date)
 
@@ -208,7 +208,7 @@ class CircuitCriminalHearing(Base, Hearing):
     case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
     case = relationship(prefix + 'Case', back_populates='Hearings')
     Duration = Column(String)
-    Jury = Column(String)
+    Jury = Column(Boolean)
     Plea = Column(String)
 
 class CircuitCivilHearing(Base, Hearing):
@@ -510,7 +510,6 @@ class PostgresDatabase():
         }
 
     def replace_case_details(self, case, case_type):
-        pprint(case)
         case_builder = self.get_case_builder(case_type)
         self.session.query(case_builder).filter_by(
             fips=int(case['fips']),
