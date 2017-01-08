@@ -148,7 +148,7 @@ def parse_case_details(soup):
 
         for key in MONETARY:
             if key in case_details:
-                case_details[key] = float(case_details[key].replace('$', ''))
+                case_details[key] = float(case_details[key].replace('$', '').replace(',', ''))
 
         for key in BOOL:
             if key in case_details:

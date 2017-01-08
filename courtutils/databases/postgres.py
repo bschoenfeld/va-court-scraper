@@ -314,6 +314,84 @@ class DistrictCivilCase(Base, Case):
     Plaintiffs = relationship(prefix + 'Plaintiff', back_populates='case')
     Defendants = relationship(prefix + 'Defendant', back_populates='case')
 
+    FiledDate = Column(Date)
+    CaseType = Column(String)
+    DebtType = Column(String)
+
+    Judgment = Column(String)
+    Costs = Column(Float)
+    AttorneyFees = Column(Float)
+    PrincipalAmount = Column(Float)
+    OtherAmount = Column(Float)
+    InterestAward = Column(String)
+    Possession = Column(String)
+    WritIssuedDate = Column(Date)
+    HomesteadExemptionWaived = Column(Boolean)
+    IsJudgmentSatisfied = Column(String)
+    DateSatisfactionFiled = Column(Date)
+    OtherAwarded = Column(String)
+    FurtherCaseInformation = Column(String)
+
+    Garnishee = Column(String)
+    Address = Column(String)
+    GarnisheeAnswer = Column(String)
+    AnswerDate = Column(Date)
+    NumberofChecksReceived = Column(Integer)
+
+    AppealDate = Column(Date)
+    AppealedBy = Column(String)
+
+    @staticmethod
+    def create(case):
+        details = case['details']
+        hearings = []
+        services = []
+        reports = []
+        plaintiffs = []
+        defendants = []
+
+        if 'Hearings' in details:
+            hearings = details['Hearings']
+            del details['Hearings']
+        if 'Services' in details:
+            services = details['Services']
+            del details['Services']
+        if 'Reports' in details:
+            reports = details['Reports']
+            del details['Reports']
+        if 'Plaintiffs' in details:
+            plaintiffs = details['Plaintiffs']
+            del details['Plaintiffs']
+        if 'Defendants' in details:
+            defendants = details['Defendants']
+            del details['Defendants']
+
+        db_case = DistrictCivilCase(**details)
+        db_case.fips = int(case['fips'])
+        db_case.details_fetched_for_hearing_date = case['details_fetched_for_hearing_date']
+
+        db_case.Hearings = [
+            DistrictCivilHearing(**hearing)
+            for hearing in hearings
+        ]
+        db_case.Services = [
+            DistrictCivilService(**service)
+            for service in services
+        ]
+        db_case.Reports = [
+            DistrictCivilReport(**report)
+            for report in reports
+        ]
+        db_case.Plaintiffs = [
+            DistrictCivilPlaintiff(**plaintiff)
+            for plaintiff in plaintiffs
+        ]
+        db_case.Defendants = [
+            DistrictCivilDefendant(**defendant)
+            for defendant in defendants
+        ]
+        return db_case
+
 #
 # Hearing Tables
 #
@@ -440,11 +518,11 @@ class DistrictCivilService(Base, Service):
 #
 class Report():
     id = Column(Integer, primary_key=True)
-    Type = Column(String)
-    Agency = Column(String)
-    Date_Ordered = Column(Date)
-    Date_Due = Column(Date)
-    Date_Received = Column(Date)
+    ReportType = Column(String)
+    ReportingAgency = Column(String)
+    DateOrdered = Column(Date)
+    DateDue = Column(Date)
+    DateReceived = Column(Date)
 
 class DistrictCivilReport(Base, Report):
     prefix = DISTRICT_CIVIL
@@ -476,9 +554,9 @@ class CircuitCivilDefendant(Base, CircuitCivilParty):
 class DistrictCivilParty():
     id = Column(Integer, primary_key=True)
     Name = Column(String)
-    dba = Column(String)
+    DBATA = Column(String)
     Address = Column(String)
-    Judgement = Column(String)
+    Judgment = Column(String)
     Attorney = Column(String)
 
 class DistrictCivilPlaintiff(Base, DistrictCivilParty):

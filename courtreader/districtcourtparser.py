@@ -113,7 +113,16 @@ DATES = [
     'RestrictionEffectiveDate',
     'RestrictionEndDate',
     'FineCostsDue',
-    'FineCostsPaidDate'
+    'FineCostsPaidDate',
+    'WritIssuedDate',
+    'DateSatisfactionFiled',
+    'AnswerDate',
+    'AppealDate',
+    'DateOrdered',
+    'DateDue',
+    'DateReceived',
+    'DateIssued',
+    'DateReturned'
 ]
 
 TIME_SPANS = [
@@ -125,12 +134,17 @@ TIME_SPANS = [
 
 MONETARY = [
     'Fine',
-    'Costs'
+    'Costs',
+    'AttorneyFees',
+    'PrincipalAmount',
+    'OtherAmount'
 ]
 
 BOOL = [
     'FineCostsPaid',
-    'VASAP'
+    'VASAP',
+    'HomesteadExemptionWaived',
+    'IsJudgmentSatisfied'
 ]
 
 def parse_case_details(soup, case_type):
@@ -166,6 +180,9 @@ def parse_case_details(soup, case_type):
             if val.endswith('-'):
                 case_details['FinalDisposition'] = val[:-1].strip()
 
+        if 'NumberofChecksReceived' in case_details:
+            case_details['NumberofChecksReceived'] = int(case_details['NumberofChecksReceived'])
+
         for key in DATES:
             if key in case_details:
                 case_details[key] = case_details[key].replace('PAST DUE', '')
@@ -177,7 +194,7 @@ def parse_case_details(soup, case_type):
 
         for key in MONETARY:
             if key in case_details:
-                case_details[key] = float(case_details[key].replace('$', ''))
+                case_details[key] = float(case_details[key].replace('$', '').replace(',', ''))
 
         for key in BOOL:
             if key in case_details:
@@ -205,13 +222,18 @@ def get_string_from_cell(cell, is_label=False):
 def parse_table(soup, table_id):
     table_contents = []
     table_section = soup.find(id=table_id)
-    table_headers = [s.replace(' ', '') for s in
+    table_headers = [s.replace(' ', '').replace('/', '') for s in
                      table_section.find(class_='gridheader').stripped_strings]
     for row in table_section.find_all(class_='gridrow'):
         table_contents.append(parse_table_row(row, table_headers))
     for row in table_section.find_all(class_='gridalternaterow'):
         table_contents.append(parse_table_row(row, table_headers))
     return table_contents
+
+NO_ATTORNEY = [
+    'NONE',
+    'NOT EMPLOYED'
+]
 
 def parse_table_row(row, table_headers):
     data_dict = {}
@@ -222,12 +244,18 @@ def parse_table_row(row, table_headers):
          for cell in row.find_all('td')]
     )
     for item in data_list:
-        if item[1] != '':
-            data_dict[item[0]] = item[1]
+        if item[1] == '':
+            continue
+        data_dict[item[0]] = item[1]
+        if item[0] in DATES:
+            data_dict[item[0]] = datetime.strptime(item[1], '%m/%d/%Y')
     if 'Time' in data_dict:
         full_dt = '{} {}'.format(data_dict['Date'], data_dict['Time'])
         data_dict['Date'] = datetime.strptime(full_dt, '%m/%d/%Y %I:%M %p')
         del data_dict['Time']
+    if 'Attorney' in data_dict and data_dict['Attorney'].upper() in NO_ATTORNEY:
+        del data_dict['Attorney']
+
     return data_dict
 
 def simplify_time_str_to_days(time_string):
