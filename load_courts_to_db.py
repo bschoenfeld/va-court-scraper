@@ -44,9 +44,10 @@ courts = reader.connect()
 court_names = []
 for fips, court in courts.iteritems():
     print court
-    court_locality = court.replace(' General District Court', '')\
-                          .replace('-Criminal', '')\
-                          .replace('-Civil', '')\
+    court_locality = court.replace('-Marsh Criminal/Traffic General District Court at Manchester', '') \
+                          .replace(' General District Court', '') \
+                          .replace('-Criminal', '') \
+                          .replace('-Civil', '') \
                           .replace('-Traffic', '')
     location = geolocator.geocode(court_locality + ', Virginia, USA')
     district_db.add_court(court, fips, location)

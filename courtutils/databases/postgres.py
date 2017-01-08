@@ -66,9 +66,9 @@ class Case():
 class CircuitCriminalCase(Base, Case):
     prefix = CIRCUIT_CRIMINAL
     __tablename__ = prefix + 'Case'
-    Hearings = relationship(prefix + 'Hearing', back_populates='case')
-    Pleadings = relationship(prefix + 'Pleading', back_populates='case')
-    Services = relationship(prefix + 'Service', back_populates='case')
+    Hearings = relationship(prefix + 'Hearing')
+    Pleadings = relationship(prefix + 'Pleading')
+    Services = relationship(prefix + 'Service')
 
     Filed = Column(Date)
     Commencedby = Column(String)
@@ -159,11 +159,11 @@ class CircuitCriminalCase(Base, Case):
 class CircuitCivilCase(Base, Case):
     prefix = CIRCUIT_CIVIL
     __tablename__ = prefix + 'Case'
-    Hearings = relationship(prefix + 'Hearing', back_populates='case')
-    Pleadings = relationship(prefix + 'Pleading', back_populates='case')
-    Services = relationship(prefix + 'Service', back_populates='case')
-    Plaintiffs = relationship(prefix + 'Plaintiff', back_populates='case')
-    Defendants = relationship(prefix + 'Defendant', back_populates='case')
+    Hearings = relationship(prefix + 'Hearing')
+    Pleadings = relationship(prefix + 'Pleading')
+    Services = relationship(prefix + 'Service')
+    Plaintiffs = relationship(prefix + 'Plaintiff')
+    Defendants = relationship(prefix + 'Defendant')
 
     Filed = Column(Date)
     FilingType = Column(String)
@@ -235,8 +235,8 @@ class CircuitCivilCase(Base, Case):
 class DistrictCriminalCase(Base, Case):
     prefix = DISTRICT_CRIMINAL
     __tablename__ = prefix + 'Case'
-    Hearings = relationship(prefix + 'Hearing', back_populates='case')
-    Services = relationship(prefix + 'Service', back_populates='case')
+    Hearings = relationship(prefix + 'Hearing')
+    Services = relationship(prefix + 'Service')
 
     FiledDate = Column(Date)
     Locality = Column(String)
@@ -308,11 +308,11 @@ class DistrictCriminalCase(Base, Case):
 class DistrictCivilCase(Base, Case):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Case'
-    Hearings = relationship(prefix + 'Hearing', back_populates='case')
-    Services = relationship(prefix + 'Service', back_populates='case')
-    Reports = relationship(prefix + 'Report', back_populates='case')
-    Plaintiffs = relationship(prefix + 'Plaintiff', back_populates='case')
-    Defendants = relationship(prefix + 'Defendant', back_populates='case')
+    Hearings = relationship(prefix + 'Hearing')
+    Services = relationship(prefix + 'Service')
+    Reports = relationship(prefix + 'Report')
+    Plaintiffs = relationship(prefix + 'Plaintiff')
+    Defendants = relationship(prefix + 'Defendant')
 
     FiledDate = Column(Date)
     CaseType = Column(String)
@@ -403,8 +403,7 @@ class Hearing():
 class CircuitCriminalHearing(Base, Hearing):
     prefix = CIRCUIT_CRIMINAL
     __tablename__ = prefix + 'Hearing'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='Hearings')
+    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
     Duration = Column(String)
     Jury = Column(Boolean)
     Plea = Column(String)
@@ -414,8 +413,7 @@ class CircuitCriminalHearing(Base, Hearing):
 class CircuitCivilHearing(Base, Hearing):
     prefix = CIRCUIT_CIVIL
     __tablename__ = prefix + 'Hearing'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='Hearings')
+    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
     Duration = Column(String)
     Jury = Column(String)
     Type = Column(String)
@@ -424,8 +422,7 @@ class CircuitCivilHearing(Base, Hearing):
 class DistrictCriminalHearing(Base, Hearing):
     prefix = DISTRICT_CRIMINAL
     __tablename__ = prefix + 'Hearing'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='Hearings')
+    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
     Plea = Column(String)
     ContinuanceCode = Column(String)
     HearingType = Column(String)
@@ -434,8 +431,7 @@ class DistrictCriminalHearing(Base, Hearing):
 class DistrictCivilHearing(Base, Hearing):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Hearing'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='Hearings')
+    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
     HearingType = Column(String)
     Courtroom = Column(String)
 
@@ -455,14 +451,12 @@ class Pleading():
 class CircuitCriminalPleading(Base, Pleading):
     prefix = CIRCUIT_CRIMINAL
     __tablename__ = prefix + 'Pleading'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='Pleadings')
+    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
 
 class CircuitCivilPleading(Base, Pleading):
     prefix = CIRCUIT_CIVIL
     __tablename__ = prefix + 'Pleading'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='Pleadings')
+    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
 
 #
 # Service Tables
@@ -474,8 +468,7 @@ class Service():
 class CircuitCriminalService(Base, Service):
     prefix = CIRCUIT_CRIMINAL
     __tablename__ = prefix + 'Service'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='Services')
+    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
     HearDate = Column(Date)
     DateServed = Column(Date)
     Name = Column(String)
@@ -484,8 +477,7 @@ class CircuitCriminalService(Base, Service):
 class CircuitCivilService(Base, Service):
     prefix = CIRCUIT_CIVIL
     __tablename__ = prefix + 'Service'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='Services')
+    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
     HearDate = Column(Date)
     DateServed = Column(Date)
     Name = Column(String)
@@ -494,8 +486,7 @@ class CircuitCivilService(Base, Service):
 class DistrictCriminalService(Base, Service):
     prefix = DISTRICT_CRIMINAL
     __tablename__ = prefix + 'Service'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='Services')
+    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
     DateIssued = Column(Date)
     DateReturned = Column(Date)
     Plaintiff = Column(String)
@@ -505,8 +496,7 @@ class DistrictCriminalService(Base, Service):
 class DistrictCivilService(Base, Service):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Service'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='Services')
+    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
     DateIssued = Column(Date)
     DateReturned = Column(Date)
     Plaintiff = Column(String)
@@ -527,8 +517,7 @@ class Report():
 class DistrictCivilReport(Base, Report):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Report'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='Reports')
+    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
 
 #
 # Party Tables
@@ -542,14 +531,12 @@ class CircuitCivilParty():
 class CircuitCivilPlaintiff(Base, CircuitCivilParty):
     prefix = CIRCUIT_CIVIL
     __tablename__ = prefix + 'Plaintiff'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='Plaintiffs')
+    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
 
 class CircuitCivilDefendant(Base, CircuitCivilParty):
     prefix = CIRCUIT_CIVIL
     __tablename__ = prefix + 'Defendant'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='Defendants')
+    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
 
 class DistrictCivilParty():
     id = Column(Integer, primary_key=True)
@@ -562,14 +549,12 @@ class DistrictCivilParty():
 class DistrictCivilPlaintiff(Base, DistrictCivilParty):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Plaintiff'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='Plaintiffs')
+    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
 
 class DistrictCivilDefendant(Base, DistrictCivilParty):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Defendant'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
-    case = relationship(prefix + 'Case', back_populates='Defendants')
+    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
 
 
 TABLES = [
