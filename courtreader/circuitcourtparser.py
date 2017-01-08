@@ -136,7 +136,7 @@ def parse_case_details(soup):
         get_data_from_table(case_details, appeal_table)
 
         if 'DOB' in case_details:
-            case_details['DOB'] = case_details['DOB'].replace('****', '1000')
+            case_details['DOB'] = case_details['DOB'].replace('****', '1004')
 
         for key in DATES:
             if key in case_details:

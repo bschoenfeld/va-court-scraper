@@ -173,7 +173,7 @@ def parse_case_details(soup, case_type):
             raise ValueError('Missing Case Number')
 
         if 'DOB' in case_details:
-            case_details['DOB'] = case_details['DOB'].replace('****', '1000')
+            case_details['DOB'] = case_details['DOB'].replace('****', '1004')
 
         if 'FinalDisposition' in case_details:
             val = case_details['FinalDisposition']
