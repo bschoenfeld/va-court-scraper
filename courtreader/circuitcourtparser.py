@@ -39,6 +39,8 @@ DATES = [
     'OffenseDate',
     'ArrestDate',
     'DispositionDate',
+    'RestrictionEffectiveDate',
+    'RestrictionEndDate',
     'AppealedDate',
     'DateServed',
     'HearDate',
