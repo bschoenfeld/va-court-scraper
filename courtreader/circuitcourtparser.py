@@ -196,12 +196,11 @@ def parse_civil_case_details(soup):
             key = line[0].replace(':', '')
             if 'Plaintiff' in key or 'Defendant' in key:
                 party = {'Name': line[1]}
-                trading_as = line[2].replace('Trading as:', '')
-                if trading_as != '':
-                    party['TradingAs'] = trading_as
-                attorney = line[3].replace('Attorney:', '')
-                if attorney != '':
-                    party['Attorney'] = attorney
+                for l in line:
+                    if 'Trading as:' in l and l != 'Trading as:':
+                        party['TradingAs'] = l.replace('Trading as:', '')
+                    if 'Attorney:' in l and l != 'Attorney:':
+                        party['Attorney'] = l.replace('Attorney:', '')
 
                 if 'Plaintiff' in key:
                     case_details['Plaintiffs'].append(party)
