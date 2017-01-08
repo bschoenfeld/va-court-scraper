@@ -105,11 +105,39 @@ def next_button_found(soup):
         handle_parse_exception(soup)
         raise
 
+DATES = [
+    'FiledDate',
+    'DOB',
+    'OffenseDate',
+    'ArrestDate',
+    'RestrictionEffectiveDate',
+    'RestrictionEndDate',
+    'FineCostsDue',
+    'FineCostsPaidDate'
+]
+
+TIME_SPANS = [
+    'SentenceTime',
+    'SentenceSuspendedTime',
+    'ProbationTime',
+    'OperatorLicenseSuspensionTime'
+]
+
+MONETARY = [
+    'Fine',
+    'Costs'
+]
+
+BOOL = [
+    'FineCostsPaid',
+    'VASAP'
+]
+
 def parse_case_details(soup, case_type):
     case_details = {}
     try:
-        case_details['CourtName'] = soup.find(id='headerCourtName') \
-                                        .string.strip()
+        #case_details['CourtName'] = soup.find(id='headerCourtName') \
+        #                                .string.strip()
         # Parse grids
         for label_cell in soup.find_all(class_=re.compile('labelgrid')):
             value_cell = label_cell.next_sibling
@@ -117,7 +145,8 @@ def parse_case_details(soup, case_type):
                 value_cell = value_cell.next_sibling
             label = get_string_from_cell(label_cell, True)
             value = get_string_from_cell(value_cell)
-            case_details[label] = value
+            if value != '':
+                case_details[label] = value
         # Parse tables
         if case_type == 'civil':
             # the table names really are backwards here
@@ -128,6 +157,31 @@ def parse_case_details(soup, case_type):
         case_details['Services'] = parse_table(soup, 'toggleServices')
         if 'CaseNumber' not in case_details:
             raise ValueError('Missing Case Number')
+
+        if 'DOB' in case_details:
+            case_details['DOB'] = case_details['DOB'].replace('****', '1000')
+
+        if 'FinalDisposition' in case_details:
+            val = case_details['FinalDisposition']
+            if val.endswith('-'):
+                case_details['FinalDisposition'] = val[:-1].strip()
+
+        for key in DATES:
+            if key in case_details:
+                case_details[key] = case_details[key].replace('PAST DUE', '')
+                case_details[key] = datetime.strptime(case_details[key], '%m/%d/%Y')
+
+        for key in TIME_SPANS:
+            if key in case_details:
+                case_details[key] = simplify_time_str_to_days(case_details[key])
+
+        for key in MONETARY:
+            if key in case_details:
+                case_details[key] = float(case_details[key].replace('$', ''))
+
+        for key in BOOL:
+            if key in case_details:
+                case_details[key] = False if case_details[key].upper() == 'NO' else True
     except:
         handle_parse_exception(soup)
         raise
@@ -135,7 +189,8 @@ def parse_case_details(soup, case_type):
 
 def get_string_from_cell(cell, is_label=False):
     values = list(cell.stripped_strings)
-    if len(values) < 1: return ''
+    if len(values) < 1:
+        return ''
     value = values[0].encode('ascii', 'ignore') \
                      .strip() \
                      .replace('\t', '') \
@@ -150,8 +205,8 @@ def get_string_from_cell(cell, is_label=False):
 def parse_table(soup, table_id):
     table_contents = []
     table_section = soup.find(id=table_id)
-    table_headers = list(table_section.find(class_='gridheader') \
-                                      .stripped_strings)
+    table_headers = [s.replace(' ', '') for s in
+                     table_section.find(class_='gridheader').stripped_strings]
     for row in table_section.find_all(class_='gridrow'):
         table_contents.append(parse_table_row(row, table_headers))
     for row in table_section.find_all(class_='gridalternaterow'):
@@ -159,10 +214,39 @@ def parse_table(soup, table_id):
     return table_contents
 
 def parse_table_row(row, table_headers):
-    return dict(zip(
+    data_dict = {}
+    data_list = zip(
         table_headers,
         [cell.string.strip()
          if cell.string is not None else ''
          for cell in row.find_all('td')]
-    ))
+    )
+    for item in data_list:
+        if item[1] != '':
+            data_dict[item[0]] = item[1]
+    if 'Time' in data_dict:
+        full_dt = '{} {}'.format(data_dict['Date'], data_dict['Time'])
+        data_dict['Date'] = datetime.strptime(full_dt, '%m/%d/%Y %I:%M %p')
+        del data_dict['Time']
+    return data_dict
 
+def simplify_time_str_to_days(time_string):
+    time_string = time_string.replace(' Year(s)', 'Years ') \
+                             .replace(' Month(s)', 'Months ') \
+                             .replace(' Day(s)', 'Days ')
+    days = 0
+    string_parts = time_string.split(' ')
+    for string_part in string_parts:
+        if 'Years' in string_part:
+            days += int(string_part.replace('Years', '')) * 365
+        elif string_part == '12Months':
+            days += 365
+        elif 'Months' in string_part:
+            days += int(string_part.replace('Months', '')) * 30
+        elif 'Days' in string_part:
+            days += int(string_part.replace('Days', ''))
+        elif 'Hours' in string_part:
+            hours = int(string_part.replace('Hours', ''))
+            if hours > 0:
+                days += 1
+    return days

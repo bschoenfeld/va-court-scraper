@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from sqlalchemy import create_engine, Boolean, Column, Date, Integer, Float, String, ForeignKey
+from sqlalchemy import create_engine, Boolean, Column, Date, DateTime, Integer, Float, String, ForeignKey
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
@@ -238,6 +238,73 @@ class DistrictCriminalCase(Base, Case):
     Hearings = relationship(prefix + 'Hearing', back_populates='case')
     Services = relationship(prefix + 'Service', back_populates='case')
 
+    FiledDate = Column(Date)
+    Locality = Column(String)
+    Name = Column(String)
+    Status = Column(String)
+    DefenseAttorney = Column(String)
+    Address = Column(String)
+    AKA1 = Column(String)
+    AKA2 = Column(String)
+    Gender = Column(String)
+    Race = Column(String)
+    DOB = Column(Date)
+
+    Charge = Column(String)
+    CodeSection = Column(String)
+    CaseType = Column(String)
+    Class = Column(String)
+    OffenseDate = Column(Date)
+    ArrestDate = Column(Date)
+    Complainant = Column(String)
+    AmendedCharge = Column(String)
+    AmendedCode = Column(String)
+    AmendedCaseType = Column(String)
+
+    FinalDisposition = Column(String)
+    SentenceTime = Column(Integer)
+    SentenceSuspendedTime = Column(Integer)
+    ProbationType = Column(String)
+    ProbationTime = Column(Integer)
+    ProbationStarts = Column(String)
+    OperatorLicenseSuspensionTime = Column(Integer)
+    RestrictionEffectiveDate = Column(Date)
+    RestrictionEndDate = Column(Date)
+    OperatorLicenseRestrictionCodes = Column(String)
+    Fine = Column(Float)
+    Costs = Column(Float)
+    FineCostsDue = Column(Date)
+    FineCostsPaid = Column(Boolean)
+    FineCostsPaidDate = Column(Date)
+    VASAP = Column(Boolean)
+
+    @staticmethod
+    def create(case):
+        details = case['details']
+        hearings = []
+        services = []
+
+        if 'Hearings' in details:
+            hearings = details['Hearings']
+            del details['Hearings']
+        if 'Services' in details:
+            services = details['Services']
+            del details['Services']
+
+        db_case = DistrictCriminalCase(**details)
+        db_case.fips = int(case['fips'])
+        db_case.details_fetched_for_hearing_date = case['details_fetched_for_hearing_date']
+
+        db_case.Hearings = [
+            DistrictCriminalHearing(**hearing)
+            for hearing in hearings
+        ]
+        db_case.Services = [
+            DistrictCriminalService(**service)
+            for service in services
+        ]
+        return db_case
+
 class DistrictCivilCase(Base, Case):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Case'
@@ -252,9 +319,7 @@ class DistrictCivilCase(Base, Case):
 #
 class Hearing():
     id = Column(Integer, primary_key=True)
-    Date = Column(Date)
-    Type = Column(String)
-    Room = Column(String)
+    Date = Column(DateTime)
     Result = Column(String)
 
 class CircuitCriminalHearing(Base, Hearing):
@@ -265,6 +330,8 @@ class CircuitCriminalHearing(Base, Hearing):
     Duration = Column(String)
     Jury = Column(Boolean)
     Plea = Column(String)
+    Type = Column(String)
+    Room = Column(String)
 
 class CircuitCivilHearing(Base, Hearing):
     prefix = CIRCUIT_CIVIL
@@ -273,6 +340,8 @@ class CircuitCivilHearing(Base, Hearing):
     case = relationship(prefix + 'Case', back_populates='Hearings')
     Duration = Column(String)
     Jury = Column(String)
+    Type = Column(String)
+    Room = Column(String)
 
 class DistrictCriminalHearing(Base, Hearing):
     prefix = DISTRICT_CRIMINAL
@@ -281,12 +350,16 @@ class DistrictCriminalHearing(Base, Hearing):
     case = relationship(prefix + 'Case', back_populates='Hearings')
     Plea = Column(String)
     ContinuanceCode = Column(String)
+    HearingType = Column(String)
+    Courtroom = Column(String)
 
 class DistrictCivilHearing(Base, Hearing):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Hearing'
     case_id = Column(Integer, ForeignKey(prefix + 'Case.id'))
     case = relationship(prefix + 'Case', back_populates='Hearings')
+    HearingType = Column(String)
+    Courtroom = Column(String)
 
 #
 # Pleading Tables
@@ -318,8 +391,6 @@ class CircuitCivilPleading(Base, Pleading):
 #
 class Service():
     id = Column(Integer, primary_key=True)
-    Name = Column(String)
-    Type = Column(String)
     HowServed = Column(String)
 
 class CircuitCriminalService(Base, Service):
@@ -329,6 +400,8 @@ class CircuitCriminalService(Base, Service):
     case = relationship(prefix + 'Case', back_populates='Services')
     HearDate = Column(Date)
     DateServed = Column(Date)
+    Name = Column(String)
+    Type = Column(String)
 
 class CircuitCivilService(Base, Service):
     prefix = CIRCUIT_CIVIL
@@ -337,6 +410,8 @@ class CircuitCivilService(Base, Service):
     case = relationship(prefix + 'Case', back_populates='Services')
     HearDate = Column(Date)
     DateServed = Column(Date)
+    Name = Column(String)
+    Type = Column(String)
 
 class DistrictCriminalService(Base, Service):
     prefix = DISTRICT_CRIMINAL
@@ -346,6 +421,8 @@ class DistrictCriminalService(Base, Service):
     DateIssued = Column(Date)
     DateReturned = Column(Date)
     Plaintiff = Column(String)
+    PersonServed = Column(String)
+    ProcessType = Column(String)
 
 class DistrictCivilService(Base, Service):
     prefix = DISTRICT_CIVIL
@@ -355,6 +432,8 @@ class DistrictCivilService(Base, Service):
     DateIssued = Column(Date)
     DateReturned = Column(Date)
     Plaintiff = Column(String)
+    PersonServed = Column(String)
+    ProcessType = Column(String)
 
 #
 # Report Tables

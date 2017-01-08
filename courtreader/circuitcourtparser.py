@@ -300,5 +300,4 @@ def simplify_time_str_to_days(time_string):
             hours = int(string_part.replace('Hours', ''))
             if hours > 0:
                 days += 1
-    simplified_time = str(days) if days > 0 else ''
-    return simplified_time
+    return days
