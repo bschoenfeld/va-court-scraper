@@ -197,7 +197,10 @@ def parse_case_details(soup, case_type):
                 if 'REASONABLE' in case_details[key].upper():
                     case_details[key] = -1.0
                 else:
-                    case_details[key] = float(case_details[key].replace('$', '').replace(',', ''))
+                    case_details[key] = float(case_details[key]
+                                              .replace('$', '')
+                                              .replace(',', '')
+                                              .split(' ')[0])
 
         for key in BOOL:
             if key in case_details:
