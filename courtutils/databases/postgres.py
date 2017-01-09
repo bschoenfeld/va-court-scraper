@@ -76,6 +76,7 @@ class CircuitCriminalCase(Base, Case):
 
     Defendant = Column(String)
     AKA = Column(String)
+    AKA2 = Column(String)
     Sex = Column(String)
     Race = Column(String)
     DOB = Column(Date)
