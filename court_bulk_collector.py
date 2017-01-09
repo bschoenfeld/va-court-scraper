@@ -31,6 +31,7 @@ def get_db_connection():
 
 def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
     log.info('Getting cases on ' + dateStr)
+    sleep(1)
     cases = reader.get_cases_by_date(fips, case_type, dateStr)
     for case in cases:
         case['details_fetched_for_hearing_date'] = date
@@ -127,8 +128,8 @@ def run():
                 pass
             reader = None
             log.error(traceback.format_exc())
-            log.info('Unexpect error. Sleeping for 5 minutes.')
-            sleep(300)
+            log.info('Unexpect error. Sleeping for 1 minute')
+            sleep(60)
         log.info('Sleeping for 10 seconds')
         sleep(10)
 
