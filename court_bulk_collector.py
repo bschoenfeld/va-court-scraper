@@ -71,7 +71,7 @@ def run_collector(reader):
         return
 
     try:
-        reader.connect()
+        reader_connected = False
 
         fips = task['fips']
         start_date = task['start_date']
@@ -95,11 +95,15 @@ def run_collector(reader):
             if db.get_date_search(date_search) != None:
                 log.info(date_str + ' already searched')
             else:
+                if not reader_connected:
+                    reader.connect()
+                    reader_connected = True
                 get_cases_on_date(db, reader, fips, case_type, date, date_str)
                 db.add_date_search(date_search)
             date += timedelta(days=-1)
 
-        reader.log_off()
+        if reader_connected:
+            reader.log_off()
     except Exception, err:
         log.error(traceback.format_exc())
         log.warn('Putting task back')
