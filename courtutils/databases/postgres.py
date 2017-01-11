@@ -737,3 +737,9 @@ class PostgresDatabase():
         self.session.add(case_builder.create(case))
         self.session.commit()
 
+    def rollback(self):
+        self.session.rollback()
+
+    def disconnect(self):
+        self.session.close()
+

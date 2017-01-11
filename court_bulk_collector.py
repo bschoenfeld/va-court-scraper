@@ -103,12 +103,18 @@ def run_collector(reader):
     except Exception, err:
         log.error(traceback.format_exc())
         log.warn('Putting task back')
+        db.rollback()
         db.add_date_task(task)
+        db.disconnect()
         raise
     except KeyboardInterrupt:
         log.warn('Putting task back')
+        db.rollback()
         db.add_date_task(task)
+        db.disconnect()
         raise
+
+    db.disconnect()
 
 def get_reader():
     return readers.CircuitCourtReader() if 'circuit' in COURT_TYPE else \
