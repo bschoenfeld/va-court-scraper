@@ -96,6 +96,8 @@ def get_data_from_table_with_rows(table, court_type):
                 val = datetime.strptime(val, date_format)
             item[key] = val
         if 'Time' in item:
+            if item['Time'] == '0:00AM':
+                item['Time'] = '1:00AM'
             full_dt = '{} {}'.format(item['Date'], item['Time'])
             item['Date'] = datetime.strptime(full_dt, date_format + ' %I:%M%p')
             del item['Time']
