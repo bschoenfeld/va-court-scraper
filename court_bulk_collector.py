@@ -136,7 +136,4 @@ def run():
             log.error(traceback.format_exc())
             log.info('Unexpect error. Sleeping for 1 minute')
             sleep(60)
-        log.info('Sleeping for 10 seconds')
-        sleep(10)
-
 run()
