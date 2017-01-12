@@ -606,7 +606,7 @@ TABLES = [
 #
 class PostgresDatabase():
     def __init__(self, court_type):
-        self.engine = create_engine("postgresql://" + os.environ['POSTGRES_DB'])
+        self.engine = create_engine("postgresql://" + os.environ['POSTGRES_DB'], pool_size=3, max_overflow=0)
         self.session = sessionmaker(bind=self.engine)()
 
         for table in TABLES:
