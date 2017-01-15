@@ -194,13 +194,13 @@ def parse_case_details(soup, case_type):
 
         for key in MONETARY:
             if key in case_details:
-                if 'REASONABLE' in case_details[key].upper():
-                    case_details[key] = -1.0
-                else:
+                try:
                     case_details[key] = float(case_details[key]
                                               .replace('$', '')
                                               .replace(',', '')
                                               .split(' ')[0])
+                except ValueError:
+                    case_details[key] = -1.0
 
         for key in BOOL:
             if key in case_details:
