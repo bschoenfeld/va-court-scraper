@@ -4,6 +4,7 @@ from sqlalchemy import create_engine, Boolean, Column, Date, DateTime, Integer, 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.pool import NullPool
 from geoalchemy2 import Geometry
 from pprint import pprint
 
@@ -606,7 +607,7 @@ TABLES = [
 #
 class PostgresDatabase():
     def __init__(self, court_type):
-        self.engine = create_engine("postgresql://" + os.environ['POSTGRES_DB'], pool_size=1, max_overflow=0)
+        self.engine = create_engine("postgresql://" + os.environ['POSTGRES_DB'], poolclass=NullPool)
         self.session = sessionmaker(bind=self.engine)()
 
         for table in TABLES:
