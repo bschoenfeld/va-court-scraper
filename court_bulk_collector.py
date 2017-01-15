@@ -41,7 +41,7 @@ def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
             last_date = case_details['details_fetched_for_hearing_date'].strftime('%m/%d/%Y')
             log.info(case['case_number'] + ' details collected for hearing on ' + last_date)
             continue
-        if '--' in case['case_number']:
+        if '--' in case['case_number'] and 'defendant' in case:
             case['details'] = {
                 'CaseNumber': case['case_number'],
                 'Defendant': case['defendant']
