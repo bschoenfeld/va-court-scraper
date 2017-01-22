@@ -159,6 +159,7 @@ class CircuitCriminalCase(Base, Case):
         db_case = CircuitCriminalCase(**details)
         db_case.fips = int(case['fips'])
         db_case.details_fetched_for_hearing_date = case['details_fetched_for_hearing_date']
+        db_case.collected = case['collected']
 
         db_case.Hearings = [
             CircuitCriminalHearing(**hearing)
@@ -227,6 +228,7 @@ class CircuitCivilCase(Base, Case):
         db_case = CircuitCivilCase(**details)
         db_case.fips = int(case['fips'])
         db_case.details_fetched_for_hearing_date = case['details_fetched_for_hearing_date']
+        db_case.collected = case['collected']
 
         db_case.Hearings = [
             CircuitCivilHearing(**hearing)
@@ -313,6 +315,7 @@ class DistrictCriminalCase(Base, Case):
         db_case = DistrictCriminalCase(**details)
         db_case.fips = int(case['fips'])
         db_case.details_fetched_for_hearing_date = case['details_fetched_for_hearing_date']
+        db_case.collected = case['collected']
 
         db_case.Hearings = [
             DistrictCriminalHearing(**hearing)
@@ -388,6 +391,7 @@ class DistrictCivilCase(Base, Case):
         db_case = DistrictCivilCase(**details)
         db_case.fips = int(case['fips'])
         db_case.details_fetched_for_hearing_date = case['details_fetched_for_hearing_date']
+        db_case.collected = case['collected']
 
         db_case.Hearings = [
             DistrictCivilHearing(**hearing)
