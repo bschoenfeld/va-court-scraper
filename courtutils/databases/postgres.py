@@ -812,3 +812,13 @@ class PostgresDatabase():
     def disconnect(self):
         self.session.close()
 
+    def get_cases_with_no_past_due(self, fips, case_type):
+        case_builder = self.get_case_builder(case_type)
+        cases = self.session.query(case_builder).filter(
+            case_builder.fips == int(fips),
+            case_builder.collected == None,
+            case_builder.FineCostsDue != None
+        )
+        case_numbers = [(case.CaseNumber, case.details_fetched_for_hearing_date) for case in cases]
+        return case_numbers
+

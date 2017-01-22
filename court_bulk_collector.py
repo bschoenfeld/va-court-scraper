@@ -40,7 +40,7 @@ def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
         case_details = db.get_more_recent_case_details(case, case_type, date)
         if case_details != None:
             last_date = case_details['details_fetched_for_hearing_date'].strftime('%m/%d/%Y')
-            log.info(case['case_number'] + ' details collected for hearing on ' + last_date)
+            log.info('%s details collected for hearing on %s', case['case_number'], last_date)
             continue
         if '--' in case['case_number'] and 'defendant' in case:
             case['details'] = {
@@ -48,25 +48,15 @@ def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
                 'Defendant': case['defendant']
             }
         else:
-            case['details'] = reader.get_case_details_by_number( \
-                                fips, \
-                                case_type, \
-                                case['case_number'],
-                                case['details_url'] if 'details_url' in case else None)
-        case['details_fetched'] = datetime.utcnow()
+            case['details'] = reader.get_case_details_by_number(
+                fips, case_type, case['case_number'],
+                case['details_url'] if 'details_url' in case else None)
         if 'error' in case['details']:
-            log.warn('Could not collect case details for ' + \
-                case['case_number'] + ' in ' + case['fips'])
+            log.warn('Could not collect case details for %s in %s',
+                     case['case_number'], case['fips'])
         else:
-            log.info(case['case_number'] + ' ' + \
-                        case['defendant'])
-            keys = case['details'].keys()
-            for key in keys:
-                if not case['details'][key]:
-                    del case['details'][key]
-            if 'details_url' in case:
-                del case['details_url']
-        db.replace_case_details(case, case_type)
+            log.info('%s %s', case['case_number'], case['defendant'])
+            db.replace_case_details(case, case_type)
 
 def run_collector(reader, last_task):
     db = get_db_connection()
