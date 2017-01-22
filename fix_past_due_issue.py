@@ -28,8 +28,8 @@ def update_case(fips):
             log.info('%s %s', fips, case['details']['CaseNumber'])
             db.replace_case_details(case, 'criminal')
 
-if len(sys.argv) > 2:
-    update_case(sys.argv[2])
+if len(sys.argv) > 1:
+    update_case(sys.argv[1])
 else:
     courts = list(db.get_courts())
     for court in courts:
