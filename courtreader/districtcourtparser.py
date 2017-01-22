@@ -183,8 +183,8 @@ def parse_case_details(soup, case_type):
         if 'NumberofChecksReceived' in case_details:
             case_details['NumberofChecksReceived'] = int(case_details['NumberofChecksReceived'])
 
-        if 'FineCostsDue' in case_details and 'PAST DUE' in case_details['FineCostsDue']:
-            case_details['FineCostsPastDue'] = True
+        if 'FineCostsDue' in case_details:
+            case_details['FineCostsPastDue'] = 'PAST DUE' in case_details['FineCostsDue']
 
         for key in DATES:
             if key in case_details:
