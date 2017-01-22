@@ -1,6 +1,8 @@
 import os
 from datetime import datetime
-from sqlalchemy import create_engine, Boolean, Column, Date, DateTime, Integer, Float, String, ForeignKey
+from sqlalchemy import (create_engine, Boolean, Column,
+                        Date, DateTime, Integer, Float,
+                        String, ForeignKey, Index)
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
@@ -35,6 +37,19 @@ class CircuitCourtDateTask(Base, DateTask):
 
 class DistrictCourtDateTask(Base, DateTask):
     __tablename__ = 'district_court_date_tasks'
+
+class ActiveDateTask():
+    id = Column(Integer, primary_key=True)
+    fips = Column(Integer)
+    startdate = Column(Date)
+    enddate = Column(Date)
+    casetype = Column(String)
+
+class CircuitCourtActiveDateTask(Base, DateTask):
+    __tablename__ = 'circuit_court_active_date_tasks'
+
+class DistrictCourtActiveDateTask(Base, DateTask):
+    __tablename__ = 'district_court_active_date_tasks'
 
 
 class DateSearch():
@@ -567,6 +582,8 @@ TABLES = [
     # Tasks
     CircuitCourtDateTask,
     DistrictCourtDateTask,
+    CircuitCourtActiveDateTask,
+    DistrictCourtActiveDateTask,
 
     # Searches
     CircuitCourtDateSearch,
@@ -610,6 +627,15 @@ class PostgresDatabase():
         self.engine = create_engine("postgresql://" + os.environ['POSTGRES_DB'], poolclass=NullPool)
         self.session = sessionmaker(bind=self.engine)()
 
+        Index('circuit_court_active_date_tasks_fips_casetype_idx',
+              CircuitCourtActiveDateTask.__table__.c.fips,
+              CircuitCourtActiveDateTask.__table__.c.casetype,
+              unique=True)
+        Index('district_court_active_date_tasks_fips_casetype_idx',
+              DistrictCourtActiveDateTask.__table__.c.fips,
+              DistrictCourtActiveDateTask.__table__.c.casetype,
+              unique=True)
+
         for table in TABLES:
             table.__table__.create(self.engine, checkfirst=True) #pylint: disable=E1101
 
@@ -617,10 +643,12 @@ class PostgresDatabase():
         if court_type == 'circuit':
             self.court_builder = CircuitCourt
             self.date_task_builder = CircuitCourtDateTask
+            self.active_date_task_builder = CircuitCourtActiveDateTask
             self.date_search_builder = CircuitCourtDateSearch
         else:
             self.court_builder = DistrictCourt
             self.date_task_builder = DistrictCourtDateTask
+            self.active_date_task_builder = DistrictCourtActiveDateTask
             self.date_search_builder = DistrictCourtDateSearch
 
     def commit(self):
@@ -649,31 +677,64 @@ class PostgresDatabase():
 
     def add_date_tasks(self, tasks):
         for task in tasks:
-            self.session.add( \
-                self.date_task_builder( \
+            self.session.add(
+                self.date_task_builder(
                     fips=int(task['fips']),
                     startdate=task['start_date'],
                     enddate=task['end_date'],
-                    casetype=task['case_type']))
+                    casetype=task['case_type']
+                )
+            )
         self.session.commit()
 
-    def add_date_task(self, task):
-        self.session.add( \
-            self.date_task_builder( \
+    def add_date_task(self, task, stopping_work=False):
+        self.session.add(
+            self.date_task_builder(
                 fips=int(task['fips']),
                 startdate=task['start_date'],
                 enddate=task['end_date'],
-                casetype=task['case_type']))
+                casetype=task['case_type']
+            )
+        )
+        if stopping_work:
+            self.session \
+                .query(self.active_date_task_builder) \
+                .filter(
+                    self.active_date_task_builder.fips == int(task['fips']),
+                    self.active_date_task_builder.casetype == task['case_type']
+                ) \
+                .delete()
         self.session.commit()
 
-    def get_and_delete_date_task(self):
+    def get_and_delete_date_task(self, finished_task=None):
         while True:
             try:
+                if finished_task is not None:
+                    self.session \
+                        .query(self.active_date_task_builder) \
+                        .filter(
+                            self.active_date_task_builder.fips == int(finished_task['fips']),
+                            self.active_date_task_builder.casetype == finished_task['case_type']
+                        ) \
+                        .delete()
+                    self.session.commit()
+
                 task = self.session.query(self.date_task_builder).first()
                 if task is None:
                     return None
                 self.session.delete(task)
                 self.session.commit()
+
+                self.session.add(
+                    self.active_date_task_builder(
+                        fips=task.fips,
+                        startdate=task.startdate,
+                        enddate=task.enddate,
+                        casetype=task.casetype
+                    )
+                )
+                self.session.commit()
+
                 return {
                     'fips': str(task.fips).zfill(3),
                     'start_date': task.startdate,

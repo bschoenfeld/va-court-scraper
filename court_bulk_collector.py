@@ -67,10 +67,10 @@ def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
                 del case['details_url']
         db.replace_case_details(case, case_type)
 
-def run_collector(reader):
+def run_collector(reader, last_task):
     db = get_db_connection()
 
-    task = db.get_and_delete_date_task()
+    task = db.get_and_delete_date_task(last_task)
     if task is None:
         log.info('Nothing to do. Sleeping for 30 seconds.')
         sleep(30)
@@ -114,17 +114,18 @@ def run_collector(reader):
         log.error(traceback.format_exc())
         log.warn('Putting task back')
         db.rollback()
-        db.add_date_task(task)
+        db.add_date_task(task, True)
         db.disconnect()
         raise
     except KeyboardInterrupt:
         log.warn('Putting task back')
         db.rollback()
-        db.add_date_task(task)
+        db.add_date_task(task, True)
         db.disconnect()
         raise
 
     db.disconnect()
+    return task
 
 def get_reader():
     return readers.CircuitCourtReader() if 'circuit' in COURT_TYPE else \
@@ -132,11 +133,12 @@ def get_reader():
 
 def run():
     reader = None
+    finished_task = None
     while True:
         try:
             if reader is None:
                 reader = get_reader()
-            run_collector(reader)
+            finished_task = run_collector(reader, finished_task)
         except Exception, err:
             try:
                 reader.log_off()
