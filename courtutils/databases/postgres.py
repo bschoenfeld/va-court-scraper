@@ -77,6 +77,7 @@ class Case():
     id = Column(Integer, primary_key=True)
     fips = Column(Integer)
     details_fetched_for_hearing_date = Column(Date)
+    collected = Column(Date)
     CaseNumber = Column(String)
 
 class CircuitCriminalCase(Base, Case):
@@ -291,6 +292,7 @@ class DistrictCriminalCase(Base, Case):
     Fine = Column(Float)
     Costs = Column(Float)
     FineCostsDue = Column(Date)
+    FineCostsPastDue = Column(Boolean)
     FineCostsPaid = Column(Boolean)
     FineCostsPaidDate = Column(Date)
     VASAP = Column(Boolean)
@@ -742,6 +744,7 @@ class PostgresDatabase():
                     'case_type': task.casetype
                 }
             except IntegrityError:
+                print 'WARNING - FAILED TO GET NEW TASK'
                 self.session.rollback()
 
     def add_date_search(self, search):

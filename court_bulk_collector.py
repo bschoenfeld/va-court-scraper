@@ -36,6 +36,7 @@ def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
     for case in cases:
         case['details_fetched_for_hearing_date'] = date
         case['fips'] = fips
+        case['collected'] = datetime.now()
         case_details = db.get_more_recent_case_details(case, case_type, date)
         if case_details != None:
             last_date = case_details['details_fetched_for_hearing_date'].strftime('%m/%d/%Y')
