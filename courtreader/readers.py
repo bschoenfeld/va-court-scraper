@@ -10,6 +10,7 @@ log = logging.getLogger('logentries')
 
 class DistrictCourtReader:
     def __init__(self):
+        self.searches_on_session = 0
         self.fips_code = ''
         self.case_type = ''
         self.opener = DistrictCourtOpener()
@@ -18,6 +19,17 @@ class DistrictCourtReader:
         soup = self.opener.open_welcome_page()
         self.court_names = districtcourtparser.parse_court_names(soup)
         return self.court_names
+
+    def manage_opener(self):
+        self.searches_on_session += 1
+        if self.searches_on_session > 10000:
+            print 'RESETTING OPENER'
+            self.log_off()
+            sleep(2)
+            self.connect()
+            self.searches_on_session = 0
+            self.fips_code = ''
+            print 'RESET SUCCESSFUL'
 
     def change_court(self, fips_code, case_type):
         if fips_code != self.fips_code or case_type != self.case_type:
@@ -32,6 +44,7 @@ class DistrictCourtReader:
         self.opener.log_off()
 
     def get_case_details_by_number(self, fips_code, case_type, case_number, case_details_url=None):
+        self.manage_opener()
         self.change_court(fips_code, case_type)
         sleep(1)
         search_division = 'T'
@@ -42,6 +55,7 @@ class DistrictCourtReader:
         return districtcourtparser.parse_case_details(soup, case_type)
 
     def get_cases_by_date(self, fips_code, case_type, date):
+        self.manage_opener()
         self.change_court(fips_code, case_type)
         search_division = 'T'
         if case_type == 'civil':
@@ -67,11 +81,13 @@ class DistrictCourtReader:
         return cases
 
     def get_case_details(self, case):
+        self.manage_opener()
         sleep(1)
         soup = self.opener.open_case_details(case)
         return districtcourtparser.parse_case_details(soup, None)
 
     def get_cases_by_name(self, fips_code, case_type, name):
+        self.manage_opener()
         self.change_court(fips_code, case_type)
         search_division = 'T'
         if case_type == 'civil':
