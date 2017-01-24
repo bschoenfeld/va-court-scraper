@@ -1,4 +1,5 @@
 import sys
+from time import sleep
 from datetime import datetime
 from courtutils.databases.postgres import PostgresDatabase
 from courtreader import readers
@@ -6,7 +7,6 @@ from courtutils.logger import get_logger
 
 log = get_logger()
 reader = readers.DistrictCourtReader()
-reader.connect()
 db = PostgresDatabase('district')
 
 def update_case(fips):
@@ -34,9 +34,27 @@ def update_case(fips):
                  int((time_cap_2 - time_cap_1).total_seconds()),
                  int((datetime.now() - time_cap_2).total_seconds()))
 
-if len(sys.argv) > 1:
-    update_case(sys.argv[1])
-else:
-    courts = list(db.get_courts())
-    for court in courts:
-        update_case(court['fips'])
+while True:
+    try:
+        reader.connect()
+        if len(sys.argv) > 1:
+            update_case(sys.argv[1])
+        else:
+            courts = list(db.get_courts())
+            for court in courts:
+                if court['fips'] == '059':
+                    continue
+                update_case(court['fips'])
+    except Exception:
+        print 'Exception. Starting over.'
+    except KeyboardInterrupt:
+        raise
+
+    try:
+        reader.log_off()
+    except Exception:
+        print 'Could not log off'
+    except KeyboardInterrupt:
+        raise
+
+    sleep(10)
