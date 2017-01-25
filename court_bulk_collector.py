@@ -42,11 +42,16 @@ def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
             last_date = case_details['details_fetched_for_hearing_date'].strftime('%m/%d/%Y')
             log.info('%s details collected for hearing on %s', case['case_number'], last_date)
             continue
-        if '--' in case['case_number'] and 'defendant' in case:
-            case['details'] = {
-                'CaseNumber': case['case_number'],
-                'Defendant': case['defendant']
-            }
+        if '--' in case['case_number']:
+            if case_type == 'civil':
+                case['details'] = {
+                    'CaseNumber': case['case_number']
+                }
+            elif 'defendant' in case:
+                case['details'] = {
+                    'CaseNumber': case['case_number'],
+                    'Defendant': case['defendant']
+                }
         else:
             case['details'] = reader.get_case_details_by_number(
                 fips, case_type, case['case_number'],
@@ -107,12 +112,20 @@ def run_collector(reader, last_task):
         db.rollback()
         db.add_date_task(task, True)
         db.disconnect()
+        try:
+            reader.log_off()
+        except:
+            pass
         raise
     except KeyboardInterrupt:
         log.warn('Putting task back')
         db.rollback()
         db.add_date_task(task, True)
         db.disconnect()
+        try:
+            reader.log_off()
+        except:
+            pass
         raise
 
     db.disconnect()
