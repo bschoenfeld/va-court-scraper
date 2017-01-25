@@ -44,10 +44,13 @@ class DistrictCourtOpener:
 
     def solve_captcha(self, url):
         self.open_driver()
+        self.driver.get('https://google.com')
 
         log.info('Solving CAPTCHA')
         captcha_solver = deathbycaptcha.SocketClient(os.environ['DBC_USER'], \
                                                      os.environ['DBC_PASSWORD'])
+        self.driver.get(url)
+        time.sleep(3)
         self.driver.get(url)
         captcha = self.driver.find_element_by_id('recaptcha_challenge_image')
         image_src = captcha.get_attribute('src')
