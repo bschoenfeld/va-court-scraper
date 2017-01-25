@@ -29,6 +29,8 @@ class DistrictCourtOpener:
 
     def open_welcome_page(self):
         url = self.url('caseSearch.do?welcomePage=welcomePage')
+        page = self.opener.open('https://google.com')
+        page_content = page.read()
         page = self.opener.open(url)
         page_content = page.read()
         # See if we need to solve a captcha
