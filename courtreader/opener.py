@@ -1,11 +1,12 @@
-import cookielib
-import os
-import pickle
 import mechanize
+
+class NoHistory(object):
+    def add(self, *a, **k): pass
+    def clear(self): pass
 
 class Opener:
     def __init__(self, name):
-        self.opener = mechanize.Browser()
+        self.opener = mechanize.Browser(history=NoHistory())
         self.opener.set_handle_robots(False)
 
     def set_cookie(self, name, value):
