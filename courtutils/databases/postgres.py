@@ -725,7 +725,10 @@ class PostgresDatabase():
                         .delete()
                     self.session.commit()
 
-                task = self.session.query(self.date_task_builder).first()
+                task = self.session \
+                           .query(self.date_task_builder) \
+                           .order_by(self.date_task_builder.startdate.desc()) \
+                           .first()
                 if task is None:
                     return None
                 self.session.delete(task)
