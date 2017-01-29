@@ -42,8 +42,6 @@ while True:
         else:
             courts = list(db.get_courts())
             for court in courts:
-                if court['fips'] == '059':
-                    continue
                 update_case(court['fips'])
     except Exception:
         print 'Exception. Starting over.'
