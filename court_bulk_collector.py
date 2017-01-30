@@ -150,6 +150,6 @@ def run():
                 pass
             reader = None
             log.error(traceback.format_exc())
-            log.info('Unexpect error. Sleeping for 1 minute')
-            sleep(60)
+            log.info('Unexpect error. Sleeping for 10 minute')
+            sleep(600)
 run()
