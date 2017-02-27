@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, date
 from sqlalchemy import (create_engine, Boolean, Column,
                         Date, DateTime, Integer, Float,
                         String, ForeignKey, Index)
@@ -680,6 +680,9 @@ class PostgresDatabase():
             'name': court.name,
             'fips': str(court.fips).zfill(3)
         } for court in self.session.query(self.court_builder)]
+    
+    def count_courts(self):
+        return self.session.query(self.court_builder).count()
 
     def add_date_tasks(self, tasks):
         for task in tasks:
@@ -773,6 +776,15 @@ class PostgresDatabase():
         if result is None:
             return None
         return search
+
+    def count_dates_searched_for_year(self, case_type, year):
+        start_date = date(year, 1, 1)
+        end_date = date(year+1, 1, 1)
+        return self.session.query(self.date_search_builder).filter(
+            self.date_search_builder.date >= start_date,
+            self.date_search_builder.date < end_date,
+            self.date_search_builder.casetype == case_type
+        ).distinct(self.date_search_builder.fips, self.date_search_builder.date).count()
 
     def get_case_builder(self, case_type):
         if self.court_type == 'circuit':
