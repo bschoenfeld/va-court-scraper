@@ -5,13 +5,15 @@ import os
 import subprocess
 import zipfile
 
+import boto3
+
 from courtutils.databases.postgres import PostgresDatabase
 
 REMOVE_FIELDS = [
     'collected', 'id', 'details_fetched_for_hearing_date'
 ]
 ANON_FIELDS = [
-    'CaseNumber', 'Defendant', 'AKA', 'DOB', 'AKA1', 'AKA2'
+    'CaseNumber', 'Name', 'Defendant', 'AKA', 'DOB', 'AKA1', 'AKA2'
 ]
 
 def export_table(table, court_type, case_type):
@@ -34,8 +36,12 @@ def export_table(table, court_type, case_type):
             data_filepaths, anon_data_filepaths = create_data_files(filepath, temp_filepath)
 
             # Zip data files
-            data_zip_path = zip_data_files(filepath, data_filepaths)
+            data_zip_path = zip_data_files(filepath + '_complete', data_filepaths)
             anon_data_zip_path = zip_data_files(filepath + '_anon', anon_data_filepaths)
+
+            # Upload zip files
+            upload_zip_file(data_zip_path)
+            upload_zip_file(anon_data_zip_path)
             break
         else:
             break
@@ -53,6 +59,7 @@ def download_data(table, year, outfile_path):
     ]
     print year, subprocess.check_output(psql_cmd)
 
+CASES_PER_FILE = 250000
 def create_data_files(filepath, temp_filepath):
     data_filepaths = []
     anon_data_filepaths = []
@@ -62,13 +69,13 @@ def create_data_files(filepath, temp_filepath):
         data_reader = csv.DictReader(temp_file)
         case_count = 0
         for case in data_reader:
-            if case_count % 500000 == 0:
+            if case_count % CASES_PER_FILE == 0:
                 fieldnames = data_reader.fieldnames
 
                 fieldnames = [field for field in fieldnames if field not in REMOVE_FIELDS]
                 if data_file: data_file.close()
                 data_filepaths.append('{}_{}.csv'.format(
-                    filepath, str(case_count/500000).zfill(2)
+                    filepath, str(case_count/CASES_PER_FILE).zfill(2)
                 ))
                 data_file = open(data_filepaths[-1], 'w')
                 data_writer = csv.DictWriter(data_file, fieldnames=fieldnames)
@@ -77,7 +84,7 @@ def create_data_files(filepath, temp_filepath):
                 fieldnames = [field for field in fieldnames if field not in ANON_FIELDS]
                 if anon_data_file: anon_data_file.close()
                 anon_data_filepaths.append('{}_anon_{}.csv'.format(
-                    filepath, str(case_count/500000).zfill(2)
+                    filepath, str(case_count/CASES_PER_FILE).zfill(2)
                 ))
                 anon_data_file = open(anon_data_filepaths[-1], 'w')
                 anon_data_writer = csv.DictWriter(anon_data_file, fieldnames=fieldnames)
@@ -107,5 +114,14 @@ def zip_data_files(filepath, data_filepaths):
         os.remove(path)
     data_zip.close()
     return data_zip_path
+
+S3 = boto3.client('s3')
+S3_BUCKET = 'virginia-court-data'
+def upload_zip_file(path):
+    S3.upload_file(path, S3_BUCKET, path, ExtraArgs={
+        'ACL': 'public-read',
+        'ContentType':'application/zip'
+    })
+    os.remove(path)
 
 export_table('DistrictCriminalCase', 'district', 'criminal')
