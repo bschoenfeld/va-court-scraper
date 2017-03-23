@@ -12,14 +12,26 @@ from firebase import firebase
 
 from courtutils.databases.postgres import PostgresDatabase
 
+# PGHOST, PGDATABASE, PGUSER, PGPASSWORD
+
 REMOVE_FIELDS = [
-    'collected', 'id', 'details_fetched_for_hearing_date'
+    'collected', 'id', 'case_id', 'details_fetched_for_hearing_date', 'Duration'
 ]
 ANON_FIELDS = [
     'CaseNumber', 'Name', 'Defendant', 'AKA', 'DOB', 'AKA1', 'AKA2',
     'Plaintiff1Name', 'Plaintiff2Name', 'Plaintiff3Name',
     'Defendant1Name', 'Defendant2Name', 'Defendant3Name'
 ]
+ALTER_FIELDS = {
+    'Date': 'HearingDate',
+    'Result': 'HearingResult',
+    'Jury': 'HearingJury',
+    'Plea': 'HearingPlea',
+    'Type': 'HearingType',
+    'Room': 'HearingRoom',
+    'ContinuanceCode': 'HearingContinuanceCode',
+    'Courtroom': 'HearingCourtroom'
+}
 PARTIES = [
     'Plaintiff', 'Defendant'
 ]
@@ -61,11 +73,26 @@ def export_table(table, court_type, case_type):
     return metadata
 
 def download_data(table, year, outfile_path, case_type):
-    copy_cmd = '\\copy (Select * From "{}" '.format(table)
-    copy_cmd += 'where {0} >= \'{1}\' and {0} < \'{2}\' '.format(
-        'details_fetched_for_hearing_date', '1/1/' + str(year), '1/1/' + str(year+1)
-    )
-    copy_cmd += 'order by id) To \'{}\' With CSV HEADER;'.format(outfile_path)
+    if case_type == 'civil':
+        copy_cmd = '\\copy (Select * From "{}" '.format(table)
+        copy_cmd += 'where {0} >= \'{1}\' and {0} < \'{2}\' '.format(
+            'details_fetched_for_hearing_date', '1/1/' + str(year), '1/1/' + str(year+1)
+        )
+        copy_cmd += 'order by id) To \'{}\' With CSV HEADER;'.format(outfile_path)
+    else:
+        hearing_table = table.replace('Case', 'Hearing')
+        copy_cmd = '\\copy (SELECT DISTINCT on(case_id) * From "{}" '.format(
+            hearing_table
+        )
+        copy_cmd += 'INNER JOIN "{0}" ON "{1}".case_id = "{0}".id '.format(
+            table, hearing_table
+        )
+        copy_cmd += 'WHERE "{0}".{1} >= \'{2}\' and "{0}".{1} < \'{3}\' '.format(
+            table, 'details_fetched_for_hearing_date', '1/1/' + str(year), '1/1/' + str(year+1)
+        )
+        copy_cmd += 'ORDER BY case_id, "Date" DESC) To \'{}\' With CSV HEADER;'.format(
+            outfile_path
+        )
 
     psql_cmd = [
         'psql',
@@ -132,6 +159,7 @@ def create_data_files(filepath, temp_filepath, court_type, case_type):
                     fieldnames.extend(get_party_headers(party['name'], court_type))
 
                 fieldnames = [field for field in fieldnames if field not in REMOVE_FIELDS]
+                fieldnames = [field if field not in ALTER_FIELDS else ALTER_FIELDS[field] for field in fieldnames]
                 if data_file: data_file.close()
                 metadata['complete']['filepaths'].append('{}_{}.csv'.format(
                     filepath, str(case_count/CASES_PER_FILE).zfill(2)
@@ -154,6 +182,13 @@ def create_data_files(filepath, temp_filepath, court_type, case_type):
                     case['id'], party['reader'], party['lastRead']
                 )
                 add_parties_to_case(case, party['curCaseParties'], party['name'], court_type)
+
+            for field in ALTER_FIELDS:
+                if field in case:
+                    if field == 'Date':
+                        case[field] = case[field].split(' ')[0]
+                    case[ALTER_FIELDS[field]] = case[field]
+                    del case[field]
 
             for field in REMOVE_FIELDS:
                 if field in case:
@@ -247,8 +282,8 @@ def upload_metadata(metadata):
     database.put('/', 'data', metadata)
 
 def export_all():
-    court_types = ['District', 'Circuit']
-    case_types = ['Civil', 'Criminal']
+    court_types = ['Circuit', 'District']
+    case_types = ['Criminal', 'Civil']
 
     metadata = {
         'complete': {},
