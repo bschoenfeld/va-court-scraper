@@ -1,8 +1,8 @@
 import os
 from datetime import datetime, date
 from sqlalchemy import (create_engine, Boolean, Column,
-                        Date, DateTime, Integer, Float,
-                        String, ForeignKey, Index)
+                        Date, DateTime, Integer, BigInteger,
+                        Float, String, ForeignKey, Index)
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
@@ -74,7 +74,7 @@ DISTRICT_CIVIL = 'DistrictCivil'
 # Case Tables
 #
 class Case():
-    id = Column(Integer, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
     fips = Column(Integer)
     details_fetched_for_hearing_date = Column(Date)
     collected = Column(Date)
@@ -419,14 +419,14 @@ class DistrictCivilCase(Base, Case):
 # Hearing Tables
 #
 class Hearing():
-    id = Column(Integer, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
     Date = Column(DateTime)
     Result = Column(String)
 
 class CircuitCriminalHearing(Base, Hearing):
     prefix = CIRCUIT_CRIMINAL
     __tablename__ = prefix + 'Hearing'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
+    case_id = Column(BigInteger, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
     Duration = Column(String)
     Jury = Column(Boolean)
     Plea = Column(String)
@@ -436,7 +436,7 @@ class CircuitCriminalHearing(Base, Hearing):
 class CircuitCivilHearing(Base, Hearing):
     prefix = CIRCUIT_CIVIL
     __tablename__ = prefix + 'Hearing'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
+    case_id = Column(BigInteger, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
     Duration = Column(String)
     Jury = Column(String)
     Type = Column(String)
@@ -445,7 +445,7 @@ class CircuitCivilHearing(Base, Hearing):
 class DistrictCriminalHearing(Base, Hearing):
     prefix = DISTRICT_CRIMINAL
     __tablename__ = prefix + 'Hearing'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
+    case_id = Column(BigInteger, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
     Plea = Column(String)
     ContinuanceCode = Column(String)
     HearingType = Column(String)
@@ -454,7 +454,7 @@ class DistrictCriminalHearing(Base, Hearing):
 class DistrictCivilHearing(Base, Hearing):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Hearing'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
+    case_id = Column(BigInteger, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
     HearingType = Column(String)
     Courtroom = Column(String)
 
@@ -462,7 +462,7 @@ class DistrictCivilHearing(Base, Hearing):
 # Pleading Tables
 #
 class Pleading():
-    id = Column(Integer, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
     Filed = Column(Date)
     Type = Column(String)
     Party = Column(String)
@@ -474,24 +474,24 @@ class Pleading():
 class CircuitCriminalPleading(Base, Pleading):
     prefix = CIRCUIT_CRIMINAL
     __tablename__ = prefix + 'Pleading'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
+    case_id = Column(BigInteger, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
 
 class CircuitCivilPleading(Base, Pleading):
     prefix = CIRCUIT_CIVIL
     __tablename__ = prefix + 'Pleading'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
+    case_id = Column(BigInteger, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
 
 #
 # Service Tables
 #
 class Service():
-    id = Column(Integer, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
     HowServed = Column(String)
 
 class CircuitCriminalService(Base, Service):
     prefix = CIRCUIT_CRIMINAL
     __tablename__ = prefix + 'Service'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
+    case_id = Column(BigInteger, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
     HearDate = Column(Date)
     DateServed = Column(Date)
     Name = Column(String)
@@ -500,7 +500,7 @@ class CircuitCriminalService(Base, Service):
 class CircuitCivilService(Base, Service):
     prefix = CIRCUIT_CIVIL
     __tablename__ = prefix + 'Service'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
+    case_id = Column(BigInteger, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
     HearDate = Column(Date)
     DateServed = Column(Date)
     Name = Column(String)
@@ -509,7 +509,7 @@ class CircuitCivilService(Base, Service):
 class DistrictCriminalService(Base, Service):
     prefix = DISTRICT_CRIMINAL
     __tablename__ = prefix + 'Service'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
+    case_id = Column(BigInteger, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
     DateIssued = Column(Date)
     DateReturned = Column(Date)
     Plaintiff = Column(String)
@@ -519,7 +519,7 @@ class DistrictCriminalService(Base, Service):
 class DistrictCivilService(Base, Service):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Service'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
+    case_id = Column(BigInteger, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
     DateIssued = Column(Date)
     DateReturned = Column(Date)
     Plaintiff = Column(String)
@@ -530,7 +530,7 @@ class DistrictCivilService(Base, Service):
 # Report Tables
 #
 class Report():
-    id = Column(Integer, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
     ReportType = Column(String)
     ReportingAgency = Column(String)
     DateOrdered = Column(Date)
@@ -540,13 +540,13 @@ class Report():
 class DistrictCivilReport(Base, Report):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Report'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
+    case_id = Column(BigInteger, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
 
 #
 # Party Tables
 #
 class CircuitCivilParty():
-    id = Column(Integer, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
     Name = Column(String)
     TradingAs = Column(String)
     Attorney = Column(String)
@@ -554,15 +554,15 @@ class CircuitCivilParty():
 class CircuitCivilPlaintiff(Base, CircuitCivilParty):
     prefix = CIRCUIT_CIVIL
     __tablename__ = prefix + 'Plaintiff'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
+    case_id = Column(BigInteger, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
 
 class CircuitCivilDefendant(Base, CircuitCivilParty):
     prefix = CIRCUIT_CIVIL
     __tablename__ = prefix + 'Defendant'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
+    case_id = Column(BigInteger, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
 
 class DistrictCivilParty():
-    id = Column(Integer, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
     Name = Column(String)
     DBATA = Column(String)
     Address = Column(String)
@@ -572,12 +572,12 @@ class DistrictCivilParty():
 class DistrictCivilPlaintiff(Base, DistrictCivilParty):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Plaintiff'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
+    case_id = Column(BigInteger, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
 
 class DistrictCivilDefendant(Base, DistrictCivilParty):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Defendant'
-    case_id = Column(Integer, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
+    case_id = Column(BigInteger, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
 
 
 TABLES = [
@@ -680,7 +680,7 @@ class PostgresDatabase():
             'name': court.name,
             'fips': str(court.fips).zfill(3)
         } for court in self.session.query(self.court_builder)]
-    
+
     def count_courts(self):
         return self.session.query(self.court_builder).count()
 
