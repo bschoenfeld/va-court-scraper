@@ -91,6 +91,7 @@ class CircuitCriminalCase(Base, Case):
     Commencedby = Column(String)
     Locality = Column(String)
 
+    person_id = Column(BigInteger)
     Defendant = Column(String)
     AKA = Column(String)
     AKA2 = Column(String)
@@ -258,6 +259,7 @@ class DistrictCriminalCase(Base, Case):
     Hearings = relationship(prefix + 'Hearing')
     Services = relationship(prefix + 'Service')
 
+    person_id = Column(BigInteger)
     FiledDate = Column(Date)
     Locality = Column(String)
     Name = Column(String)
@@ -819,6 +821,24 @@ class PostgresDatabase():
             CaseNumber=case['case_number']
         ).delete()
         self.session.add(case_builder.create(case))
+        self.session.commit()
+
+    def set_person_id(self, case_ids):
+        person_id = 0
+        case_builder = self.get_case_builder('criminal')
+
+        result = self.session.query(case_builder).filter(
+            case_builder.person_id != None
+        ).order_by(
+            case_builder.person_id.desc()
+        ).first()
+        if result is not None:
+            person_id = result.person_id
+
+        person_id += 1
+        self.session.query(case_builder).filter(
+            case_builder.id.in_(case_ids)
+        ).update({'person_id':person_id}, synchronize_session=False)
         self.session.commit()
 
     def rollback(self):
