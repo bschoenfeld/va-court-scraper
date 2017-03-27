@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import datetime, date, timedelta
 from itertools import groupby
 from operator import itemgetter
 from pprint import pprint
@@ -6,10 +6,12 @@ from courtutils.databases.postgres import PostgresDatabase
 from fuzzywuzzy import fuzz
 
 def run():
+    last_time = datetime.now()
     cur_date = date(1004, 1, 1)
     while cur_date.year == 1004:
         for letter in char_range('A', 'Z'):
-            print cur_date, letter
+            print cur_date, letter, (datetime.now()-last_time).total_seconds()
+            last_time = datetime.now()
             match_people(cur_date, letter, 'Male')
             match_people(cur_date, letter, 'Female')
         cur_date += timedelta(days=1)
