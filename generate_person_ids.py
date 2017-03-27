@@ -4,28 +4,40 @@ from operator import itemgetter
 from pprint import pprint
 from courtutils.databases.postgres import PostgresDatabase
 from fuzzywuzzy import fuzz
+from joblib import Parallel, delayed
+import multiprocessing
 
 def run():
-    last_time = datetime.now()
     cur_date = date(1004, 1, 1)
+    dates = []
     while cur_date.year == 1004:
-        for letter in char_range('A', 'Z'):
-            print cur_date, letter, (datetime.now()-last_time).total_seconds()
-            last_time = datetime.now()
-            match_people(cur_date, letter, 'Male')
-            match_people(cur_date, letter, 'Female')
+        dates.append(cur_date)
         cur_date += timedelta(days=1)
+
+    cpus = multiprocessing.cpu_count()
+    Parallel(n_jobs=cpus)(delayed(run_for_date)(cur_date) for cur_date in dates)
+
+def run_for_date(cur_date):
+    print 'Connecting to DB'
+    db = PostgresDatabase('circuit')
+
+    for letter in char_range('A', 'Z'):
+        print cur_date, letter
+        match_people(db, cur_date, letter, 'Male')
+        match_people(db, cur_date, letter, 'Female')
+
+    db.disconnect()
 
 def char_range(c1, c2):
     """Generates the characters from `c1` to `c2`, inclusive."""
     for c in xrange(ord(c1), ord(c2)+1):
         yield chr(c)
 
-def match_people(date, letter, sex):
+def match_people(db, date, letter, sex):
     person_id = get_starting_person_id(date, letter, sex)
-    people = DB.list_people_to_id(date, letter, sex)
+    people = db.list_people_to_id(date, letter, sex)
     people.sort(key=lambda p: p['name'])
-    print len(people), 'Cases'
+    print date, letter, sex, len(people), 'Cases'
 
     last_id = 0
     for i, person in enumerate(people):
@@ -67,8 +79,8 @@ def match_people(date, letter, sex):
 
     for key, group in groupby(people, key=itemgetter('courtType', 'personId')):
         case_ids = [x['id'] for x in group]
-        DB.set_person_id(key[0], case_ids, key[1])
-    DB.commit()
+        db.set_person_id(key[0], case_ids, key[1])
+    db.commit()
 
 # Person ID
 # BigInt Max 9,223,372,036,854,775,807
@@ -90,6 +102,4 @@ def sanitize_name(name):
         name = name[:name.index('  ')]
     return name
 
-DB = PostgresDatabase('circuit')
 run()
-DB.disconnect()
