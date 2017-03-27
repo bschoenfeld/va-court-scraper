@@ -823,23 +823,48 @@ class PostgresDatabase():
         self.session.add(case_builder.create(case))
         self.session.commit()
 
-    def set_person_id(self, case_ids):
-        person_id = 0
-        case_builder = self.get_case_builder('criminal')
+    def list_people_to_id(self, date, letter, sex):
+        people = []
 
-        result = self.session.query(case_builder).filter(
-            case_builder.person_id != None
-        ).order_by(
-            case_builder.person_id.desc()
-        ).first()
-        if result is not None:
-            person_id = result.person_id
+        circuit_people = self.session.query(CircuitCriminalCase).filter(
+            CircuitCriminalCase.DOB == date,
+            CircuitCriminalCase.Defendant.startswith(letter),
+            CircuitCriminalCase.Sex == sex
+        ).with_entities(
+            CircuitCriminalCase.id,
+            CircuitCriminalCase.Defendant,
+            CircuitCriminalCase.Address
+        ).all()
+        people.extend([{
+            'id': p[0],
+            'name': p[1],
+            'address': p[2],
+            'courtType': 'circuit'
+        } for p in circuit_people])
 
-        person_id += 1
+        district_people = self.session.query(DistrictCriminalCase).filter(
+            DistrictCriminalCase.DOB == date,
+            DistrictCriminalCase.Name.startswith(letter),
+            DistrictCriminalCase.Gender == sex
+        ).with_entities(
+            DistrictCriminalCase.id,
+            DistrictCriminalCase.Name,
+            DistrictCriminalCase.Address
+        ).all()
+        people.extend([{
+            'id': p[0],
+            'name': p[1],
+            'address': p[2],
+            'courtType': 'district'
+        } for p in district_people])
+
+        return people
+
+    def set_person_id(self, court_type, case_ids, person_id):
+        case_builder = CircuitCriminalCase if court_type == 'circuit' else DistrictCriminalCase
         self.session.query(case_builder).filter(
             case_builder.id.in_(case_ids)
         ).update({'person_id':person_id}, synchronize_session=False)
-        self.session.commit()
 
     def rollback(self):
         self.session.rollback()
