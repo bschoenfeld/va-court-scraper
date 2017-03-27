@@ -6,7 +6,7 @@ from courtutils.databases.postgres import PostgresDatabase
 from fuzzywuzzy import fuzz
 
 def run():
-    cur_date = date(1004, 2, 1)
+    cur_date = date(1004, 1, 1)
     while cur_date.year == 1004:
         for letter in char_range('A', 'Z'):
             print cur_date, letter
@@ -23,6 +23,7 @@ def match_people(date, letter, sex):
     person_id = get_starting_person_id(date, letter, sex)
     people = DB.list_people_to_id(date, letter, sex)
     people.sort(key=lambda p: p['name'])
+    print len(people), 'Cases'
 
     last_id = 0
     for i, person in enumerate(people):
