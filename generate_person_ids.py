@@ -15,25 +15,23 @@ def run():
         cur_date += timedelta(days=1)
 
     cpus = multiprocessing.cpu_count()
-    Parallel(n_jobs=cpus)(delayed(run_for_date)(cur_date) for cur_date in dates)
+    Parallel(n_jobs=1)(delayed(run_for_date)(cur_date) for cur_date in dates)
 
 def run_for_date(cur_date):
-    print 'Connecting to DB'
-    db = PostgresDatabase('circuit')
-
     for letter in char_range('A', 'Z'):
-        print cur_date, letter
-        match_people(db, cur_date, letter, 'Male')
-        match_people(db, cur_date, letter, 'Female')
-
-    db.disconnect()
+        match_people(cur_date, letter, 'Male')
+        match_people(cur_date, letter, 'Female')
 
 def char_range(c1, c2):
     """Generates the characters from `c1` to `c2`, inclusive."""
     for c in xrange(ord(c1), ord(c2)+1):
         yield chr(c)
 
-def match_people(db, date, letter, sex):
+def match_people(date, letter, sex):
+    print 'Connecting to DB'
+    db = PostgresDatabase('circuit')
+    print 'Connected'
+
     person_id = get_starting_person_id(date, letter, sex)
     people = db.list_people_to_id(date, letter, sex)
     people.sort(key=lambda p: p['name'])
@@ -77,10 +75,14 @@ def match_people(db, date, letter, sex):
         if last_id != person['personId']:
             last_id = person['personId']
 
+    print 'Writing to db'
     for key, group in groupby(people, key=itemgetter('courtType', 'personId')):
         case_ids = [x['id'] for x in group]
         db.set_person_id(key[0], case_ids, key[1])
     db.commit()
+
+    print 'Disconnect'
+    db.disconnect()
 
 # Person ID
 # BigInt Max 9,223,372,036,854,775,807
