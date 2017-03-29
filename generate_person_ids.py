@@ -13,7 +13,6 @@ def run():
             for x in range(0, days[1])
         ]
         process_data(dates)
-        break
 
 GENDERS = ['Female', 'Male']
 LETTERS = [chr(c) for c in xrange(ord('A'), ord('Z')+1)]
@@ -21,6 +20,7 @@ LETTERS = [chr(c) for c in xrange(ord('A'), ord('Z')+1)]
 class CourtDataProcessor:
     def __init__(self, court_type, dob_start, dob_end):
         self.court_type = court_type
+        self.dob_start = dob_start
         self.in_filepath = '{}_{}_{}.csv'.format(dob_start, dob_end, court_type)
         self.out_filepath = 'out_' + self.in_filepath
 
@@ -30,7 +30,7 @@ class CourtDataProcessor:
         self.out_file = open(self.out_filepath, 'w')
 
         self.data_reader = DictReader(self.in_file)
-        self.data_writer = DictWriter(self.out_file, fieldnames=['personId', 'id'])
+        self.data_writer = DictWriter(self.out_file, fieldnames=['id', 'person_id'])
 
         self.last_person = None
 
@@ -53,10 +53,7 @@ class CourtDataProcessor:
             gender_field, name_field, self.in_filepath
         )
 
-        psql_cmd = [
-            'psql',
-            '-c', copy_cmd
-        ]
+        psql_cmd = ['psql', '-c', copy_cmd]
         print self.in_filepath, subprocess.check_output(psql_cmd)
 
     def upload_data(self):
@@ -64,9 +61,24 @@ class CourtDataProcessor:
         self.out_file.close()
 
         # psql create temp table
+        temp_table = 'temp_{}_{}'.format(self.court_type, self.dob_start.replace('-', ''))
+        cmd = 'CREATE TABLE {} (id bigint, person_id bigint);'.format(temp_table)
+        print subprocess.check_output(['psql', '-c', cmd])
+
         # psql copy outfile to table
+        cmd = '\\COPY {} FROM {} CSV;'.format(temp_table, self.out_filepath)
+        print subprocess.check_output(['psql', '-c', cmd])
+
         # psql update primary table with temp table data
+        cmd = 'UPDATE "{0}" SET person_id = {1}.person_id FROM {1} WHERE "{0}".id = {1}.id'.format(
+            'DistrictCriminalCase' if self.court_type == 'district' else 'CircuitCriminalCase',
+            temp_table
+        )
+        print subprocess.check_output(['psql', '-c', cmd])
+
         # psql drop temp table
+        cmd = 'DROP TABLE {};'.format(temp_table)
+        print subprocess.check_output(['psql', '-c', cmd])
 
         os.remove(self.in_filepath)
         os.remove(self.out_filepath)
@@ -106,15 +118,15 @@ class CourtDataProcessor:
 
     def write_people(self, combined_people):
         people = [
-            {'id': person['id'], 'personId': person['personId']}
+            {'id': person['id'], 'person_id': person['personId']}
             for person in combined_people
             if person['courtType'] == self.court_type
         ]
         self.data_writer.writerows(people)
 
 def process_data(dates):
-    district_data_processor = CourtDataProcessor('district', dates[0], dates[1])
-    circuit_data_processor = CourtDataProcessor('circuit', dates[0], dates[1])
+    district_data_processor = CourtDataProcessor('district', dates[0], dates[-1])
+    circuit_data_processor = CourtDataProcessor('circuit', dates[0], dates[-1])
 
     for gender in GENDERS:
         for dob in dates:
