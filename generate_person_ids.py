@@ -6,6 +6,8 @@ from datetime import datetime, date, timedelta
 from fuzzywuzzy import fuzz
 
 def run():
+    prepare_database()
+
     for i in range(1, 13):
         days = monthrange(1904, i)
         dates = [
@@ -17,20 +19,23 @@ def run():
 GENDERS = ['Female', 'Male']
 LETTERS = [chr(c) for c in xrange(ord('A'), ord('Z')+1)]
 
+def prepare_database():
+    cmd = 'DROP TABLE IF EXISTS person_ids;'
+    print subprocess.check_output(['psql', '-c', cmd])
+
+    cmd = 'CREATE TABLE person_ids (person_id bigint, circuit_id bigint, district_id bigint);'
+    print subprocess.check_output(['psql', '-c', cmd])
+
 class CourtDataProcessor:
     def __init__(self, court_type, dob_start, dob_end):
         self.court_type = court_type
         self.dob_start = dob_start
         self.in_filepath = '{}_{}_{}.csv'.format(dob_start, dob_end, court_type)
-        self.out_filepath = 'out_' + self.in_filepath
 
         self.download_data(dob_start, dob_end)
 
         self.in_file = open(self.in_filepath)
-        self.out_file = open(self.out_filepath, 'w')
-
         self.data_reader = DictReader(self.in_file)
-        self.data_writer = DictWriter(self.out_file, fieldnames=['id', 'person_id'])
 
         self.last_person = None
 
@@ -56,32 +61,9 @@ class CourtDataProcessor:
         psql_cmd = ['psql', '-c', copy_cmd]
         print self.in_filepath, subprocess.check_output(psql_cmd)
 
-    def upload_data(self):
+    def close(self):
         self.in_file.close()
-        self.out_file.close()
-
-        # psql create temp table
-        temp_table = 'temp_{}_{}'.format(self.court_type, self.dob_start.replace('-', ''))
-        cmd = 'CREATE TABLE {} (id bigint, person_id bigint);'.format(temp_table)
-        print subprocess.check_output(['psql', '-c', cmd])
-
-        # psql copy outfile to table
-        cmd = '\\COPY {} FROM {} CSV;'.format(temp_table, self.out_filepath)
-        print subprocess.check_output(['psql', '-c', cmd])
-
-        # psql update primary table with temp table data
-        cmd = 'UPDATE "{0}" SET person_id = {1}.person_id FROM {1} WHERE "{0}".id = {1}.id'.format(
-            'DistrictCriminalCase' if self.court_type == 'district' else 'CircuitCriminalCase',
-            temp_table
-        )
-        print subprocess.check_output(['psql', '-c', cmd])
-
-        # psql drop temp table
-        cmd = 'DROP TABLE {};'.format(temp_table)
-        print subprocess.check_output(['psql', '-c', cmd])
-
         os.remove(self.in_filepath)
-        os.remove(self.out_filepath)
 
     def next_people(self, gender_group, dob_group, letter_group):
         people = []
@@ -116,17 +98,37 @@ class CourtDataProcessor:
                 break
         return people
 
-    def write_people(self, combined_people):
-        people = [
-            {'id': person['id'], 'person_id': person['personId']}
-            for person in combined_people
-            if person['courtType'] == self.court_type
-        ]
-        self.data_writer.writerows(people)
+class CourtDataWriter:
+    def __init__(self):
+        self.out_filepath = 'person_ids.csv'
+        self.out_file = open(self.out_filepath, 'w')
+        self.data_writer = DictWriter(self.out_file, fieldnames=[
+            'person_id', 'circuit_id', 'district_id'
+        ])
+
+    def write(self, people):
+        self.data_writer.writerows([
+            {
+                'person_id': person['personId'],
+                'circuit_id': person['id'] if person['courtType'] == 'circuit' else None,
+                'district_id': person['id'] if person['courtType'] == 'district' else None
+            }
+            for person in people
+        ])
+
+    def upload(self):
+        self.out_file.close()
+
+        # psql copy outfile to table
+        cmd = '\\COPY person_ids FROM {} CSV;'.format(self.out_filepath)
+        print subprocess.check_output(['psql', '-c', cmd])
+
+        os.remove(self.out_filepath)
 
 def process_data(dates):
     district_data_processor = CourtDataProcessor('district', dates[0], dates[-1])
     circuit_data_processor = CourtDataProcessor('circuit', dates[0], dates[-1])
+    data_writer = CourtDataWriter()
 
     for gender in GENDERS:
         for dob in dates:
@@ -137,11 +139,11 @@ def process_data(dates):
                 if len(people) > 0:
                     #print gender, dob, letter, '|', people[0]['name'], '|', people[-1]['name']
                     match_people(gender, dob, letter, people)
-                    district_data_processor.write_people(people)
-                    circuit_data_processor.write_people(people)
+                    data_writer.write(people)
 
-    district_data_processor.upload_data()
-    circuit_data_processor.upload_data()
+    district_data_processor.close()
+    circuit_data_processor.close()
+    data_writer.upload()
 
 def match_people(gender, dob, letter, people):
     person_id = get_starting_person_id(dob, letter, gender)
