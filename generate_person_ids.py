@@ -136,6 +136,7 @@ def process_data(dates):
                 people = []
                 people.extend(district_data_processor.next_people(gender, dob, letter))
                 people.extend(circuit_data_processor.next_people(gender, dob, letter))
+                people.sort(key=lambda p: p['name'])
                 if len(people) > 0:
                     #print gender, dob, letter, '|', people[0]['name'], '|', people[-1]['name']
                     match_people(gender, dob, letter, people)
