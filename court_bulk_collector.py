@@ -2,7 +2,6 @@ from courtreader import readers
 from courtutils.logger import get_logger
 from datetime import datetime, timedelta
 from time import sleep
-import pymongo
 import os
 import sys
 import time
@@ -11,8 +10,11 @@ import traceback
 MONGO = False
 POSTGRES = True
 
-if MONGO: from courtutils.databases.mongo import MongoDatabase
-if POSTGRES: from courtutils.databases.postgres import PostgresDatabase
+if MONGO:
+    import pymongo
+    from courtutils.databases.mongo import MongoDatabase
+if POSTGRES:
+    from courtutils.databases.postgres import PostgresDatabase
 
 # configure logging
 log = get_logger()

@@ -2,7 +2,6 @@ from courtreader import readers
 from courtutils.logger import get_logger
 from datetime import datetime, timedelta
 import csv
-import pymongo
 import os
 import sys
 import time
@@ -10,8 +9,11 @@ import time
 MONGO = False
 POSTGRES = True
 
-if MONGO: from courtutils.databases.mongo import MongoDatabase
-if POSTGRES: from courtutils.databases.postgres import PostgresDatabase
+if MONGO:
+    import pymongo
+    from courtutils.databases.mongo import MongoDatabase
+if POSTGRES:
+    from courtutils.databases.postgres import PostgresDatabase
 
 # get command line args
 start_date = datetime.strptime(sys.argv[1], '%m/%d/%Y')
