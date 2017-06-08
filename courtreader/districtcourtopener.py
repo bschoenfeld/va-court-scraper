@@ -44,13 +44,18 @@ class DistrictCourtOpener:
 
     def solve_captcha(self, url):
         self.open_driver()
-        self.driver.get('https://google.com')
+        self.driver.get(url)
+        time.sleep(1)
+        current_url = self.driver.current_url
+        print current_url
 
+        while current_url == self.driver.current_url:
+            time.sleep(1)
+
+        '''
         log.info('Solving CAPTCHA')
         captcha_solver = deathbycaptcha.SocketClient(os.environ['DBC_USER'], \
                                                      os.environ['DBC_PASSWORD'])
-        self.driver.get(url)
-        time.sleep(3)
         self.driver.get(url)
         captcha = self.driver.find_element_by_id('recaptcha_challenge_image')
         image_src = captcha.get_attribute('src')
@@ -72,6 +77,7 @@ class DistrictCourtOpener:
         time.sleep(1)
         self.driver.find_element_by_name('captchaVerificationForm') \
               .submit()
+        '''
         cookie = self.driver.get_cookie('JSESSIONID')['value']
         self.opener.set_cookie('JSESSIONID', cookie)
         self.opener.save_cookies()

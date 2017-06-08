@@ -1,15 +1,17 @@
 import os
-import pymongo
-from geopy.geocoders import GoogleV3
+#from geopy.geocoders import GoogleV3
 from courtreader import readers
 
 MONGO = False
 POSTGRES = True
 
-if MONGO: from courtutils.databases.mongo import MongoDatabase
-if POSTGRES: from courtutils.databases.postgres import PostgresDatabase
+if MONGO:
+    import pymongo
+    from courtutils.databases.mongo import MongoDatabase
+if POSTGRES:
+    from courtutils.databases.postgres import PostgresDatabase
 
-geolocator = GoogleV3(api_key=os.environ['GOOGLE_API_KEY'])
+#geolocator = GoogleV3(api_key=os.environ['GOOGLE_API_KEY'])
 
 print 'CIRCUIT COURT'
 circuit_db = None
@@ -22,8 +24,8 @@ court_names = []
 for fips, court in courts.iteritems():
     print court['name']
     court_locality = court['name'].replace(' Circuit Court', '')
-    location = geolocator.geocode(court_locality + ', Virginia, USA')
-    circuit_db.add_court(court['name'], fips, location)
+    #location = geolocator.geocode(court_locality + ', Virginia, USA')
+    circuit_db.add_court(court['name'], fips, None)
     court_names.append(court['name'] + ' ' + fips)
 circuit_db.add_court_location_index()
 circuit_db.commit()
@@ -49,8 +51,8 @@ for fips, court in courts.iteritems():
                           .replace('-Criminal', '') \
                           .replace('-Civil', '') \
                           .replace('-Traffic', '')
-    location = geolocator.geocode(court_locality + ', Virginia, USA')
-    district_db.add_court(court, fips, location)
+    #location = geolocator.geocode(court_locality + ', Virginia, USA')
+    district_db.add_court(court, fips, None)
     court_names.append(court + ' ' + fips)
 district_db.add_court_location_index()
 district_db.commit()

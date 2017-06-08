@@ -663,12 +663,13 @@ class PostgresDatabase():
         self.session.commit()
 
     def add_court(self, name, fips, location):
-        self.session.add( \
-            self.court_builder( \
-                name=name, \
-                fips=int(fips), \
-                location='POINT({} {})'.format( \
-                    location.longitude, location.latitude)))
+        longitude = 0 if location is None else location.longitude
+        latitude = 0 if location is None else location.latitude
+        self.session.add(
+            self.court_builder(
+                name=name,
+                fips=int(fips),
+                location='POINT({} {})'.format(longitude, latitude)))
 
     def add_court_location_index(self):
         pass
