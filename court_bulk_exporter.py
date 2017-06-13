@@ -43,19 +43,31 @@ def get_party_temp_file(temp_filepath, party):
 def export_people():
     metadata = []
     start_day = 1
-    while start_day < 366:
-        end_day = start_day + 31
+    while start_day < 367:
+        end_day = start_day + 10
 
         # Create filepaths
-        filepath = 'people_{}'.format(start_day)
+        filepath = 'people_{}'.format(str(start_day).zfill(3))
         temp_filepath = filepath + '_temp.csv'
 
         # Download data from postgres into a temp file
-        download_data_by_person(
-            start_day * pow(10, 12),
-            end_day * pow(10, 12),
-            temp_filepath
-        )
+        temp_files = []
+        for i in range(0, 3):
+            temp_files.append(filepath + '_temp_' + str(i) + '.csv')
+            download_data_by_person(
+                (start_day + 10 * i) * pow(10, 12),
+                (end_day + 10 * i) * pow(10, 12),
+                temp_files[-1],
+                i == 0
+            )
+        with open(temp_filepath, 'w') as outfile:
+            for temp_file in temp_files:
+                with open(temp_file) as infile:
+                    for line in infile:
+                        outfile.write(line)
+        for temp_file in temp_files:
+            os.remove(temp_file)
+        end_day = start_day + 30
 
         # Create partitioned data files, on of which is anonymized
         metadata.append(create_data_files(filepath, temp_filepath, None, 'criminal'))
@@ -107,7 +119,7 @@ def export_table(table, court_type, case_type):
             break
     return metadata
 
-def download_data_by_person(start_id, end_id, outfile_path):
+def download_data_by_person(start_id, end_id, outfile_path, with_header):
     query = """
 SELECT 
     p.person_id,
@@ -174,7 +186,8 @@ ORDER BY p.person_id
 """.format(start_id, end_id)
     query = query.replace('\n', ' ')
     query = ' '.join(query.split())
-    copy_cmd = '\\copy ({}) To \'{}\' With CSV HEADER;'.format(query, outfile_path)
+    copy_cmd = '\\copy ({}) To \'{}\' With CSV{};'.format(
+        query, outfile_path, ' HEADER' if with_header else '')
     psql_cmd = [
         'psql',
         '-c', copy_cmd
@@ -403,6 +416,15 @@ def export_all():
         'anon': {}
     }
 
+    key = 'person'
+    metadata['complete'][key] = []
+    metadata['anon'][key] = []
+
+    cur_metadata = export_people()
+    for data in cur_metadata:
+        copy_person_metadata(data, metadata['complete'][key], 'complete')
+        copy_person_metadata(data, metadata['anon'][key], 'anon')
+
     for court_type in court_types:
         for case_type in case_types:
             key = '{}-{}'.format(court_type.lower(), case_type.lower())
@@ -416,15 +438,6 @@ def export_all():
             for data in cur_metadata:
                 copy_metadata(data, metadata['complete'][key], 'complete')
                 copy_metadata(data, metadata['anon'][key], 'anon')
-
-    key = 'person'
-    metadata['complete'][key] = []
-    metadata['anon'][key] = []
-
-    cur_metadata = export_people()
-    for data in cur_metadata:
-        copy_person_metadata(data, metadata['complete'][key], 'complete')
-        copy_person_metadata(data, metadata['anon'][key], 'anon')
 
     print metadata
     upload_metadata(metadata)
