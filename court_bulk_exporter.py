@@ -15,7 +15,8 @@ from courtutils.databases.postgres import PostgresDatabase
 # PGHOST, PGDATABASE, PGUSER, PGPASSWORD
 
 REMOVE_FIELDS = [
-    'collected', 'id', 'case_id', 'details_fetched_for_hearing_date', 'Duration'
+    'collected', 'id', 'case_id', 'details_fetched_for_hearing_date',
+    'Duration', 'district_id', 'circuit_id'
 ]
 ANON_FIELDS = [
     'CaseNumber', 'Name', 'Defendant', 'AKA', 'DOB', 'AKA1', 'AKA2',
@@ -39,6 +40,40 @@ PARTIES = [
 def get_party_temp_file(temp_filepath, party):
     return temp_filepath.replace('_temp.csv', '_{}_temp.csv'.format(party.lower()))
 
+def export_people():
+    metadata = []
+    start_day = 1
+    while start_day < 366:
+        end_day = start_day + 31
+
+        # Create filepaths
+        filepath = 'people_{}'.format(start_day)
+        temp_filepath = filepath + '_temp.csv'
+
+        # Download data from postgres into a temp file
+        download_data_by_person(
+            start_day * pow(10, 12),
+            end_day * pow(10, 12),
+            temp_filepath
+        )
+
+        # Create partitioned data files, on of which is anonymized
+        metadata.append(create_data_files(filepath, temp_filepath, None, 'criminal'))
+        metadata[-1]['startDay'] = start_day
+
+        # Zip data files
+        data_zip_path = zip_data_files(filepath + '_complete', metadata[-1]['complete'])
+        anon_data_zip_path = zip_data_files(filepath + '_anon', metadata[-1]['anon'])
+
+        # Upload zip files
+        delete_old_zip_files(filepath)
+        upload_zip_file(data_zip_path)
+        upload_zip_file(anon_data_zip_path)
+
+        start_day = end_day
+
+    return metadata
+
 def export_table(table, court_type, case_type):
     db = PostgresDatabase(court_type)
     year = datetime.datetime.now().year
@@ -54,7 +89,7 @@ def export_table(table, court_type, case_type):
             temp_filepath = filepath + '_temp.csv'
 
             # Download data from postgres into a temp file
-            download_data(table, year, temp_filepath, case_type)
+            download_data_by_year(table, year, temp_filepath, case_type)
 
             # Create partitioned data files, on of which is anonymized
             metadata.append(create_data_files(filepath, temp_filepath, court_type, case_type))
@@ -72,7 +107,81 @@ def export_table(table, court_type, case_type):
             break
     return metadata
 
-def download_data(table, year, outfile_path, case_type):
+def download_data_by_person(start_id, end_id, outfile_path):
+    query = """
+SELECT 
+    p.person_id,
+    p.district_id,
+    p.circuit_id,
+    COALESCE(d.fips, c.fips) as fips,
+    COALESCE(d."CaseNumber", c."CaseNumber") as "CaseNumber",
+    COALESCE(d."FiledDate", c."Filed") as "FiledDate",
+    c."Commencedby",
+    COALESCE(d."Locality", c."Locality") as "Locality",
+    COALESCE(d."Name", c."Defendant") as "Name",
+    COALESCE(d."Status", c."ConcludedBy") as "Status",
+    d."DefenseAttorney",
+    COALESCE(d."Address", c."Address") as "Address",
+    COALESCE(d."AKA1", c."AKA") as "AKA",
+    COALESCE(d."AKA2", c."AKA2") as "AKA2",
+    COALESCE(d."Gender", c."Sex") as "Gender",
+    COALESCE(d."Race", c."Race") as "Race",
+    COALESCE(d."DOB", c."DOB") as "DOB",
+    COALESCE(d."Charge", c."Charge") as "Charge",
+    COALESCE(d."CodeSection", c."CodeSection") as "CodeSection",
+    COALESCE(d."CaseType", c."ChargeType") as "CaseType",
+    COALESCE(d."Class", c."Class") as "Class",
+    COALESCE(d."OffenseDate", c."OffenseDate") as "OffenseDate",
+    COALESCE(d."ArrestDate", c."ArrestDate") as "ArrestDate",
+    d."Complainant",
+    COALESCE(d."AmendedCharge", c."AmendedCharge") as "AmendedCharge",
+    COALESCE(d."AmendedCode", c."AmendedCodeSection") as "AmendedCodeSection",
+    COALESCE(d."AmendedCaseType", c."AmendedChargeType") as "AmendedCaseType",
+    COALESCE(d."FinalDisposition", c."DispositionCode") as "FinalDisposition",
+    c."DispositionDate",
+    c."JailPenitentiary",
+    c."ConcurrentConsecutive",
+    c."LifeDeath",
+    COALESCE(d."SentenceTime", c."SentenceTime") as "SentenceTime",
+    COALESCE(d."SentenceSuspendedTime", c."SentenceSuspended") as "SentenceSuspendedTime",
+    COALESCE(d."ProbationType", c."ProbationType") as "ProbationType",
+    COALESCE(d."ProbationTime", c."ProbationTime") as "ProbationTime",
+    COALESCE(d."ProbationStarts", c."ProbationStarts") as "ProbationStarts",
+    COALESCE(d."OperatorLicenseSuspensionTime", c."OperatorLicenseSuspensionTime") as "OperatorLicenseSuspensionTime",
+    COALESCE(d."RestrictionEffectiveDate", c."RestrictionEffectiveDate") as "RestrictionEffectiveDate",
+    COALESCE(d."RestrictionEndDate", c."RestrictionEndDate") as "RestrictionEndDate",
+    d."OperatorLicenseRestrictionCodes",
+    c."DrivingRestrictions",
+    COALESCE(d."Fine", c."FineAmount") as "Fine",
+    COALESCE(d."Costs", c."Costs") as "Costs",
+    d."FineCostsDue",
+    COALESCE(d."FineCostsPaid", c."FinesCostPaid") as "FineCostPaid",
+    d."FineCostsPaidDate",
+    COALESCE(d."VASAP", c."VAAlcoholSafetyAction") as "VASAP",
+    d."FineCostsPastDue",
+    c."CourtDMVSurrender",
+    c."DriverImprovementClinic",
+    c."RestitutionPaid",
+    c."RestitutionAmount",
+    c."Military",
+    c."TrafficFatality",
+    c."AppealedDate"
+FROM person_ids p
+LEFT JOIN "DistrictCriminalCase" d ON d.id=p.district_id
+LEFT JOIN "CircuitCriminalCase" c ON c.id=p.circuit_id
+WHERE p.person_id >= {} and p.person_id < {}
+ORDER BY p.person_id
+""".format(start_id, end_id)
+    query = query.replace('\n', ' ')
+    query = ' '.join(query.split())
+    copy_cmd = '\\copy ({}) To \'{}\' With CSV HEADER;'.format(query, outfile_path)
+    psql_cmd = [
+        'psql',
+        '-c', copy_cmd
+    ]
+    print start_id, subprocess.check_output(psql_cmd)
+
+def download_data_by_year(table, year, outfile_path, case_type):
     if case_type == 'civil':
         copy_cmd = '\\copy (Select * From "{}" '.format(table)
         copy_cmd += 'where {0} >= \'{1}\' and {0} < \'{2}\' '.format(
@@ -81,11 +190,15 @@ def download_data(table, year, outfile_path, case_type):
         copy_cmd += 'order by id) To \'{}\' With CSV HEADER;'.format(outfile_path)
     else:
         hearing_table = table.replace('Case', 'Hearing')
+        person_id_field = 'circuit_id' if 'Circuit' in table else 'district_id'
         copy_cmd = '\\copy (SELECT DISTINCT on(case_id) * From "{}" '.format(
             hearing_table
         )
         copy_cmd += 'INNER JOIN "{0}" ON "{1}".case_id = "{0}".id '.format(
             table, hearing_table
+        )
+        copy_cmd += 'INNER JOIN person_ids ON "{0}".id = person_ids.{1} '.format(
+            table, person_id_field
         )
         copy_cmd += 'WHERE "{0}".{1} >= \'{2}\' and "{0}".{1} < \'{3}\' '.format(
             table, 'details_fetched_for_hearing_date', '1/1/' + str(year), '1/1/' + str(year+1)
@@ -303,12 +416,32 @@ def export_all():
             for data in cur_metadata:
                 copy_metadata(data, metadata['complete'][key], 'complete')
                 copy_metadata(data, metadata['anon'][key], 'anon')
+
+    key = 'person'
+    metadata['complete'][key] = []
+    metadata['anon'][key] = []
+
+    cur_metadata = export_people()
+    for data in cur_metadata:
+        copy_person_metadata(data, metadata['complete'][key], 'complete')
+        copy_person_metadata(data, metadata['anon'][key], 'anon')
+
     print metadata
     upload_metadata(metadata)
 
 def copy_metadata(source, dest, metadata_type):
     dest.append({
         'year': source['year'],
+        'cases': source['cases'],
+        'downloadLink': 'https://s3.amazonaws.com/virginia-court-data/{}'.format(
+            source[metadata_type]['filepath']),
+        'filesize': source[metadata_type]['filesize'],
+        'filesizeUncompressed': source[metadata_type]['filesizeUncompressed']
+    })
+
+def copy_person_metadata(source, dest, metadata_type):
+    dest.append({
+        'day': source['startDay'],
         'cases': source['cases'],
         'downloadLink': 'https://s3.amazonaws.com/virginia-court-data/{}'.format(
             source[metadata_type]['filepath']),
