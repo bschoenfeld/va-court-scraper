@@ -44,7 +44,7 @@ def export_people():
     metadata = []
     start_day = 1
     while start_day < 367:
-        end_day = start_day + 10
+        end_day = start_day + 5
 
         # Create filepaths
         filepath = 'people_{}'.format(str(start_day).zfill(3))
@@ -52,11 +52,11 @@ def export_people():
 
         # Download data from postgres into a temp file
         temp_files = []
-        for i in range(0, 3):
+        for i in range(0, 6):
             temp_files.append(filepath + '_temp_' + str(i) + '.csv')
             download_data_by_person(
-                (start_day + 10 * i) * pow(10, 12),
-                (end_day + 10 * i) * pow(10, 12),
+                (start_day + 5 * i) * pow(10, 12),
+                (end_day + 5 * i) * pow(10, 12),
                 temp_files[-1],
                 i == 0
             )
