@@ -58,3 +58,35 @@ Now you can create collectors. When a collector runs, it will take a task and st
         python court_bulk_collector.py district
 
 _Warning - This task system that I've created is pretty terrible and uncompleted tasks can easily be lost. I'd love to replace it with a more robust tool, but I haven't gotten around to it yet. Sorry_
+
+## How to run the export
+
+The export script exports data from Postgres to CSV files. The data are exported first by court type and year of most recent hearing, and then by person id. The script uses the psql subprocess to run the copy command to download large chunks of data to the local machine. Then the script breaks the CSVs up so that no file has more than 250,000 cases. Finally, the CSVs are zipped up and pushed to an AWS S3 bucket. Once the script has uploaded all the zip files, it generates a bunch of metadata about the files (number of cases, file size, S3 path) and pushes that metadata to a Firebase database.
+
+Start an Amazon Linux EC2 instance. SSH and run the following commands.
+
+```
+sudo yum update
+sudo yum -y install gcc gcc-c++ make
+sudo yum -y install postgresql postgresql-server postgresql-devel postgresql-contrib postgresql-docs
+sudo yum -y install git
+git clone https://github.com/bschoenfeld/va-court-scraper.git
+cd va-court-scraper
+virtualenv venv
+source venv/bin/activate
+pip install selenium mechanize beautifulsoup4 psycopg2 SQLAlchemy GeoAlchemy2 pgcli boto3 awscli python-firebase
+export FIREBASE_TOKEN=''
+export PGDATABASE=''
+export PGHOST=''
+export PGUSER=''
+export PGPASSWORD=''
+export POSTGRES_DB=''
+```
+
+Run `psql` to make sure you can connect to the instance. Type `\q` to disconnect.  
+Run `aws configure` to set up your connection to AWS. Confirm everthing is setup by running `aws s3 ls`.  
+Run the script  
+
+```
+nohup python court_bulk_exporter.py >> export.out 2>&1 &
+```
