@@ -75,12 +75,12 @@ cd va-court-scraper
 virtualenv venv
 source venv/bin/activate
 pip install selenium mechanize beautifulsoup4 psycopg2 SQLAlchemy GeoAlchemy2 pgcli boto3 awscli python-firebase
-export FIREBASE_TOKEN=''
-export PGDATABASE=''
-export PGHOST=''
-export PGUSER=''
-export PGPASSWORD=''
-export POSTGRES_DB=''
+export FIREBASE_TOKEN='<FIREBASETOKEN>'
+export PGHOST='<PGHOST>'
+export PGDATABASE='<PGDATABASE>'
+export PGUSER='<PGUSER>'
+export PGPASSWORD='<PGPASSWORD>'
+export POSTGRES_DB='<PGUSER>:<PGPASSWORD>@<PGHOST>:<PGPORT>/<PGDATABASE>'
 ```
 
 Run `psql` to make sure you can connect to the instance. Type `\q` to disconnect.  
