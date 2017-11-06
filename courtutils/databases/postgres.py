@@ -91,7 +91,7 @@ class CircuitCriminalCase(Base, Case):
     Commencedby = Column(String)
     Locality = Column(String)
 
-    person_id = Column(BigInteger)
+    #person_id = Column(BigInteger)
     Defendant = Column(String)
     AKA = Column(String)
     AKA2 = Column(String)
@@ -259,7 +259,7 @@ class DistrictCriminalCase(Base, Case):
     Hearings = relationship(prefix + 'Hearing')
     Services = relationship(prefix + 'Service')
 
-    person_id = Column(BigInteger)
+    #person_id = Column(BigInteger)
     FiledDate = Column(Date)
     Locality = Column(String)
     Name = Column(String)

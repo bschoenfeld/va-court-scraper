@@ -32,7 +32,8 @@ def get_data_from_table(case, table):
                          .replace(':', '') \
                          .replace('/', '') \
                          .replace(' ', '')
-        case[name] = strings[1].encode('ascii', 'ignore')
+        case[name] = strings[1].encode('ascii', 'ignore') \
+                               .replace('\0', '').strip()
 
 DATES = [
     'Filed',
@@ -275,7 +276,7 @@ def parse_date_search(soup, cases):
                 continue
             cases.append({
                 'case_number': case_number,
-                'defendant': defendant.strip()
+                'defendant': defendant.replace('\0', '').strip()
             })
         return previous_cases_count == len(cases)
     except:
