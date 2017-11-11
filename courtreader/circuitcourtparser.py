@@ -90,7 +90,8 @@ def get_data_from_table_with_rows(table, court_type):
                          .replace('/', '') \
                          .replace(' ', '')
             val = col.get_text(strip=True) \
-                     .encode('ascii', 'ignore')
+                     .encode('ascii', 'ignore') \
+                     .replace('\0', '').strip()
             if val == '':
                 continue
             if key in DATES:
