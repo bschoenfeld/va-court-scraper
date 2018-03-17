@@ -218,10 +218,11 @@ def get_string_from_cell(cell, is_label=False):
     if len(values) < 1:
         return ''
     value = values[0].encode('ascii', 'ignore') \
-                     .strip() \
                      .replace('\t', '') \
                      .replace('\r', '') \
-                     .replace('\n', '')
+                     .replace('\n', '') \
+                     .replace('\0', '') \
+                     .strip()
     if is_label:
         value = value.replace(':', '') \
                      .replace('/', '') \
