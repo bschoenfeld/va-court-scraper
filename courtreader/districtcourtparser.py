@@ -249,7 +249,7 @@ def parse_table_row(row, table_headers):
     data_dict = {}
     data_list = zip(
         table_headers,
-        [cell.string.strip()
+        [cell.string.replace('\0', '').strip()
          if cell.string is not None else ''
          for cell in row.find_all('td')]
     )
