@@ -63,6 +63,12 @@ _Warning - This task system that I've created is pretty terrible and uncompleted
 
 The export script exports data from Postgres to CSV files. The data are exported first by court type and year of most recent hearing, and then by person id. The script uses the psql subprocess to run the copy command to download large chunks of data to the local machine. Then the script breaks the CSVs up so that no file has more than 250,000 cases. Finally, the CSVs are zipped up and pushed to an AWS S3 bucket. Once the script has uploaded all the zip files, it generates a bunch of metadata about the files (number of cases, file size, S3 path) and pushes that metadata to a Firebase database.
 
+Be sure to connect to the database using psql and vacuum it before and after the export.
+
+```
+VACUUM (VERBOSE, ANALYZE);
+```
+
 Start an Amazon Linux EC2 instance. SSH and run the following commands.
 
 ```
