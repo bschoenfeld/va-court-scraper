@@ -1,20 +1,31 @@
 import os
 import subprocess
+import sys
+import time
 from calendar import monthrange
 from csv import DictReader, DictWriter
 from datetime import datetime, date, timedelta
 from fuzzywuzzy import fuzz
 
-def run():
-    prepare_database()
+def run(option):
+    if option is None or option == 0:
+        prepare_database()
+    if option == 0:
+        return
 
-    for i in range(1, 13):
-        days = monthrange(1904, i)
-        dates = [
-            (date(1904, i, 1) + timedelta(days=x)).strftime('%Y-%m-%d').replace('1904', '1004')
-            for x in range(0, days[1])
-        ]
-        process_data(dates)
+    if option is None:
+        for i in range(1, 13):
+            run_month(i)
+    else:
+        run_month(option)
+
+def run_month(month):
+    days = monthrange(1904, month)
+    dates = [
+        (date(1904, month, 1) + timedelta(days=x)).strftime('%Y-%m-%d').replace('1904', '1004')
+        for x in range(0, days[1])
+    ]
+    process_data(dates)
 
 GENDERS = ['Female', 'Male']
 LETTERS = [chr(c) for c in xrange(ord('A'), ord('Z')+1)]
@@ -99,12 +110,12 @@ class CourtDataProcessor:
         return people
 
 class CourtDataWriter:
-    def __init__(self):
-        self.out_filepath = 'person_ids.csv'
+    def __init__(self, dob_start, dob_end):
+        self.out_filepath = '{}_{}_person_ids.csv'.format(dob_start, dob_end)
         self.out_file = open(self.out_filepath, 'w')
         self.data_writer = DictWriter(self.out_file, fieldnames=[
             'person_id', 'circuit_id', 'district_id'
-        ])
+        ], lineterminator='\n')
 
     def write(self, people):
         self.data_writer.writerows([
@@ -128,7 +139,7 @@ class CourtDataWriter:
 def process_data(dates):
     district_data_processor = CourtDataProcessor('district', dates[0], dates[-1])
     circuit_data_processor = CourtDataProcessor('circuit', dates[0], dates[-1])
-    data_writer = CourtDataWriter()
+    data_writer = CourtDataWriter(dates[0], dates[-1])
 
     for gender in GENDERS:
         for dob in dates:
@@ -150,6 +161,9 @@ def match_people(gender, dob, letter, people):
     person_id = get_starting_person_id(dob, letter, gender)
     print dob, letter, gender, len(people), 'Cases'
 
+    for person in people:
+        person['sName'] = sanitize_name(person['name'])
+
     for i, person in enumerate(people):
         if 'personId' not in person:
             person['personId'] = person_id
@@ -162,8 +176,8 @@ def match_people(gender, dob, letter, people):
                 break
             if people[i]['name'][:2] != people[j]['name'][:2]:
                 break
-            name_a = sanitize_name(people[i]['name'])
-            name_b = sanitize_name(people[j]['name'])
+            name_a = people[i]['sName']
+            name_b = people[j]['sName']
             score = fuzz.partial_ratio(name_a, name_b)
             if score >= 90:
                 people[j]['personId'] = people[i]['personId']
@@ -207,4 +221,8 @@ def sanitize_name(name):
         name = name[:name.index('  ')]
     return name
 
-run()
+if __name__ == '__main__':
+    param = None
+    if len(sys.argv) > 1:
+        param = int(sys.argv[1])
+    run(param)
