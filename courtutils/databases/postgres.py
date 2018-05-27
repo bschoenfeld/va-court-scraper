@@ -475,51 +475,6 @@ class DistrictCivilDefendant(Base, DistrictCivilParty):
     case_id = Column(BigInteger, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
 
 
-TABLES = [
-    # Courts
-    CircuitCourt,
-    DistrictCourt,
-
-    # Tasks
-    CircuitCourtDateTask,
-    DistrictCourtDateTask,
-    CircuitCourtActiveDateTask,
-    DistrictCourtActiveDateTask,
-
-    # Searches
-    CircuitCourtDateSearch,
-    DistrictCourtDateSearch,
-
-    # Cases
-    CircuitCriminalCase,
-    CircuitCivilCase,
-    DistrictCriminalCase,
-    DistrictCivilCase,
-
-    # Hearings
-    CircuitCriminalHearing,
-    CircuitCivilHearing,
-    DistrictCriminalHearing,
-    DistrictCivilHearing,
-
-    # Pleadings
-    CircuitCriminalPleading,
-    CircuitCivilPleading,
-
-    # Services
-    CircuitCriminalService,
-    CircuitCivilService,
-    DistrictCriminalService,
-    DistrictCivilService,
-
-    # Reports and Parties
-    DistrictCivilReport,
-    DistrictCivilPlaintiff,
-    DistrictCivilDefendant,
-    CircuitCivilPlaintiff,
-    CircuitCivilDefendant
-]
-
 #
 # Database class
 #
@@ -537,8 +492,7 @@ class PostgresDatabase():
               DistrictCourtActiveDateTask.__table__.c.casetype,
               unique=True)
 
-        for table in TABLES:
-            table.__table__.create(self.engine, checkfirst=True) #pylint: disable=E1101
+        Base.metadata.create_all(self.engine)
 
         self.court_type = court_type
         if court_type == 'circuit':
