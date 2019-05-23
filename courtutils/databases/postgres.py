@@ -1,4 +1,5 @@
 import os
+import collections
 from datetime import datetime, date
 from sqlalchemy import (create_engine, Boolean, Column,
                         Date, DateTime, Integer, BigInteger,
@@ -11,6 +12,11 @@ from geoalchemy2 import Geometry
 from pprint import pprint
 
 Base = declarative_base()
+
+RelatedModelFetcher = collections.namedtuple(
+    'RelatedModelFetcher',
+    ['key', 'attribute'],
+)
 
 class Court():
     id = Column(Integer, primary_key=True)
@@ -80,9 +86,39 @@ class Case():
     collected = Column(Date)
     CaseNumber = Column(String)
 
+    related_model_fetchers = []
+
+    @classmethod
+    def create(cls, case):
+        details = case['details']
+
+        related_values = {
+            fetcher.key: details.pop(fetcher.key, [])
+            for fetcher in cls.related_model_fetchers
+        }
+
+        row = cls(**details)
+        row.fips = int(case['fips'])
+        row.details_fetched_for_hearing_date = case['details_fetched_for_hearing_date']
+        row.collected = case['collected']
+
+        for fetcher in cls.related_model_fetchers:
+            related_model = cls.__mapper__._props[fetcher.attribute].mapper.class_
+            related_rows = [related_model(**each) for each in related_values[fetcher.key]]
+            setattr(row, fetcher.attribute, related_rows)
+
+        return row
+
+
 class CircuitCriminalCase(Base, Case):
     prefix = CIRCUIT_CRIMINAL
     __tablename__ = prefix + 'Case'
+    related_model_fetchers = [
+        RelatedModelFetcher('Hearings', 'Hearings'),
+        RelatedModelFetcher('Pleadings', 'Pleadings'),
+        RelatedModelFetcher('Services', 'Services'),
+    ]
+
     Hearings = relationship(prefix + 'Hearing')
     Pleadings = relationship(prefix + 'Pleading')
     Services = relationship(prefix + 'Service')
@@ -140,43 +176,16 @@ class CircuitCriminalCase(Base, Case):
 
     AppealedDate = Column(Date)
 
-    @staticmethod
-    def create(case):
-        details = case['details']
-        hearings = []
-        pleadings = []
-        services = []
-
-        if 'Hearings' in details:
-            hearings = details['Hearings']
-            del details['Hearings']
-        if 'Pleadings' in details:
-            pleadings = details['Pleadings']
-            del details['Pleadings']
-        if 'Services' in details:
-            services = details['Services']
-            del details['Services']
-
-        db_case = CircuitCriminalCase(**details)
-        db_case.fips = int(case['fips'])
-        db_case.details_fetched_for_hearing_date = case['details_fetched_for_hearing_date']
-        db_case.collected = case['collected']
-
-        db_case.Hearings = [
-            CircuitCriminalHearing(**hearing)
-            for hearing in hearings
-        ]
-        db_case.Pleadings = [
-            CircuitCriminalPleading(**pleading)
-            for pleading in pleadings
-        ]
-        db_case.Services = [
-            CircuitCriminalService(**service)
-            for service in services
-        ]
-        return db_case
 
 class CircuitCivilCase(Base, Case):
+    related_model_fetchers = [
+        RelatedModelFetcher('Hearings', 'Hearings'),
+        RelatedModelFetcher('Pleadings', 'Pleadings'),
+        RelatedModelFetcher('Services', 'Services'),
+        RelatedModelFetcher('Plaintiffs', 'Plaintiffs'),
+        RelatedModelFetcher('Defendants', 'Defendants'),
+    ]
+
     prefix = CIRCUIT_CIVIL
     __tablename__ = prefix + 'Case'
     Hearings = relationship(prefix + 'Hearing')
@@ -201,61 +210,15 @@ class CircuitCivilCase(Base, Case):
     AppealedDate = Column(Date)
     ConcludedBy = Column(String)
 
-    @staticmethod
-    def create(case):
-        details = case['details']
-        hearings = []
-        pleadings = []
-        services = []
-        plaintiffs = []
-        defendants = []
-
-        if 'Hearings' in details:
-            hearings = details['Hearings']
-            del details['Hearings']
-        if 'Pleadings' in details:
-            pleadings = details['Pleadings']
-            del details['Pleadings']
-        if 'Services' in details:
-            services = details['Services']
-            del details['Services']
-        if 'Plaintiffs' in details:
-            plaintiffs = details['Plaintiffs']
-            del details['Plaintiffs']
-        if 'Defendants' in details:
-            defendants = details['Defendants']
-            del details['Defendants']
-
-        db_case = CircuitCivilCase(**details)
-        db_case.fips = int(case['fips'])
-        db_case.details_fetched_for_hearing_date = case['details_fetched_for_hearing_date']
-        db_case.collected = case['collected']
-
-        db_case.Hearings = [
-            CircuitCivilHearing(**hearing)
-            for hearing in hearings
-        ]
-        db_case.Pleadings = [
-            CircuitCivilPleading(**pleading)
-            for pleading in pleadings
-        ]
-        db_case.Services = [
-            CircuitCivilService(**service)
-            for service in services
-        ]
-        db_case.Plaintiffs = [
-            CircuitCivilPlaintiff(**plaintiff)
-            for plaintiff in plaintiffs
-        ]
-        db_case.Defendants = [
-            CircuitCivilDefendant(**defendant)
-            for defendant in defendants
-        ]
-        return db_case
 
 class DistrictCriminalCase(Base, Case):
     prefix = DISTRICT_CRIMINAL
     __tablename__ = prefix + 'Case'
+    related_model_fetchers = [
+        RelatedModelFetcher('Hearings', 'Hearings'),
+        RelatedModelFetcher('Services', 'Services'),
+    ]
+
     Hearings = relationship(prefix + 'Hearing')
     Services = relationship(prefix + 'Service')
 
@@ -301,37 +264,18 @@ class DistrictCriminalCase(Base, Case):
     FineCostsPaidDate = Column(Date)
     VASAP = Column(Boolean)
 
-    @staticmethod
-    def create(case):
-        details = case['details']
-        hearings = []
-        services = []
-
-        if 'Hearings' in details:
-            hearings = details['Hearings']
-            del details['Hearings']
-        if 'Services' in details:
-            services = details['Services']
-            del details['Services']
-
-        db_case = DistrictCriminalCase(**details)
-        db_case.fips = int(case['fips'])
-        db_case.details_fetched_for_hearing_date = case['details_fetched_for_hearing_date']
-        db_case.collected = case['collected']
-
-        db_case.Hearings = [
-            DistrictCriminalHearing(**hearing)
-            for hearing in hearings
-        ]
-        db_case.Services = [
-            DistrictCriminalService(**service)
-            for service in services
-        ]
-        return db_case
 
 class DistrictCivilCase(Base, Case):
     prefix = DISTRICT_CIVIL
     __tablename__ = prefix + 'Case'
+    related_model_fetchers = [
+        RelatedModelFetcher('Hearings', 'Hearings'),
+        RelatedModelFetcher('Services', 'Services'),
+        RelatedModelFetcher('Reports', 'Reports'),
+        RelatedModelFetcher('Plaintiffs', 'Plaintiffs'),
+        RelatedModelFetcher('Defendants', 'Defendants'),
+    ]
+
     Hearings = relationship(prefix + 'Hearing')
     Services = relationship(prefix + 'Service')
     Reports = relationship(prefix + 'Report')
@@ -365,57 +309,6 @@ class DistrictCivilCase(Base, Case):
     AppealDate = Column(Date)
     AppealedBy = Column(String)
 
-    @staticmethod
-    def create(case):
-        details = case['details']
-        hearings = []
-        services = []
-        reports = []
-        plaintiffs = []
-        defendants = []
-
-        if 'Hearings' in details:
-            hearings = details['Hearings']
-            del details['Hearings']
-        if 'Services' in details:
-            services = details['Services']
-            del details['Services']
-        if 'Reports' in details:
-            reports = details['Reports']
-            del details['Reports']
-        if 'Plaintiffs' in details:
-            plaintiffs = details['Plaintiffs']
-            del details['Plaintiffs']
-        if 'Defendants' in details:
-            defendants = details['Defendants']
-            del details['Defendants']
-
-        db_case = DistrictCivilCase(**details)
-        db_case.fips = int(case['fips'])
-        db_case.details_fetched_for_hearing_date = case['details_fetched_for_hearing_date']
-        db_case.collected = case['collected']
-
-        db_case.Hearings = [
-            DistrictCivilHearing(**hearing)
-            for hearing in hearings
-        ]
-        db_case.Services = [
-            DistrictCivilService(**service)
-            for service in services
-        ]
-        db_case.Reports = [
-            DistrictCivilReport(**report)
-            for report in reports
-        ]
-        db_case.Plaintiffs = [
-            DistrictCivilPlaintiff(**plaintiff)
-            for plaintiff in plaintiffs
-        ]
-        db_case.Defendants = [
-            DistrictCivilDefendant(**defendant)
-            for defendant in defendants
-        ]
-        return db_case
 
 #
 # Hearing Tables
@@ -582,51 +475,6 @@ class DistrictCivilDefendant(Base, DistrictCivilParty):
     case_id = Column(BigInteger, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
 
 
-TABLES = [
-    # Courts
-    CircuitCourt,
-    DistrictCourt,
-
-    # Tasks
-    CircuitCourtDateTask,
-    DistrictCourtDateTask,
-    CircuitCourtActiveDateTask,
-    DistrictCourtActiveDateTask,
-
-    # Searches
-    CircuitCourtDateSearch,
-    DistrictCourtDateSearch,
-
-    # Cases
-    CircuitCriminalCase,
-    CircuitCivilCase,
-    DistrictCriminalCase,
-    DistrictCivilCase,
-
-    # Hearings
-    CircuitCriminalHearing,
-    CircuitCivilHearing,
-    DistrictCriminalHearing,
-    DistrictCivilHearing,
-
-    # Pleadings
-    CircuitCriminalPleading,
-    CircuitCivilPleading,
-
-    # Services
-    CircuitCriminalService,
-    CircuitCivilService,
-    DistrictCriminalService,
-    DistrictCivilService,
-
-    # Reports and Parties
-    DistrictCivilReport,
-    DistrictCivilPlaintiff,
-    DistrictCivilDefendant,
-    CircuitCivilPlaintiff,
-    CircuitCivilDefendant
-]
-
 #
 # Database class
 #
@@ -644,8 +492,7 @@ class PostgresDatabase():
               DistrictCourtActiveDateTask.__table__.c.casetype,
               unique=True)
 
-        for table in TABLES:
-            table.__table__.create(self.engine, checkfirst=True) #pylint: disable=E1101
+        Base.metadata.create_all(self.engine)
 
         self.court_type = court_type
         if court_type == 'circuit':
