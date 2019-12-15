@@ -160,6 +160,7 @@ def process_data(dates):
 def match_people(gender, dob, letter, people):
     person_id = get_starting_person_id(dob, letter, gender)
     print dob, letter, gender, len(people), 'Cases'
+    sys.stdout.flush()
 
     for person in people:
         person['sName'] = sanitize_name(person['name'])
