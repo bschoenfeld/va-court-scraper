@@ -5,6 +5,7 @@ import os
 import random
 import string
 import subprocess
+import sys
 import zipfile
 
 import boto3
@@ -120,57 +121,120 @@ def export_table(table, court_type, case_type):
     return metadata
 
 def download_data_by_person(start_id, end_id, outfile_path, with_header):
+    print 'Download data by person', start_id, end_id, outfile_path
+    sys.stdout.flush()
     query = """
-SELECT 
-    p.person_id,
+select
+	p.person_id,
     p.district_id,
     p.circuit_id,
-    COALESCE(d.fips, c.fips) as fips,
-    COALESCE(d."CaseNumber", c."CaseNumber") as "CaseNumber",
-    COALESCE(d."FiledDate", c."Filed") as "FiledDate",
-    c."Commencedby",
-    COALESCE(d."Locality", c."Locality") as "Locality",
-    COALESCE(d."Name", c."Defendant") as "Name",
-    COALESCE(d."Status", c."ConcludedBy") as "Status",
+    d.fips,
+    d."CaseNumber",
+    d."FiledDate",
+    null as "Commencedby",
+    d."Locality",
+    d."Name",
+    d."Status",
     d."DefenseAttorney",
-    COALESCE(d."Address", c."Address") as "Address",
-    COALESCE(d."AKA1", c."AKA") as "AKA",
-    COALESCE(d."AKA2", c."AKA2") as "AKA2",
-    COALESCE(d."Gender", c."Sex") as "Gender",
-    COALESCE(d."Race", c."Race") as "Race",
-    COALESCE(d."DOB", c."DOB") as "DOB",
-    COALESCE(d."Charge", c."Charge") as "Charge",
-    COALESCE(d."CodeSection", c."CodeSection") as "CodeSection",
-    COALESCE(d."CaseType", c."ChargeType") as "CaseType",
-    COALESCE(d."Class", c."Class") as "Class",
-    COALESCE(d."OffenseDate", c."OffenseDate") as "OffenseDate",
-    COALESCE(d."ArrestDate", c."ArrestDate") as "ArrestDate",
+    d."Address",
+    d."AKA1" as "AKA",
+    d."AKA2",
+    d."Gender",
+    d."Race",
+    d."DOB",
+    d."Charge",
+    d."CodeSection",
+    d."CaseType",
+    d."Class",
+    d."OffenseDate",
+    d."ArrestDate",
     d."Complainant",
-    COALESCE(d."AmendedCharge", c."AmendedCharge") as "AmendedCharge",
-    COALESCE(d."AmendedCode", c."AmendedCodeSection") as "AmendedCodeSection",
-    COALESCE(d."AmendedCaseType", c."AmendedChargeType") as "AmendedCaseType",
-    COALESCE(d."FinalDisposition", c."DispositionCode") as "FinalDisposition",
+    d."AmendedCharge",
+    d."AmendedCode" as "AmendedCodeSection",
+    d."AmendedCaseType",
+    d."FinalDisposition",
+    null as "DispositionDate",
+    null as "JailPenitentiary",
+    null as "ConcurrentConsecutive",
+    null as "LifeDeath",
+    d."SentenceTime", 
+    d."SentenceSuspendedTime",
+    d."ProbationType",
+    d."ProbationTime",
+    d."ProbationStarts",
+    d."OperatorLicenseSuspensionTime",
+    d."RestrictionEffectiveDate",
+    d."RestrictionEndDate",
+    d."OperatorLicenseRestrictionCodes",
+    null as "DrivingRestrictions",
+    d."Fine",
+    d."Costs",
+    d."FineCostsDue",
+    d."FineCostsPaid", 
+    d."FineCostsPaidDate",
+    d."VASAP",
+    d."FineCostsPastDue",
+    null as "CourtDMVSurrender",
+    null as "DriverImprovementClinic",
+    null as "RestitutionPaid",
+    null as "RestitutionAmount",
+    null as "Military",
+    null as "TrafficFatality",
+    null as "AppealedDate"
+from "DistrictCriminalCase" d
+join person_ids p on p.district_id = d.id
+WHERE p.person_id >= {} and p.person_id < {}
+union
+select 
+   p.person_id,
+    p.district_id,
+    p.circuit_id,
+    c.fips,
+    c."CaseNumber",
+    c."Filed" as "FiledDate",
+    c."Commencedby",
+    c."Locality",
+    c."Defendant" as "Name",
+    c."ConcludedBy" as "Status",
+    null as "DefenseAttorney",
+    c."Address" as "Address",
+    c."AKA" as "AKA",
+    c."AKA2" as "AKA2",
+    c."Sex" as "Gender",
+    c."Race" as "Race",
+    c."DOB" as "DOB",
+    c."Charge" as "Charge",
+    c."CodeSection" as "CodeSection",
+    c."ChargeType" as "CaseType",
+    c."Class" as "Class",
+    c."OffenseDate" as "OffenseDate",
+    c."ArrestDate" as "ArrestDate",
+    null as "Complainant",
+    c."AmendedCharge" as "AmendedCharge",
+    c."AmendedCodeSection" as "AmendedCodeSection",
+    c."AmendedChargeType" as "AmendedCaseType",
+    c."DispositionCode" as "FinalDisposition",
     c."DispositionDate",
     c."JailPenitentiary",
     c."ConcurrentConsecutive",
     c."LifeDeath",
-    COALESCE(d."SentenceTime", c."SentenceTime") as "SentenceTime",
-    COALESCE(d."SentenceSuspendedTime", c."SentenceSuspended") as "SentenceSuspendedTime",
-    COALESCE(d."ProbationType", c."ProbationType") as "ProbationType",
-    COALESCE(d."ProbationTime", c."ProbationTime") as "ProbationTime",
-    COALESCE(d."ProbationStarts", c."ProbationStarts") as "ProbationStarts",
-    COALESCE(d."OperatorLicenseSuspensionTime", c."OperatorLicenseSuspensionTime") as "OperatorLicenseSuspensionTime",
-    COALESCE(d."RestrictionEffectiveDate", c."RestrictionEffectiveDate") as "RestrictionEffectiveDate",
-    COALESCE(d."RestrictionEndDate", c."RestrictionEndDate") as "RestrictionEndDate",
-    d."OperatorLicenseRestrictionCodes",
+    c."SentenceTime" as "SentenceTime",
+    c."SentenceSuspended" as "SentenceSuspendedTime",
+    c."ProbationType" as "ProbationType",
+    c."ProbationTime" as "ProbationTime",
+    c."ProbationStarts" as "ProbationStarts",
+    c."OperatorLicenseSuspensionTime" as "OperatorLicenseSuspensionTime",
+    c."RestrictionEffectiveDate" as "RestrictionEffectiveDate",
+    c."RestrictionEndDate" as "RestrictionEndDate",
+    null as "OperatorLicenseRestrictionCodes",
     c."DrivingRestrictions",
-    COALESCE(d."Fine", c."FineAmount") as "Fine",
-    COALESCE(d."Costs", c."Costs") as "Costs",
-    d."FineCostsDue",
-    COALESCE(d."FineCostsPaid", c."FinesCostPaid") as "FineCostPaid",
-    d."FineCostsPaidDate",
-    COALESCE(d."VASAP", c."VAAlcoholSafetyAction") as "VASAP",
-    d."FineCostsPastDue",
+    c."FineAmount" as "Fine",
+    c."Costs" as "Costs",
+    null as "FineCostsDue",
+    c."FinesCostPaid" as "FineCostPaid",
+    null as "FineCostsPaidDate",
+    c."VAAlcoholSafetyAction" as "VASAP",
+    null as "FineCostsPastDue",
     c."CourtDMVSurrender",
     c."DriverImprovementClinic",
     c."RestitutionPaid",
@@ -178,12 +242,10 @@ SELECT
     c."Military",
     c."TrafficFatality",
     c."AppealedDate"
-FROM person_ids p
-LEFT JOIN "DistrictCriminalCase" d ON d.id=p.district_id
-LEFT JOIN "CircuitCriminalCase" c ON c.id=p.circuit_id
+from "CircuitCriminalCase" c
+join person_ids p on p.circuit_id = c.id
 WHERE p.person_id >= {} and p.person_id < {}
-ORDER BY p.person_id
-""".format(start_id, end_id)
+""".format(start_id, end_id, start_id, end_id)
     query = query.replace('\n', ' ')
     query = ' '.join(query.split())
     copy_cmd = '\\copy ({}) To \'{}\' With CSV{};'.format(
@@ -193,6 +255,7 @@ ORDER BY p.person_id
         '-c', copy_cmd
     ]
     print start_id, subprocess.check_output(psql_cmd)
+    sys.stdout.flush()
 
 def download_data_by_year(table, year, outfile_path, case_type):
     if case_type == 'civil':
