@@ -115,6 +115,8 @@ DATES = [
     'FineCostsDue',
     'FineCostsPaidDate',
     'WritIssuedDate',
+    'WritofEvictionIssuedDate',
+    'WritofFieriFaciasIssuedDate',
     'DateSatisfactionFiled',
     'AnswerDate',
     'AppealDate',

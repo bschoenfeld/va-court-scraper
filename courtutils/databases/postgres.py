@@ -350,6 +350,8 @@ class DistrictCivilCase(Base, Case):
     InterestAward = Column(String)
     Possession = Column(String)
     WritIssuedDate = Column(Date)
+    WritofEvictionIssuedDate = Column(Date)
+    WritofFieriFaciasIssuedDate = Column(Date)
     HomesteadExemptionWaived = Column(Boolean)
     IsJudgmentSatisfied = Column(String)
     DateSatisfactionFiled = Column(Date)
