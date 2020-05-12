@@ -55,6 +55,9 @@ def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
                     'Defendant': case['defendant']
                 }
         else:
+            if len(case['case_number']) < 13:
+                log.warn('[%s] is an invalid case number', case['case_number'])
+                continue
             case['details'] = reader.get_case_details_by_number(
                 fips, case_type, case['case_number'],
                 case['details_url'] if 'details_url' in case else None)

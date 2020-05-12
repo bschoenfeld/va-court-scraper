@@ -882,4 +882,32 @@ class PostgresDatabase():
         )
         case_numbers = [(case.CaseNumber, case.details_fetched_for_hearing_date) for case in cases]
         return case_numbers
+    
+    def get_next_unlawful_detainer_to_update(self, fips, older_than):
+        lastest_date = date(2019, 7, 1)
+        earliest_date = date(2018, 1, 1)
+
+        case = self.session.query(DistrictCivilCase).filter(
+            DistrictCivilCase.fips == int(fips),
+            DistrictCivilCase.CaseType == 'Unlawful Detainer',
+            DistrictCivilCase.collected < older_than,
+            DistrictCivilCase.details_fetched_for_hearing_date < lastest_date,
+            DistrictCivilCase.details_fetched_for_hearing_date > earliest_date
+        ).with_entities(
+            DistrictCivilCase.CaseNumber,
+            DistrictCivilCase.collected,
+            DistrictCivilCase.details_fetched_for_hearing_date,
+            DistrictCivilCase.WritIssuedDate
+        ).order_by(DistrictCivilCase.details_fetched_for_hearing_date.desc()).first()
+
+        if case is None:
+            return None
+
+        return {
+            'fips': fips,
+            'case_number': case[0],
+            'collected':case[1],
+            'details_fetched_for_hearing_date': case[2],
+            'WritIssuedDate': case[3]
+        }
 

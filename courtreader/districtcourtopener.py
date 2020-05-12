@@ -43,45 +43,9 @@ class DistrictCourtOpener:
         return BeautifulSoup(page_content, 'html.parser')
 
     def solve_captcha(self, url):
-        self.open_driver()
-        self.driver.get(url)
-        time.sleep(1)
-        current_url = self.driver.current_url
-        print current_url
-
-        while current_url == self.driver.current_url:
-            time.sleep(1)
-
-        '''
-        log.info('Solving CAPTCHA')
-        captcha_solver = deathbycaptcha.SocketClient(os.environ['DBC_USER'], \
-                                                     os.environ['DBC_PASSWORD'])
-        self.driver.get(url)
-        captcha = self.driver.find_element_by_id('recaptcha_challenge_image')
-        image_src = captcha.get_attribute('src')
-        image_filename = str(os.getpid()) + '_captcha.png'
-        urllib.urlretrieve(image_src, image_filename)
-        try:
-            captcha_solution = captcha_solver.decode(image_filename, 60)
-            #captcha_solution = {'captcha': 'manual', 'text': raw_input('Enter CAPTCHA:')}
-            if captcha_solution:
-                log.info('CAPTCHA SOLVED')
-                print "CAPTCHA %s solved: %s" % (captcha_solution["captcha"],
-                                                 captcha_solution["text"])
-                self.driver.find_element_by_name('recaptcha_response_field') \
-                      .send_keys(captcha_solution["text"])
-                os.remove(image_filename)
-        except deathbycaptcha.AccessDeniedException:
-            log.error('deathbycaptcha access denied')
-            print 'deathbycaptcha access denied'
-        time.sleep(1)
-        self.driver.find_element_by_name('captchaVerificationForm') \
-              .submit()
-        '''
-        cookie = self.driver.get_cookie('JSESSIONID')['value']
+        cookie = raw_input('JESSSIONID')
         self.opener.set_cookie('JSESSIONID', cookie)
         self.opener.save_cookies()
-        self.driver.quit()
 
     def change_court(self, name, code):
         data = urllib.urlencode({
@@ -153,7 +117,7 @@ class DistrictCourtOpener:
         self.opener.open(url, data)
         # the post returns 302, then we have to do a GET... strange
 
-        url = self.url('criminalDetail.do')
+        url = self.url('criminalDetail.do' if search_division == 'T' else 'civilDetail.do')
         content = self.opener.open(url)
         soup = BeautifulSoup(content, 'html.parser')
         return soup
