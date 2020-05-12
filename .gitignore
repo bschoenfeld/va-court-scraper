@@ -75,3 +75,6 @@ criminalCircuitCourtCaseExport.js
 criminalDistrictCourtCaseExport.js
 
 chromedriver
+
+venv/
+chromedriver.exe

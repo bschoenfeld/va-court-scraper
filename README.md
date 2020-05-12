@@ -59,9 +59,60 @@ Now you can create collectors. When a collector runs, it will take a task and st
 
 _Warning - This task system that I've created is pretty terrible and uncompleted tasks can easily be lost. I'd love to replace it with a more robust tool, but I haven't gotten around to it yet. Sorry_
 
+## How to generate person ids
+
+Many effective uses of this data require grouping criminal cases to defendant. Unfortunately, the state does not provide any unique identifier, so the [generate_person_ids.py](https://github.com/bschoenfeld/va-court-scraper/blob/master/generate_person_ids.py) script attempts to create one. The script takes all cases and breaks them into groups based on gender, day of birth (there are no years in the case data), and first letter of last name. For each group, every name is compared to every other name using a fuzzy string match. This process can take a while. The script is built so that it can be run in parallel, one execution for each month of the year. I recommend a beefy server - I use a t2.xlarge on AWS, which has 4 CPUs and 16 GB of memory.
+
+Get your environment ready to connect to psql (the commands for that are elsewhere in the README, install some additional libraries
+
+```
+pip install fuzzywuzzy
+pip install python-Levenshtein
+```
+
+Then prepare the database
+
+```
+python generate_person_ids.py 0
+```
+
+Finally run the script for all 12 months
+
+```
+nohup python generate_person_ids.py 1 >> gen_1.out 2>&1 &
+nohup python generate_person_ids.py 2 >> gen_2.out 2>&1 &
+nohup python generate_person_ids.py 3 >> gen_3.out 2>&1 &
+nohup python generate_person_ids.py 4 >> gen_4.out 2>&1 &
+nohup python generate_person_ids.py 5 >> gen_5.out 2>&1 &
+nohup python generate_person_ids.py 6 >> gen_6.out 2>&1 &
+nohup python generate_person_ids.py 7 >> gen_7.out 2>&1 &
+nohup python generate_person_ids.py 8 >> gen_8.out 2>&1 &
+nohup python generate_person_ids.py 9 >> gen_9.out 2>&1 &
+nohup python generate_person_ids.py 10 >> gen_10.out 2>&1 &
+nohup python generate_person_ids.py 11 >> gen_11.out 2>&1 &
+nohup python generate_person_ids.py 12 >> gen_12.out 2>&1 &
+```
+
+After it runs, I create a few indexes
+
+```
+vacourtscraper=> create index on person_ids (person_id);
+CREATE INDEX
+vacourtscraper=> create index on person_ids (circuit_id);
+CREATE INDEX
+vacourtscraper=> create index on person_ids (district_id);
+CREATE INDEX
+```
+
 ## How to run the export
 
 The export script exports data from Postgres to CSV files. The data are exported first by court type and year of most recent hearing, and then by person id. The script uses the psql subprocess to run the copy command to download large chunks of data to the local machine. Then the script breaks the CSVs up so that no file has more than 250,000 cases. Finally, the CSVs are zipped up and pushed to an AWS S3 bucket. Once the script has uploaded all the zip files, it generates a bunch of metadata about the files (number of cases, file size, S3 path) and pushes that metadata to a Firebase database.
+
+Be sure to connect to the database using psql and vacuum it before and after the export.
+
+```
+VACUUM (VERBOSE, ANALYZE);
+```
 
 Start an Amazon Linux EC2 instance. SSH and run the following commands.
 
