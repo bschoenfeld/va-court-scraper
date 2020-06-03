@@ -813,7 +813,8 @@ class PostgresDatabase():
         if result is None:
             return result
         return  {
-            'details_fetched_for_hearing_date': result.details_fetched_for_hearing_date
+            'details_fetched_for_hearing_date': result.details_fetched_for_hearing_date,
+            'collected': result.collected
         }
 
     def replace_case_details(self, case, case_type):

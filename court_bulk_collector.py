@@ -42,8 +42,12 @@ def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
         case_details = db.get_more_recent_case_details(case, case_type, date)
         if case_details != None:
             last_date = case_details['details_fetched_for_hearing_date'].strftime('%m/%d/%Y')
-            log.info('%s details collected for hearing on %s', case['case_number'], last_date)
-            continue
+            collected_date = case_details['collected'].strftime('%m/%d/%Y')
+            if case_details['details_fetched_for_hearing_date'] < case_details['collected']:
+                log.info('%s details collected for hearing on %s', case['case_number'], last_date)
+                continue
+            else:
+                log.info('%s details were collected on %s before hearing date on %s - updating now', case['case_number'], collected_date, last_date)
         if '--' in case['case_number']:
             if case_type == 'civil':
                 case['details'] = {
