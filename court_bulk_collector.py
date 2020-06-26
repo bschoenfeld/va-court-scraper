@@ -39,6 +39,18 @@ def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
         case['details_fetched_for_hearing_date'] = date
         case['fips'] = fips
         case['collected'] = datetime.now()
+
+        # If the hearing is in the future, add to the docket table - don't get details
+        if date > case['collected']:
+            log.info('Docket %s %s', case['case_number'], case['defendant'])
+            case['CaseNumber'] = case['case_number']
+            case['Defendant'] = case['defendant']
+            if case_type == 'civil':
+                case['CaseType'] = case['civil_case_type']
+                case['Plaintiff'] = case['plaintiff']
+            db.add_case_to_docket(case, case_type)
+            continue
+        
         case_details = db.get_more_recent_case_details(case, case_type, date)
         if case_details != None:
             last_date = case_details['details_fetched_for_hearing_date'].strftime('%m/%d/%Y')

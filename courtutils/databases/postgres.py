@@ -419,6 +419,14 @@ class DistrictCivilCase(Base, Case):
         ]
         return db_case
 
+class DistrictCivilDocket(Base, Case):
+    prefix = DISTRICT_CIVIL
+    __tablename__ = prefix + 'Docket'
+
+    CaseType = Column(String)
+    Defendant = Column(String)
+    Plaintiff = Column(String)
+
 #
 # Hearing Tables
 #
@@ -626,7 +634,10 @@ TABLES = [
     DistrictCivilPlaintiff,
     DistrictCivilDefendant,
     CircuitCivilPlaintiff,
-    CircuitCivilDefendant
+    CircuitCivilDefendant,
+
+    # Docket
+    DistrictCivilDocket
 ]
 
 #
@@ -802,6 +813,18 @@ class PostgresDatabase():
                 return DistrictCriminalCase
             else:
                 return DistrictCivilCase
+    
+    def get_docket_builder(self, case_type):
+        if self.court_type == 'circuit':
+            if case_type == 'criminal':
+                return CircuitCriminalDocket
+            else:
+                return CircuitCivilDocket
+        else:
+            if case_type == 'criminal':
+                return DistrictCriminalDocket
+            else:
+                return DistrictCivilDocket
 
     def get_more_recent_case_details(self, case, case_type, date):
         case_builder = self.get_case_builder(case_type)
@@ -824,6 +847,12 @@ class PostgresDatabase():
             fips=int(case['fips']),
             CaseNumber=case['case_number']
         ).delete()
+        self.session.add(case_builder.create(case))
+        self.session.commit()
+    
+    def add_case_to_docket(self, case, case_type):
+        #pprint(case)
+        case_builder = self.get_docket_builder(case_type)
         self.session.add(case_builder.create(case))
         self.session.commit()
 
