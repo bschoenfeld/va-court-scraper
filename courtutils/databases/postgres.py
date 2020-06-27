@@ -427,6 +427,14 @@ class DistrictCivilDocket(Base, Case):
     Defendant = Column(String)
     Plaintiff = Column(String)
 
+    @staticmethod
+    def create(case):
+        db_case = DistrictCivilDocket(**case)
+        db_case.fips = int(case['fips'])
+        db_case.details_fetched_for_hearing_date = case['details_fetched_for_hearing_date']
+        db_case.collected = case['collected']
+        return db_case
+
 #
 # Hearing Tables
 #
@@ -853,6 +861,10 @@ class PostgresDatabase():
     def add_case_to_docket(self, case, case_type):
         #pprint(case)
         case_builder = self.get_docket_builder(case_type)
+        self.session.query(case_builder).filter_by(
+            fips=int(case['fips']),
+            CaseNumber=case['case_number']
+        ).delete()
         self.session.add(case_builder.create(case))
         self.session.commit()
 
