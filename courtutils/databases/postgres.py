@@ -430,6 +430,7 @@ class DistrictCivilDocket(Base, Case):
     @staticmethod
     def create(case):
         db_case = DistrictCivilDocket()
+        db_case.CaseNumber = case['CaseNumber']
         db_case.CaseType = case['CaseType']
         db_case.Defendant = case['Defendant']
         db_case.Plaintiff = case['Plaintiff']
