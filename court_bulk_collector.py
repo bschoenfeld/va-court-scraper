@@ -1,7 +1,7 @@
 from courtreader import readers
 from courtutils.logger import get_logger
-from datetime import datetime, timedelta
 from time import sleep
+import datetime
 import os
 import sys
 import time
@@ -38,10 +38,10 @@ def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
     for case in cases:
         case['details_fetched_for_hearing_date'] = date
         case['fips'] = fips
-        case['collected'] = datetime.now()
+        case['collected'] = datetime.datetime.now()
 
         # If the hearing is in the future, add to the docket table - don't get details
-        if date > datetime.now().date():
+        if date > datetime.date(2020, 9, 27): #datetime.datetime.now().date():
             log.info('Docket %s %s', case['case_number'], case['defendant'])
             case['CaseNumber'] = case['case_number']
             case['Defendant'] = case['defendant']
@@ -123,7 +123,7 @@ def run_collector(reader, last_task):
                     reader_connected = True
                 get_cases_on_date(db, reader, fips, case_type, date, date_str)
                 db.add_date_search(date_search)
-            date += timedelta(days=-1)
+            date += datetime.timedelta(days=-1)
 
         if reader_connected:
             reader.log_off()
