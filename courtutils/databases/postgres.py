@@ -2,7 +2,7 @@ import os
 from datetime import datetime, date
 from sqlalchemy import (create_engine, Boolean, Column,
                         Date, DateTime, Integer, BigInteger,
-                        Float, String, ForeignKey, Index)
+                        Float, String, ForeignKey, Index, and_)
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
@@ -958,4 +958,18 @@ class PostgresDatabase():
             'details_fetched_for_hearing_date': case[2],
             'WritIssuedDate': case[3]
         }
+    
+    def get_hearings_without_result(self, fips, earliest_date, lastest_date):
+        cases = self.session.query(DistrictCivilCase).filter(
+            DistrictCivilCase.fips == int(fips),
+            DistrictCivilCase.Hearings.any(and_(
+                DistrictCivilHearing.Date >= earliest_date, 
+                DistrictCivilHearing.Date < lastest_date, 
+                DistrictCivilHearing.Result == None))
+        ).with_entities(
+            DistrictCivilCase.CaseNumber,
+            DistrictCivilCase.details_fetched_for_hearing_date
+        )
+
+        return [(case.CaseNumber, case.details_fetched_for_hearing_date) for case in cases]
 
