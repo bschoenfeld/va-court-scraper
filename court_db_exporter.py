@@ -17,7 +17,7 @@ def download_case_table(case_table, filed_field, start_year, end_year, outfile_p
     copy_cmd += 'where {0} >= \'{1}\' and {0} < \'{2}\' '.format(
         filed_field, '1/1/' + str(start_year), '1/1/' + str(end_year)
     )
-    copy_cmd += 'order by id) To \'{}\' With CSV HEADER;'.format(
+    copy_cmd += 'order by id limit 10) To \'{}\' With CSV HEADER;'.format(
         outfile_path
     )
 
@@ -35,7 +35,7 @@ def download_child_table(case_table, child_table, filed_field, start_year, end_y
     copy_cmd += 'where {0} >= \'{1}\' and {0} < \'{2}\' '.format(
         filed_field, '1/1/' + str(start_year), '1/1/' + str(end_year)
     )
-    copy_cmd += 'order by "{}".case_id) To \'{}\' With CSV HEADER;'.format(
+    copy_cmd += 'order by "{}".case_id limit 10) To \'{}\' With CSV HEADER;'.format(
         child_table, outfile_path
     )
 
@@ -68,7 +68,7 @@ def upload_zip_file(path):
     os.remove(path)
 
 def export_data(table, start_year, end_year):
-    zip_filename = '{}_{}'.format(table['prefix'], year)
+    zip_filename = '{}_{}'.format(table['prefix'], start_year)
     filepaths = []
 
     # Download cases
@@ -95,7 +95,7 @@ def export_data(table, start_year, end_year):
     data_zip_path = zip_data_files(zip_filename, filepaths)
 
     # Upload zip files
-    upload_zip_file(data_zip_path)
+    #upload_zip_file(data_zip_path)
 
 COURT_TABLES = [
     {
@@ -145,4 +145,4 @@ while year >= 2010:
         export_data(year, year + 1)
     year -= 1
 
-export_data(1900, 2010)
+export_data(2000, 2010)
