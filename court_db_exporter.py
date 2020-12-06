@@ -17,7 +17,7 @@ def download_case_table(case_table, filed_field, start_year, end_year, outfile_p
     copy_cmd += 'where "{0}"."{1}" >= \'{2}\' and "{0}"."{1}" < \'{3}\' '.format(
         case_table, filed_field, '1/1/' + str(start_year), '1/1/' + str(end_year)
     )
-    copy_cmd += 'order by id limit 10) To \'{}\' With CSV HEADER;'.format(
+    copy_cmd += 'limit 10) To \'{}\' With CSV HEADER;'.format(
         outfile_path
     )
 
@@ -35,7 +35,7 @@ def download_child_table(case_table, child_table, filed_field, start_year, end_y
     copy_cmd += 'where "{0}"."{1}" >= \'{2}\' and "{0}"."{1}" < \'{3}\' '.format(
         case_table, filed_field, '1/1/' + str(start_year), '1/1/' + str(end_year)
     )
-    copy_cmd += 'order by "{}".case_id limit 10) To \'{}\' With CSV HEADER;'.format(
+    copy_cmd += 'limit 10) To \'{}\' With CSV HEADER;'.format(
         child_table, outfile_path
     )
 
