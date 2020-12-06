@@ -36,7 +36,7 @@ def download_child_table(case_table, child_table, filed_field, start_year, end_y
         case_table, filed_field, '1/1/' + str(start_year), '1/1/' + str(end_year)
     )
     copy_cmd += 'limit 10) To \'{}\' With CSV HEADER;'.format(
-        child_table, outfile_path
+        outfile_path
     )
 
     psql_cmd = [
