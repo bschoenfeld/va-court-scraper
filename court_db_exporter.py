@@ -46,7 +46,7 @@ def download_child_table(case_table, child_table, filed_field, start_year, end_y
     print year, subprocess.check_output(psql_cmd)
 
 def zip_data_files(zip_filename, filepaths):
-    data_zip_path = '{}_DB_{}.zip'.format(zip_filename, id_generator())
+    data_zip_path = 'DB_{}_{}.zip'.format(zip_filename, id_generator())
     data_zip = zipfile.ZipFile(data_zip_path, 'w')
     for path in filepaths:
         data_zip.write(path, path, zipfile.ZIP_DEFLATED)
@@ -100,7 +100,7 @@ def export_data(table, start_year, end_year):
 
     # Upload zip files
     print "Uploading ZIP file"
-    #upload_zip_file(data_zip_path)
+    upload_zip_file(data_zip_path)
 
 COURT_TABLES = [
     {
