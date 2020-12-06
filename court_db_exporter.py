@@ -12,6 +12,8 @@ import boto3
 
 from courtutils.databases.postgres import PostgresDatabase
 
+DATA_ZIP_PATHS = []
+
 def download_case_table(case_table, filed_field, start_year, end_year, outfile_path):
     copy_cmd = '\\copy (Select * From "{}" '.format(case_table)
     copy_cmd += 'where "{0}"."{1}" >= \'{2}\' and "{0}"."{1}" < \'{3}\' '.format(
@@ -25,7 +27,7 @@ def download_case_table(case_table, filed_field, start_year, end_year, outfile_p
         'psql',
         '-c', copy_cmd
     ]
-    print year, subprocess.check_output(psql_cmd)
+    print start_year, subprocess.check_output(psql_cmd)
 
 def download_child_table(case_table, child_table, filed_field, start_year, end_year, outfile_path):
     copy_cmd = '\\copy (Select "{}".* From "{}" '.format(child_table, case_table)
@@ -43,7 +45,7 @@ def download_child_table(case_table, child_table, filed_field, start_year, end_y
         'psql',
         '-c', copy_cmd
     ]
-    print year, subprocess.check_output(psql_cmd)
+    print start_year, subprocess.check_output(psql_cmd)
 
 def zip_data_files(zip_filename, filepaths):
     data_zip_path = 'DB_{}_{}.zip'.format(zip_filename, id_generator())
@@ -102,6 +104,8 @@ def export_data(table, start_year, end_year):
     print "Uploading ZIP file"
     upload_zip_file(data_zip_path)
 
+    DATA_ZIP_PATHS.append(data_zip_path)
+
 COURT_TABLES = [
     {
         'prefix': 'CircuitCivil',
@@ -152,3 +156,5 @@ while year >= 2010:
 
 for table in COURT_TABLES:
     export_data(table, 2000, 2010)
+
+print DATA_ZIP_PATHS
