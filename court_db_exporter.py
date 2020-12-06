@@ -142,7 +142,7 @@ COURT_TABLES = [
 year = datetime.datetime.now().year
 while year >= 2010:
     for table in COURT_TABLES:
-        export_data(year, year + 1)
+        export_data(table, year, year + 1)
     year -= 1
 
 export_data(2000, 2010)
