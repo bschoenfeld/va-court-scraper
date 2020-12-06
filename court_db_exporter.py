@@ -19,7 +19,7 @@ def download_case_table(case_table, filed_field, start_year, end_year, outfile_p
     copy_cmd += 'where "{0}"."{1}" >= \'{2}\' and "{0}"."{1}" < \'{3}\' '.format(
         case_table, filed_field, '1/1/' + str(start_year), '1/1/' + str(end_year)
     )
-    copy_cmd += 'limit 10) To \'{}\' With CSV HEADER;'.format(
+    copy_cmd += ') To \'{}\' With CSV HEADER;'.format(
         outfile_path
     )
 
@@ -37,7 +37,7 @@ def download_child_table(case_table, child_table, filed_field, start_year, end_y
     copy_cmd += 'where "{0}"."{1}" >= \'{2}\' and "{0}"."{1}" < \'{3}\' '.format(
         case_table, filed_field, '1/1/' + str(start_year), '1/1/' + str(end_year)
     )
-    copy_cmd += 'limit 10) To \'{}\' With CSV HEADER;'.format(
+    copy_cmd += ') To \'{}\' With CSV HEADER;'.format(
         outfile_path
     )
 
@@ -153,7 +153,6 @@ while year >= 2010:
     for table in COURT_TABLES:
         export_data(table, year, year + 1)
     year -= 1
-    break
 
 for table in COURT_TABLES:
     export_data(table, 2000, 2010)
