@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from courtreader import readers
 from courtutils.logger import get_logger
 from datetime import datetime, timedelta
