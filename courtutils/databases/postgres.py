@@ -189,6 +189,7 @@ class CircuitCivilCase(Base, Case):
     Filed = Column(Date)
     FilingType = Column(String)
     AppointmentType = Column(String)
+    StateAgency = Column(String)
     FilingFeePaid = Column(Boolean)
     NumberofPlaintiffs = Column(Integer)
     NumberofDefendants = Column(Integer)
