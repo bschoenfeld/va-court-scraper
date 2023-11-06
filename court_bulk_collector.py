@@ -41,7 +41,7 @@ def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
         case['collected'] = datetime.datetime.now()
 
         # If the hearing is in the future, add to the docket table - don't get details
-        if date > datetime.date(2020, 9, 27): #datetime.datetime.now().date():
+        if date > datetime.date(2024, 3, 31): # datetime.datetime.now().date():
             log.info('Docket %s %s', case['case_number'], case['defendant'])
             case['CaseNumber'] = case['case_number']
             case['Defendant'] = case['defendant']

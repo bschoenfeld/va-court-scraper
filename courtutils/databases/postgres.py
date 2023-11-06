@@ -106,6 +106,7 @@ class CircuitCriminalCase(Base, Case):
     Class = Column(String)
     OffenseDate = Column(Date)
     ArrestDate = Column(Date)
+    OTN = Column(String)
 
     DispositionCode = Column(String)
     DispositionDate = Column(Date)
@@ -187,6 +188,7 @@ class CircuitCivilCase(Base, Case):
 
     Filed = Column(Date)
     FilingType = Column(String)
+    AppointmentType = Column(String)
     FilingFeePaid = Column(Boolean)
     NumberofPlaintiffs = Column(Integer)
     NumberofDefendants = Column(Integer)

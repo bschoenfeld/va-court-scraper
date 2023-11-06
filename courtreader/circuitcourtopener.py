@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from opener import Opener
 
 class CircuitCourtOpener:
-    url_root = 'http://ewsocis1.courts.state.va.us/CJISWeb/'
+    url_root = 'https://eapps.courts.state.va.us/CJISWeb/'
 
     def __init__(self):
         self.opener = Opener('circuit')
