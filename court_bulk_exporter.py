@@ -318,6 +318,7 @@ def download_party_data(table, party_table, year, outfile_path):
 
 CASES_PER_FILE = 250000
 def create_data_files(filepath, temp_filepath, court_type, case_type):
+    print 'Create data files', filepath, temp_filepath
     metadata = {
         'cases': 0,
         'complete': {
@@ -402,7 +403,7 @@ def create_data_files(filepath, temp_filepath, court_type, case_type):
 def get_party_fields(court_type):
     if court_type.lower() == 'circuit':
         return ['Name', 'TradingAs', 'Attorney']
-    return ['Name', 'Address', 'Attorney']
+    return ['Name', 'DBATA', 'Address', 'Attorney']
 
 def get_party_headers(party_name, court_type):
     party_headers = []
