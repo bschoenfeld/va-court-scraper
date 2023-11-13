@@ -10,7 +10,7 @@ futures==3.0.5
 fuzzywuzzy==0.15.0
 GeoAlchemy2==0.3.0
 geopy==1.11.0
-gunicorn==19.3.0
+gunicorn==19.5.0
 guppy==0.1.10
 itsdangerous==0.24
 Jinja2==2.8
