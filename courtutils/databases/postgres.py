@@ -276,6 +276,8 @@ class DistrictCriminalCase(Base, Case):
     DOB = Column(Date)
 
     Charge = Column(String)
+    OffenseTrackingProcessing = Column(String)
+    Summons = Column(String)
     CodeSection = Column(String)
     CaseType = Column(String)
     Class = Column(String)
@@ -354,6 +356,7 @@ class DistrictCivilCase(Base, Case):
     Possession = Column(String)
     WritIssuedDate = Column(Date)
     WritofEvictionIssuedDate = Column(Date)
+    WritofEvictionExecutedDate = Column(Date)
     WritofFieriFaciasIssuedDate = Column(Date)
     HomesteadExemptionWaived = Column(Boolean)
     IsJudgmentSatisfied = Column(String)
@@ -538,6 +541,7 @@ class DistrictCriminalService(Base, Service):
     __tablename__ = prefix + 'Service'
     case_id = Column(BigInteger, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
     DateIssued = Column(Date)
+    DateServed = Column(Date)
     DateReturned = Column(Date)
     Plaintiff = Column(String)
     PersonServed = Column(String)
@@ -548,6 +552,7 @@ class DistrictCivilService(Base, Service):
     __tablename__ = prefix + 'Service'
     case_id = Column(BigInteger, ForeignKey(prefix + 'Case.id', ondelete='CASCADE'))
     DateIssued = Column(Date)
+    DateServed = Column(Date)
     DateReturned = Column(Date)
     Plaintiff = Column(String)
     PersonServed = Column(String)

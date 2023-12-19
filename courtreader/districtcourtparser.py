@@ -124,6 +124,7 @@ DATES = [
     'DateDue',
     'DateReceived',
     'DateIssued',
+    'DateServed',
     'DateReturned'
 ]
 
@@ -228,6 +229,7 @@ def get_string_from_cell(cell, is_label=False):
     if is_label:
         value = value.replace(':', '') \
                      .replace('/', '') \
+                     .replace('#', '') \
                      .replace(' ', '')
     return value
 
