@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import os
 #from geopy.geocoders import GoogleV3
 from courtreader import readers

@@ -13,21 +13,15 @@ I'll be using AWS, but that's not a requirement.
 1. Make sure your security groups allow your server to connect to the database
 1. Connect to the server using RDP
 1. Install Google Chrome, git, and Python 2.7
-1. Install [pyscopg2](http://www.stickpeople.com/projects/python/win-psycopg/)
 1. Clone this repository
 
         git clone https://github.com/bschoenfeld/va-court-scraper.git
 
 1. Download [Chromedriver](https://sites.google.com/a/chromium.org/chromedriver/downloads) to the root of the repo directory
-1. Create a virtual environment in the root of the repo directory. Again, I'm using powershell on windows. The commands will be a bit different for activating the virtual environment and setting the environment variables
+1. Create a virtual environment and install dependencies
 
-        pip install virtualenv
-        virtualenv venv
-        .\venv\Scripts\activate.ps1
-
-1. Install dependencies
-
-        pip install selenium mechanize beautifulsoup4 psycopg2 SQLAlchemy GeoAlchemy2 pgcli
+        pipenv install
+        pipenv shell
 
 1. Connect to the database and add the postgis extension
 
