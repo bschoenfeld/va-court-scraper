@@ -193,6 +193,7 @@ class CircuitCivilCase(Base, Case):
     AppointmentType = Column(String)
     StateAgency = Column(String)
     FilingFeePaid = Column(Boolean)
+    DivorceFilingType = Column(String)
     NumberofPlaintiffs = Column(Integer)
     NumberofDefendants = Column(Integer)
     CommencedBy = Column(String)
@@ -205,6 +206,7 @@ class CircuitCivilCase(Base, Case):
     FinalOrderDate = Column(Date)
     AppealedDate = Column(Date)
     ConcludedBy = Column(String)
+    DivorceDispositionType = Column(String)
 
     @staticmethod
     def create(case):
