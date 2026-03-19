@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import csv
 import sys
 from courtutils.database import Database
@@ -7,7 +9,7 @@ courts_by_name = {court['name']:court for court in courts}
 
 def get_nearby_courts(court_name):
     if 'nearbyCourts' not in courts_by_name[court_name]:
-        print 'LOOKING UP COURTS NEAR', court_name
+        print('LOOKING UP COURTS NEAR', court_name)
         nearby_courts = Database.find_courts('circuit', court_name, 40)
         courts_by_name[court_name]['nearbyCourts'] = \
             [court['fips_code'] for court in nearby_courts]
@@ -27,7 +29,7 @@ with open(sys.argv[1]) as csvfile:
         courts_to_search = get_courts_to_search(row, courts_by_name)
         name = row['last'] + ', ' + row['first']
         search_terms += 1
-        print name, len(courts_to_search), 'courts'
+        print(name, len(courts_to_search), 'courts')
         for fips_code in courts_to_search:
             search_tasks.append({
                 'search_id': search_id,

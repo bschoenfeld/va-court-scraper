@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 import hashlib
 import os
-from database import Database
-from email import send_welcome_email
+from .database import Database
+from .email import send_welcome_email
 from flask.ext.login import UserMixin
 
 def get_hash(data):

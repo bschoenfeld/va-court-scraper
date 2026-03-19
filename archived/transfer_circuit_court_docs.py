@@ -1,7 +1,10 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import datetime
 import pymongo
 import os
 from courtreader import readers
+import six
 
 # Connect to database
 client = pymongo.MongoClient(os.environ['CIRCUIT_DB'])
@@ -10,7 +13,7 @@ db = client.va_circuit_court_cases
 reader = readers.CircuitCourtReader()
 courts = reader.connect()
 court_codes = {}
-for fips_code, court in courts.iteritems():
+for fips_code, court in six.iteritems(courts):
     court_name = court['name'].replace(' Circuit Court', '')
     court_codes[court_name] = fips_code
 
@@ -23,9 +26,9 @@ for case in cases:
     }
     cases_in_brief.append(case_in_brief)
     if len(cases_in_brief) >= 10000:
-        print 10000
+        print(10000)
         db.cases.insert_many(cases_in_brief)
         del cases_in_brief[:]
-print len(cases_in_brief)
+print(len(cases_in_brief))
 db.cases.insert_many(cases_in_brief)
-print 'Finished'
+print('Finished')

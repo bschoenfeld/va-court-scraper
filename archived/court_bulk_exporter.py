@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 from courtreader import readers
 from courtutils.databases.mongo import MongoDatabase
 from courtutils.logger import get_logger
@@ -11,6 +13,7 @@ import os
 import sys
 import time
 import zipfile
+from six.moves import range
 
 fieldnames = {
     'circuit': [
@@ -142,7 +145,7 @@ if court_type != 'circuit' and court_type != 'district':
 anonymize = True
 if len(sys.argv) > 4 and sys.argv[4] == 'original':
     anonymize = False
-print 'DATA NOT ANONYMIZED'
+print('DATA NOT ANONYMIZED')
 
 # connect to database
 db = MongoDatabase('va_court_search', court_type)
@@ -184,7 +187,7 @@ def write_cases_to_file(cases, court_type, filename, metadata):
         hearings_writer.writeheader()
         for case in cases:
             if 'error' in case['details']:
-                print 'Error getting case details', case['case_number']
+                print('Error getting case details', case['case_number'])
                 continue
             case['HearingDateSearched'] = case['details_fetched_for_hearing_date'].date()
             case['Court'] = courts_by_fips[case['court_fips']]['name']
@@ -194,7 +197,7 @@ def write_cases_to_file(cases, court_type, filename, metadata):
                 case['CaseStatus'] = case['status']
             metadata['byCourt'][case['Court']] += 1
             metadata['total'] += 1
-            print (str(metadata['total']) + '\r'),
+            print((str(metadata['total']) + '\r'), end=' ')
             for hearing in case['details']['Hearings']:
                 hearing['Court'] = case['court_fips']
                 hearing['CaseNumber'] = case['case_number']
@@ -207,7 +210,7 @@ def write_cases_to_file(cases, court_type, filename, metadata):
                 else:
                     case[new_key] = case['details'][detail]
                 if 'Month' in case[new_key]:
-                    print new_key, case[new_key]
+                    print(new_key, case[new_key])
                 if new_key in fields_to_anonomize and anonymize:
                     hash = hashlib.md5()
                     hash.update(os.environ['ANON_DATA_SALT'])
@@ -235,7 +238,7 @@ def export_and_upload_data_by_year(year, court_type):
     for month in range(0, len(months)-1):
         start = months[month]
         end = months[month+1]
-        print 'From', start, 'to', end
+        print('From', start, 'to', end)
         cases = db.get_cases_by_hearing_date(start, end)
 
         month_filename = year_filename + '_' + str(month+1)
@@ -255,7 +258,7 @@ start_year = int(sys.argv[2])
 end_year = int(sys.argv[3])
 complete_metadata = []
 for year in range(start_year, end_year+1):
-    print 'Export', year
+    print('Export', year)
     metadata = export_and_upload_data_by_year(year, court_type)
     complete_metadata.append({
         'year': year,

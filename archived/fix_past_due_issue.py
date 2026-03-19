@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 from time import sleep
 from datetime import datetime
@@ -44,14 +46,14 @@ while True:
             for court in courts:
                 update_case(court['fips'])
     except Exception:
-        print 'Exception. Starting over.'
+        print('Exception. Starting over.')
     except KeyboardInterrupt:
         raise
 
     try:
         reader.log_off()
     except Exception:
-        print 'Could not log off'
+        print('Could not log off')
     except KeyboardInterrupt:
         raise
 

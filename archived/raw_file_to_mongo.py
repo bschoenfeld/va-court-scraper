@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import pymongo
 import sys
@@ -13,7 +15,7 @@ with open(file_path, 'r') as data_file:
         }
         if not case['FIPSCode'].isdigit(): continue
         cases.append(case)
-print len(cases)
+print(len(cases))
 
 client = pymongo.MongoClient(os.environ['MONGO_URI'])
 db = client.va_district_court_cases

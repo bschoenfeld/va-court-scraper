@@ -1,11 +1,13 @@
-import deathbycaptcha
+from __future__ import absolute_import
+from . import deathbycaptcha
 import logging
 import os
 import time
-import urllib
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 from bs4 import BeautifulSoup
-from opener import Opener
+from .opener import Opener
 from selenium import webdriver
+from six.moves import input
 
 log = logging.getLogger('logentries')
 
@@ -43,12 +45,12 @@ class DistrictCourtOpener:
         return BeautifulSoup(page_content, 'html.parser')
 
     def solve_captcha(self, url):
-        cookie = raw_input('JESSSIONID')
+        cookie = input('JESSSIONID')
         self.opener.set_cookie('JSESSIONID', cookie)
         self.opener.save_cookies()
 
     def change_court(self, name, code):
-        data = urllib.urlencode({
+        data = six.moves.urllib.parse.urlencode({
             'selectedCourtsName': name,
             'selectedCourtsFipCode': code,
             'sessionCourtsFipCode': ''
@@ -84,7 +86,7 @@ class DistrictCourtOpener:
         else:
             data['caseInfoScrollForward'] = 'Next'
             data['unCheckedCases'] = ''
-        data = urllib.urlencode(data)
+        data = six.moves.urllib.parse.urlencode(data)
         url = self.url('caseSearch.do')
         page = self.opener.open(url, data)
         content = ''
@@ -112,7 +114,7 @@ class DistrictCourtOpener:
             'localFipsCode':code,
             'clientSearchCounter':0
         }
-        data = urllib.urlencode(data)
+        data = six.moves.urllib.parse.urlencode(data)
         url = self.url('criminalCivilCaseSearch.do')
         self.opener.open(url, data)
         # the post returns 302, then we have to do a GET... strange
@@ -189,7 +191,7 @@ class DistrictCourtOpener:
             data['firstRowCaseNumber'] = prev_cases[0]['case_number']
             data['lastRowName'] = prev_cases[-1]['defendant']
             data['lastRowCaseNumber'] = prev_cases[-1]['case_number']
-        data = urllib.urlencode(data)
+        data = six.moves.urllib.parse.urlencode(data)
         url = self.url('nameSearch.do')
         content = self.opener.open(url, data)
         soup = BeautifulSoup(content, 'html.parser')

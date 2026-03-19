@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import StringIO
 import csv
 import datetime
@@ -15,7 +17,7 @@ def index():
     ten_minutes_ago = datetime.datetime.utcnow() + datetime.timedelta(minutes=-10)
     one_day_ago = datetime.datetime.utcnow() + datetime.timedelta(days=-1)
     scrapers = list(district_db.scrapers.find({'last_update': {'$gt': one_day_ago}}))
-    print courts
+    print(courts)
     return render_template('data_collection.html', courts=courts, scrapers=scrapers, ten_minutes_ago=ten_minutes_ago)
 
 @app.route("/status/<fips_code>")

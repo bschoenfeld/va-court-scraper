@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 from courtreader import readers
 from courtutils.database import Database
 from courtutils.email import send_password_reset_email, verify_link
@@ -19,7 +21,7 @@ log.info('Web running')
 
 @login_manager.user_loader
 def load_user(user_id):
-    print 'loading user'
+    print('loading user')
     return User.get(user_id)
 
 @app.route('/')
@@ -87,7 +89,7 @@ def set_password():
     email = request.form['email']
     expiration = request.form['expires']
     token = request.form['token']
-    print email, expiration, token
+    print(email, expiration, token)
     valid_request = verify_link('password', email, expiration, token)
     if not valid_request:
         return 'This password reset link has expired', 409

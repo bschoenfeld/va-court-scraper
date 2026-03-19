@@ -1,9 +1,11 @@
-import circuitcourtparser
-import districtcourtparser
+from __future__ import absolute_import
+from __future__ import print_function
+from . import circuitcourtparser
+from . import districtcourtparser
 import logging
 import sys
-from circuitcourtopener import CircuitCourtOpener
-from districtcourtopener import DistrictCourtOpener
+from .circuitcourtopener import CircuitCourtOpener
+from .districtcourtopener import DistrictCourtOpener
 from time import sleep
 
 log = logging.getLogger('logentries')
@@ -23,17 +25,17 @@ class DistrictCourtReader:
     def manage_opener(self):
         self.searches_on_session += 1
         if self.searches_on_session > 10000:
-            print 'RESETTING OPENER'
+            print('RESETTING OPENER')
             self.log_off()
             sleep(2)
             self.connect()
             self.searches_on_session = 0
             self.fips_code = ''
-            print 'RESET SUCCESSFUL'
+            print('RESET SUCCESSFUL')
 
     def change_court(self, fips_code, case_type):
         if fips_code != self.fips_code or case_type != self.case_type:
-            print 'CHANGING COURT TO', fips_code
+            print('CHANGING COURT TO', fips_code)
             name = self.court_names[fips_code]
             self.opener.change_court(name, fips_code)
             self.fips_code = fips_code
@@ -64,15 +66,15 @@ class DistrictCourtReader:
         sleep(1)
 
         #date = date.strftime('%m/%d/%Y')
-        print '\tSearching ' + self.court_names[fips_code] + \
-              ' for cases on ' + date
+        print('\tSearching ' + self.court_names[fips_code] + \
+              ' for cases on ' + date)
         soup = self.opener.do_hearing_date_search(fips_code, date, True)
         sleep(1)
 
         cases = []
         while True:
             cases.extend(districtcourtparser.parse_hearing_date_search(soup, case_type))
-            print '\tFound ' + str(len(cases)) + ' cases\r',
+            print('\tFound ' + str(len(cases)) + ' cases\r', end=' ')
             sys.stdout.flush()
             if not districtcourtparser.next_button_found(soup):
                 break
@@ -104,7 +106,7 @@ class DistrictCourtReader:
             if not districtcourtparser.next_names_button_found(soup):
                 break
             log.info('Next Names Page')
-            print 'Next Names Page'
+            print('Next Names Page')
             count += 1
             sleep(2)
         return cases
@@ -119,13 +121,13 @@ class CircuitCourtReader:
     def manage_opener(self):
         self.searches_on_session += 1
         if self.searches_on_session > 100:
-            print 'RESETTING OPENER'
+            print('RESETTING OPENER')
             self.log_off()
             sleep(2)
             self.connect()
             self.searches_on_session = 0
             self.fips_code = ''
-            print 'RESET SUCCESSFUL'
+            print('RESET SUCCESSFUL')
 
     def connect(self):
         soup = self.opener.open_welcome_page()
@@ -137,7 +139,7 @@ class CircuitCourtReader:
 
     def change_court(self, fips_code, case_type):
         if fips_code != self.fips_code or case_type != self.case_type:
-            print 'CHANGING COURT TO', fips_code
+            print('CHANGING COURT TO', fips_code)
             self.opener.change_court(fips_code, self.courts[fips_code]['full_name'])
             self.fips_code = fips_code
             self.case_type = case_type
@@ -185,10 +187,10 @@ class CircuitCourtReader:
         cases = []
         soup = self.opener.do_date_search(fips_code, date, category_code)
         all_found = circuitcourtparser.parse_date_search(soup, cases)
-        print 'FINAL PAGE', all_found
+        print('FINAL PAGE', all_found)
         while not all_found:
             sleep(1)
             soup = self.opener.continue_date_search(fips_code, category_code)
             all_found = circuitcourtparser.parse_date_search(soup, cases)
-            print 'FINAL PAGE', all_found
+            print('FINAL PAGE', all_found)
         return cases

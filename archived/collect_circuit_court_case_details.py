@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import datetime
 import pymongo
 import os
@@ -19,10 +21,10 @@ while True:
         'date_collected': {'$exists': False} \
     })
     if case is None: break
-    print case['CaseNumber']
+    print(case['CaseNumber'])
     case_details = reader.get_case_details_by_number( \
         case['FIPSCode'], case['CaseNumber'])
     case_details['date_collected'] = datetime.datetime.utcnow()
-    updated_case = dict(case.items() + case_details.items())
+    updated_case = dict(list(case.items()) + list(case_details.items()))
     db.cases.replace_one({'_id': case['_id']}, updated_case)
-print 'Finished'
+print('Finished')

@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 from courtreader import readers
 from courtutils.logger import get_logger
 from datetime import datetime
@@ -36,7 +38,7 @@ def get_next_task(court_fips):
                     else db.district_court_tasks
     task = None
     if court_fips is not None:
-        print 'Looking for task in', court_fips
+        print('Looking for task in', court_fips)
         task = collection.find_one_and_delete({'court_fips': court_fips}, {'_id': False})
     if task is None:
         task = collection.find_one_and_delete({}, {'_id': False})
@@ -124,7 +126,7 @@ while True:
                     case['search_id'] = task['search_id']
                     case['fetched'] = datetime.utcnow()
                     if task['case_details'] == True:
-                        print 'Getting details', case['case_number']
+                        print('Getting details', case['case_number'])
                         case['details'] = court_reader \
                             .get_case_details_by_number(task['court_fips'], \
                                                         task['case_type'], \

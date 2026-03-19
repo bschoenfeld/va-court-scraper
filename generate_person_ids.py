@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import subprocess
 import sys
@@ -6,6 +8,7 @@ from calendar import monthrange
 from csv import DictReader, DictWriter
 from datetime import datetime, date, timedelta
 from fuzzywuzzy import fuzz
+from six.moves import range
 
 def run(option):
     if option is None or option == 0:
@@ -28,14 +31,14 @@ def run_month(month):
     process_data(dates)
 
 GENDERS = ['Female', 'Male']
-LETTERS = [chr(c) for c in xrange(ord('A'), ord('Z')+1)]
+LETTERS = [chr(c) for c in range(ord('A'), ord('Z')+1)]
 
 def prepare_database():
     cmd = 'DROP TABLE IF EXISTS person_ids;'
-    print subprocess.check_output(['psql', '-c', cmd])
+    print(subprocess.check_output(['psql', '-c', cmd]))
 
     cmd = 'CREATE TABLE person_ids (person_id bigint, circuit_id bigint, district_id bigint);'
-    print subprocess.check_output(['psql', '-c', cmd])
+    print(subprocess.check_output(['psql', '-c', cmd]))
 
 class CourtDataProcessor:
     def __init__(self, court_type, dob_start, dob_end):
@@ -70,7 +73,7 @@ class CourtDataProcessor:
         )
 
         psql_cmd = ['psql', '-c', copy_cmd]
-        print self.in_filepath, subprocess.check_output(psql_cmd)
+        print(self.in_filepath, subprocess.check_output(psql_cmd))
 
     def close(self):
         self.in_file.close()
@@ -84,7 +87,7 @@ class CourtDataProcessor:
                 self.last_person = None
             else:
                 try:
-                    person = self.data_reader.next()
+                    person = next(self.data_reader)
                 except StopIteration:
                     break
 
@@ -132,7 +135,7 @@ class CourtDataWriter:
 
         # psql copy outfile to table
         cmd = '\\COPY person_ids FROM {} CSV;'.format(self.out_filepath)
-        print subprocess.check_output(['psql', '-c', cmd])
+        print(subprocess.check_output(['psql', '-c', cmd]))
 
         os.remove(self.out_filepath)
 
@@ -159,7 +162,7 @@ def process_data(dates):
 
 def match_people(gender, dob, letter, people):
     person_id = get_starting_person_id(dob, letter, gender)
-    print dob, letter, gender, len(people), 'Cases'
+    print(dob, letter, gender, len(people), 'Cases')
     sys.stdout.flush()
 
     for person in people:

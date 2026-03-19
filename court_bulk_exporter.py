@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import calendar
 import csv
 import datetime
@@ -12,6 +14,7 @@ import boto3
 from firebase import firebase
 
 from courtutils.databases.postgres import PostgresDatabase
+from six.moves import range
 
 # PGHOST, PGDATABASE, PGUSER, PGPASSWORD
 
@@ -121,7 +124,7 @@ def export_table(table, court_type, case_type):
     return metadata
 
 def download_data_by_person(start_id, end_id, outfile_path, with_header):
-    print 'Download data by person', start_id, end_id, outfile_path
+    print('Download data by person', start_id, end_id, outfile_path)
     sys.stdout.flush()
     query = """
 select
@@ -254,7 +257,7 @@ WHERE p.person_id >= {} and p.person_id < {}
         'psql',
         '-c', copy_cmd
     ]
-    print start_id, subprocess.check_output(psql_cmd)
+    print(start_id, subprocess.check_output(psql_cmd))
     sys.stdout.flush()
 
 def download_data_by_year(table, year, outfile_path, case_type):
@@ -287,7 +290,7 @@ def download_data_by_year(table, year, outfile_path, case_type):
         'psql',
         '-c', copy_cmd
     ]
-    print year, subprocess.check_output(psql_cmd)
+    print(year, subprocess.check_output(psql_cmd))
 
     if case_type == 'civil':
         for party in PARTIES:
@@ -314,11 +317,11 @@ def download_party_data(table, party_table, year, outfile_path):
         'psql',
         '-c', copy_cmd
     ]
-    print year, subprocess.check_output(psql_cmd)
+    print(year, subprocess.check_output(psql_cmd))
 
 CASES_PER_FILE = 250000
 def create_data_files(filepath, temp_filepath, court_type, case_type):
-    print 'Create data files', filepath, temp_filepath
+    print('Create data files', filepath, temp_filepath)
     metadata = {
         'cases': 0,
         'complete': {
@@ -424,9 +427,9 @@ def get_parties(case_id, party_reader, last_party_read):
     while True:
         if party is None:
             try:
-                party = party_reader.next()
+                party = next(party_reader)
             except StopIteration:
-                print 'EOF'
+                print('EOF')
                 return (parties, party)
         if party['case_id'] != case_id:
             return (parties, party)
@@ -496,14 +499,14 @@ def export_all():
             metadata['anon'][key] = []
 
             table = '{}{}Case'.format(court_type, case_type)
-            print 'Export', table
+            print('Export', table)
             cur_metadata = export_table(table, court_type.lower(), case_type.lower())
 
             for data in cur_metadata:
                 copy_metadata(data, metadata['complete'][key], 'complete')
                 copy_metadata(data, metadata['anon'][key], 'anon')
 
-    print metadata
+    print(metadata)
     upload_metadata(metadata)
 
 def copy_metadata(source, dest, metadata_type):

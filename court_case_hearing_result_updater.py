@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from courtreader import readers
 from courtutils.logger import get_logger
 from datetime import datetime, timedelta, date

@@ -1,10 +1,13 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import re
 from datetime import datetime
+from six.moves import zip
 
 def handle_parse_exception(soup):
-    print '\nException parsing HTML.', \
+    print('\nException parsing HTML.', \
           'Probably contained something unexpected.', \
-          'Check unexpected_output.html'
+          'Check unexpected_output.html')
     with open('unexpected_output.html', 'wb') as output:
         output.write(soup.prettify().encode('UTF-8'))
 
@@ -251,12 +254,12 @@ NO_ATTORNEY = [
 
 def parse_table_row(row, table_headers):
     data_dict = {}
-    data_list = zip(
+    data_list = list(zip(
         table_headers,
         [cell.string.replace('\0', '').strip()
          if cell.string is not None else ''
          for cell in row.find_all('td')]
-    )
+    ))
     for item in data_list:
         if item[1] == '':
             continue

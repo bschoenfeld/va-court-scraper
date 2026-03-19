@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 from courtreader import readers
 from courtutils.logger import get_logger
 from datetime import datetime, timedelta, date
@@ -38,9 +40,9 @@ def update_case(reader, db, cur_fips, case):
     case['collected'] = datetime.now()
 
     if 'WritIssuedDate' in case['details']:
-        print case['details']['WritIssuedDate']
+        print(case['details']['WritIssuedDate'])
     else:
-        print 'No Writ Issued'
+        print('No Writ Issued')
 
     db.replace_case_details(case, 'civil')
 

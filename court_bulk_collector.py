@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from courtreader import readers
 from courtutils.logger import get_logger
 from time import sleep
@@ -127,7 +128,7 @@ def run_collector(reader, last_task):
 
         if reader_connected:
             reader.log_off()
-    except Exception, err:
+    except Exception as err:
         log.error(traceback.format_exc())
         log.warn('Putting task back')
         db.rollback()
@@ -164,7 +165,7 @@ def run():
             if reader is None:
                 reader = get_reader()
             finished_task = run_collector(reader, finished_task)
-        except Exception, err:
+        except Exception as err:
             try:
                 reader.log_off()
             except:

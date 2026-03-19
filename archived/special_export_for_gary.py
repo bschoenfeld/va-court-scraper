@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from courtutils.database import Database
 from pprint import pprint
 import csv
@@ -36,7 +37,7 @@ with open('./data.csv', 'w') as csvfile:
             if field in case:
                 del case[field]
         if fieldnames is None:
-            fieldnames = case.keys()
+            fieldnames = list(case.keys())
             for fieldname in force_fieldnames:
                 if fieldname not in fieldnames:
                     fieldnames.append(fieldname)

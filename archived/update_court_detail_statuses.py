@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import pymongo
 
@@ -7,9 +9,9 @@ circuit_db = circuit_db_client.va_circuit_court_cases
 district_db_client = pymongo.MongoClient(os.environ['DISTRICT_DB'])
 district_db = district_db_client.va_district_court_cases
 
-print 'DISTRICT COURT'
+print('DISTRICT COURT')
 for court in district_db.courts.find():
-    print court['name']
+    print(court['name'])
     court['total_count'] = district_db.cases.count({
         'FIPSCode': court['fips_code']
     })
@@ -21,9 +23,9 @@ for court in district_db.courts.find():
         '_id': court['_id']
     }, court)
 
-print 'CIRCUIT COURT'
+print('CIRCUIT COURT')
 for court in circuit_db.courts.find():
-    print court['name']
+    print(court['name'])
     court['total_count'] = circuit_db.cases.count({
         'FIPSCode': court['fips_code'],
         'CaseNumber': {'$regex': '^CR1[0-4].*'}

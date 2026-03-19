@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import csv
 import sys
 from itertools import groupby
@@ -29,7 +31,7 @@ with open(sys.argv[1]) as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
         rows.append(row)
-fieldnames = rows[0].keys()
+fieldnames = list(rows[0].keys())
 
 agencies = [key for key, group in groupby(rows, lambda x: x['agency'])]
 agencies_to_court = {}
@@ -37,7 +39,7 @@ sanitized_agencies_to_court = {}
 for agency in agencies:
     sanitized_agency = sanitize_agency(agency)
     if sanitized_agency in sanitized_agencies_to_court:
-        print 'FOUND SANITIZED AGENCY'
+        print('FOUND SANITIZED AGENCY')
         agencies_to_court[agency] = sanitized_agencies_to_court[sanitized_agency]
     agencies_to_court[agency] = None
     for court_name in court_names:
@@ -51,16 +53,16 @@ for agency in agencies_to_court:
     if agencies_to_court[agency] is None:
         sanitized_agency = sanitize_agency(agency)
         if sanitized_agency in sanitized_agencies_to_court:
-            print 'FOUND SANITIZED AGENCY'
+            print('FOUND SANITIZED AGENCY')
             agencies_to_court[agency] = sanitized_agencies_to_court[sanitized_agency]
         geocoder = 'OSM'
         location = geolocator_osm.geocode(sanitized_agency + ', Virginia, USA')
         if location is None:
-            print agency, 'GEOCODING FAILED'
+            print(agency, 'GEOCODING FAILED')
             continue
         nearest_court = Database.get_closest_court('circuit', \
                             location.latitude, location.longitude)
-        print agency, 'GEOCODED BY', geocoder, nearest_court['name']
+        print(agency, 'GEOCODED BY', geocoder, nearest_court['name'])
         agencies_to_court[agency] = nearest_court['name']
         sanitized_agencies_to_court[sanitized_agency] = nearest_court['name']
 

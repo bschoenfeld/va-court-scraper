@@ -1,6 +1,9 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 #from geopy.geocoders import GoogleV3
 from courtreader import readers
+import six
 
 MONGO = False
 POSTGRES = True
@@ -13,7 +16,7 @@ if POSTGRES:
 
 #geolocator = GoogleV3(api_key=os.environ['GOOGLE_API_KEY'])
 
-print 'CIRCUIT COURT'
+print('CIRCUIT COURT')
 circuit_db = None
 if MONGO: circuit_db = MongoDatabase('va_court_search', 'circuit')
 if POSTGRES: circuit_db = PostgresDatabase('circuit')
@@ -21,8 +24,8 @@ circuit_db.drop_courts()
 reader = readers.CircuitCourtReader()
 courts = reader.connect()
 court_names = []
-for fips, court in courts.iteritems():
-    print court['name']
+for fips, court in six.iteritems(courts):
+    print(court['name'])
     court_locality = court['name'].replace(' Circuit Court', '')
     #location = geolocator.geocode(court_locality + ', Virginia, USA')
     circuit_db.add_court(court['name'], fips, None)
@@ -36,7 +39,7 @@ for court_name in court_names:
     print court_name
 '''
 
-print 'DISTRICT COURT'
+print('DISTRICT COURT')
 district_db = None
 if MONGO: district_db = MongoDatabase('va_court_search', 'district')
 if POSTGRES: district_db = PostgresDatabase('district')
@@ -44,8 +47,8 @@ district_db.drop_courts()
 reader = readers.DistrictCourtReader()
 courts = reader.connect()
 court_names = []
-for fips, court in courts.iteritems():
-    print court
+for fips, court in six.iteritems(courts):
+    print(court)
     court_locality = court.replace('-Marsh Criminal/Traffic General District Court at Manchester', '') \
                           .replace(' General District Court', '') \
                           .replace('-Criminal', '') \

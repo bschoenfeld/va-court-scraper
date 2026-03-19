@@ -1,6 +1,7 @@
-import urllib
+from __future__ import absolute_import
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 from bs4 import BeautifulSoup
-from opener import Opener
+from .opener import Opener
 
 class CircuitCourtOpener:
     url_root = 'https://eapps.courts.state.va.us/CJISWeb/'
@@ -17,12 +18,12 @@ class CircuitCourtOpener:
         return BeautifulSoup(page.read(), 'html.parser')
 
     def log_off(self):
-        data = urllib.urlencode({'searchType': ''})
+        data = six.moves.urllib.parse.urlencode({'searchType': ''})
         url = self.url('Logoff.do')
         self.opener.open(url, data)
 
     def change_court(self, code, court):
-        data = urllib.urlencode({
+        data = six.moves.urllib.parse.urlencode({
             'courtId': code,
             'courtType': 'C',
             'caseType': 'ALL',
@@ -40,7 +41,7 @@ class CircuitCourtOpener:
             'caseNo':case_number,
             'categorySelected':category
         }
-        data = urllib.urlencode(data)
+        data = six.moves.urllib.parse.urlencode(data)
         url = self.url('CaseDetail.do')
         page = self.opener.open(url, data)
         return BeautifulSoup(page.read(), 'html.parser')
@@ -53,7 +54,7 @@ class CircuitCourtOpener:
             'caseStatus':'A',
             'caseNo':case_number
         }
-        data = urllib.urlencode(data)
+        data = six.moves.urllib.parse.urlencode(data)
         url = self.url('CaseDetail.do')
         page = self.opener.open(url, data)
         return BeautifulSoup(page.read(), 'html.parser')
@@ -66,7 +67,7 @@ class CircuitCourtOpener:
             'caseStatus':'A',
             'caseNo':case_number
         }
-        data = urllib.urlencode(data)
+        data = six.moves.urllib.parse.urlencode(data)
         url = self.url('CaseDetail.do')
         page = self.opener.open(url, data)
         return BeautifulSoup(page.read(), 'html.parser')
@@ -75,7 +76,7 @@ class CircuitCourtOpener:
         data = {
             'courtId':code
         }
-        data = urllib.urlencode(data)
+        data = six.moves.urllib.parse.urlencode(data)
         url = self.url('MainMenu.do')
         self.opener.open(url, data)
         return
@@ -87,7 +88,7 @@ class CircuitCourtOpener:
             'courtId': code,
             'submitValue': 'N'
         }
-        data = urllib.urlencode(data)
+        data = six.moves.urllib.parse.urlencode(data)
         url = self.url('Search.do')
         page = self.opener.open(url, data)
         return BeautifulSoup(page.read(), 'html.parser')
@@ -106,7 +107,7 @@ class CircuitCourtOpener:
             'searchType': '',
             'emptyList': ''
         }
-        data = urllib.urlencode(data)
+        data = six.moves.urllib.parse.urlencode(data)
         url = self.url('Search.do')
         page = self.opener.open(url, data)
         return BeautifulSoup(page.read(), 'html.parser')
@@ -120,7 +121,7 @@ class CircuitCourtOpener:
             'submitValue':'',
             'courtId':code
         }
-        data = urllib.urlencode(data)
+        data = six.moves.urllib.parse.urlencode(data)
         url = self.url('hearSearch.do')
         page = self.opener.open(url, data)
         return BeautifulSoup(page.read(), 'html.parser')
@@ -137,7 +138,7 @@ class CircuitCourtOpener:
             'searchType': '',
             'emptyList': ''
         }
-        data = urllib.urlencode(data)
+        data = six.moves.urllib.parse.urlencode(data)
         url = self.url('hearSearch.do')
         page = self.opener.open(url, data)
         return BeautifulSoup(page.read(), 'html.parser')

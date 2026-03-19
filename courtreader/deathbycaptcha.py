@@ -68,6 +68,8 @@ Visit http://www.deathbycaptcha.com/user/api for updates.
 
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import base64
 import binascii
 import errno
@@ -79,8 +81,9 @@ import socket
 import sys
 import threading
 import time
-import urllib
-import urllib2
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
+import six.moves.urllib.request, six.moves.urllib.error, six.moves.urllib.parse
+from six.moves import range
 try:
     from json import read as json_decode, write as json_encode
 except ImportError:
@@ -105,7 +108,7 @@ HTTP_RESPONSE_TYPE = 'application/json'
 
 # Socket API server's host & ports range
 SOCKET_HOST = 'api.dbcapi.me'
-SOCKET_PORTS = range(8123, 8131)
+SOCKET_PORTS = list(range(8123, 8131))
 
 
 def _load_image(captcha):
@@ -144,7 +147,7 @@ class Client(object):
 
     def _log(self, cmd, msg=''):
         if self.is_verbose:
-            print '%d %s %s' % (time.time(), cmd, msg.rstrip())
+            print('%d %s %s' % (time.time(), cmd, msg.rstrip()))
         return self
 
     def close(self):
@@ -209,7 +212,7 @@ class HttpClient(Client):
 
     def __init__(self, *args):
         Client.__init__(self, *args)
-        self.opener = urllib2.build_opener(urllib2.HTTPRedirectHandler())
+        self.opener = six.moves.urllib.request.build_opener(six.moves.urllib.request.HTTPRedirectHandler())
 
     def _call(self, cmd, payload=None, headers=None):
         if headers is None:
@@ -217,19 +220,19 @@ class HttpClient(Client):
         headers['Accept'] = HTTP_RESPONSE_TYPE
         headers['User-Agent'] = API_VERSION
         if hasattr(payload, 'items'):
-            payload = urllib.urlencode(payload)
+            payload = six.moves.urllib.parse.urlencode(payload)
             self._log('SEND', '%s %d %s' % (cmd, len(payload), payload))
         else:
             self._log('SEND', '%s' % cmd)
         if payload is not None:
             headers['Content-Length'] = len(payload)
         try:
-            response = self.opener.open(urllib2.Request(
+            response = self.opener.open(six.moves.urllib.request.Request(
                 HTTP_BASE_URL + '/' + cmd.strip('/'),
                 data=payload,
                 headers=headers
             )).read()
-        except urllib2.HTTPError, err:
+        except six.moves.urllib.error.HTTPError as err:
             if 403 == err.code:
                 raise AccessDeniedException('Access denied, please check your credentials and/or balance')
             elif 400 == err.code or 413 == err.code:
@@ -319,7 +322,7 @@ class SocketClient(Client):
             self.socket.settimeout(0)
             try:
                 self.socket.connect(host)
-            except socket.error, err:
+            except socket.error as err:
                 if err.args[0] not in (errno.EAGAIN, errno.EWOULDBLOCK, errno.EINPROGRESS):
                     self.close()
                     raise err
@@ -351,7 +354,7 @@ class SocketClient(Client):
                             raise IOError('recv(): connection lost')
                         else:
                             response += s
-            except socket.error, err:
+            except socket.error as err:
                 if err.args[0] not in (errno.EAGAIN, errno.EWOULDBLOCK, errno.EINPROGRESS):
                     raise err
             if response.endswith(self.TERMINATOR):
@@ -374,10 +377,10 @@ class SocketClient(Client):
             try:
                 sock = self.connect()
                 response = self._sendrecv(sock, request)
-            except IOError, err:
+            except IOError as err:
                 sys.stderr.write(str(err) + "\n")
                 self.close()
-            except socket.error, err:
+            except socket.error as err:
                 sys.stderr.write(str(err) + "\n")
                 self.close()
                 raise IOError('Connection refused')
@@ -443,20 +446,20 @@ if '__main__' == __name__:
     client = SocketClient(sys.argv[1], sys.argv[2])
     client.is_verbose = True
 
-    print 'Your balance is %s US cents' % client.get_balance()
+    print('Your balance is %s US cents' % client.get_balance())
 
     for fn in sys.argv[3:]:
         try:
             # Put your CAPTCHA image file name or file-like object, and optional
             # solving timeout (in seconds) here:
             captcha = client.decode(fn, DEFAULT_TIMEOUT)
-        except Exception, e:
+        except Exception as e:
             sys.stderr.write('Failed uploading CAPTCHA: %s\n' % (e, ))
             captcha = None
 
         if captcha:
-            print 'CAPTCHA %d solved: %s' % \
-                  (captcha['captcha'], captcha['text'])
+            print('CAPTCHA %d solved: %s' % \
+                  (captcha['captcha'], captcha['text']))
 
             # Report as incorrectly solved if needed.  Make sure the CAPTCHA was
             # in fact incorrectly solved!
