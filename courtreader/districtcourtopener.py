@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from . import deathbycaptcha
 import logging
 import os
 import time
