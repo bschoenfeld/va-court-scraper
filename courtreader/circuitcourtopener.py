@@ -1,15 +1,26 @@
 from __future__ import absolute_import
+import logging
 from bs4 import BeautifulSoup
-from playwright.sync_api import sync_playwright
+from .browser import get_playwright
+
+log = logging.getLogger('logentries')
 
 class CircuitCourtOpener:
     url_root = 'https://eapps.courts.state.va.us/CJISWeb/'
 
     def __init__(self):
-        self.playwright = sync_playwright().start()
-        self.browser = self.playwright.chromium.launch()
-        self.context = self.browser.new_context()
+        self.playwright = get_playwright()
+        self.browser = self.playwright.chromium.launch(headless=False)
+        self.context = self.browser.new_context(
+            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                       '(KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+        )
         self.driver = self.context.new_page()
+        try:
+            from playwright_stealth import stealth_sync
+            stealth_sync(self.driver)
+        except ImportError:
+            log.warning("playwright-stealth not installed.")
 
     def url(self, url):
         return CircuitCourtOpener.url_root + url

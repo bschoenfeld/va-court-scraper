@@ -1,12 +1,8 @@
 from __future__ import absolute_import
 import logging
-import os
 import time
-import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 from bs4 import BeautifulSoup
-from .opener import Opener
-from playwright.sync_api import sync_playwright
-from six.moves import input
+from .browser import get_playwright
 
 log = logging.getLogger('logentries')
 
@@ -14,59 +10,66 @@ class DistrictCourtOpener:
     url_root = 'https://eapps.courts.state.va.us/gdcourts/'
 
     def __init__(self):
-        self.opener = Opener('district')
         self.use_driver = True
         self.browser = None
         self.playwright = None
         self.context = None
         self.driver = None
         self.driver_open = False
+        self.open_driver()
 
     def url(self, url):
         return DistrictCourtOpener.url_root + url
 
     def log_off(self):
-        if hasattr(self, 'browser') and self.browser:
+        if self.browser:
             self.browser.close()
-        if hasattr(self, 'playwright') and self.playwright:
+        if self.playwright:
             self.playwright.stop()
         return None
 
     def open_driver(self):
-        self.playwright = sync_playwright().start()
-        self.browser = self.playwright.chromium.launch()
-        self.context = self.browser.new_context()
+        if self.driver_open:
+            return
+        self.playwright = get_playwright()
+        # Launch headful to avoid bot mitigation blocks
+        self.browser = self.playwright.chromium.launch(headless=False)
+        self.context = self.browser.new_context(
+            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                       '(KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+        )
         self.driver = self.context.new_page()
+        try:
+            from playwright_stealth import stealth_sync
+            stealth_sync(self.driver)
+        except ImportError:
+            log.warning("playwright-stealth not installed. Captcha might be triggered easily.")
         self.driver_open = True
 
     def open_welcome_page(self):
         url = self.url('caseSearch.do?welcomePage=welcomePage')
-        page = self.opener.open('https://google.com')
-        page_content = page.read()
-        page = self.opener.open(url)
-        page_content = page.read()
+        self.driver.goto(url)
+        content = self.driver.content()
         # See if we need to solve a captcha
-        if 'By clicking Accept' in page_content:
-            self.solve_captcha(url)
-            page = self.opener.open(url)
-            page_content = page.read()
-        if 'By clicking Accept' in page_content:
-            raise RuntimeError('CAPTCHA failed')
-        return BeautifulSoup(page_content, 'html.parser')
+        if 'By clicking Accept' in content:
+            log.info('Captcha detected. Please solve the captcha in the open browser window.')
+            # Wait until the page doesn't have 'By clicking Accept' anymore
+            self.driver.wait_for_function('() => !document.body.innerText.includes("By clicking Accept")', timeout=300000)
+            log.info('Captcha solved successfully.')
+        return BeautifulSoup(self.driver.content(), 'html.parser')
 
     def solve_captcha(self, url):
-        cookie = input('JESSSIONID')
-        self.opener.set_cookie('JSESSIONID', cookie)
-        self.opener.save_cookies()
+        # Captcha is now solved interactively inside Playwright (open_welcome_page)
+        pass
 
     def change_court(self, name, code):
-        data = six.moves.urllib.parse.urlencode({
+        data = {
             'selectedCourtsName': name,
             'selectedCourtsFipCode': code,
             'sessionCourtsFipCode': ''
-        })
+        }
         url = self.url('changeCourt.do')
-        self.opener.open(url, data)
+        self.context.request.post(url, form=data)
 
     def open_hearing_date_search(self, code, search_division):
         url = self.url('caseSearch.do')
@@ -74,7 +77,7 @@ class DistrictCourtOpener:
         url += '&searchType=hearingDate&searchDivision=' + search_division
         url += '&searchFipsCode=' + code
         url += '&curentFipsCode=' + code
-        self.opener.open(url)
+        self.context.request.get(url)
 
     def do_hearing_date_search(self, code, date, first_page):
         data = {
@@ -96,23 +99,24 @@ class DistrictCourtOpener:
         else:
             data['caseInfoScrollForward'] = 'Next'
             data['unCheckedCases'] = ''
-        data = six.moves.urllib.parse.urlencode(data)
+        
         url = self.url('caseSearch.do')
-        page = self.opener.open(url, data)
+        resp = self.context.request.post(url, form=data)
         content = ''
-        for line in page:
+        
+        for line in resp.text().splitlines():
             if '<a href="caseSearch.do?formAction=caseDetails' in line:
                 line = line.replace('/>', '>')
-            content += line
-        soup = BeautifulSoup(content, 'html.parser')
-        return soup
+            content += line + '\n'
+            
+        return BeautifulSoup(content, 'html.parser')
 
     def open_case_number_search(self, code, search_division):
         url = self.url('criminalCivilCaseSearch.do')
         url += '?fromSidebar=true&formAction=searchLanding&searchDivision=' + search_division
         url += '&searchFipsCode=' + code
         url += '&curentFipsCode=' + code
-        self.opener.open(url)
+        self.context.request.get(url)
 
     def do_case_number_search(self, code, case_number, search_division):
         data = {
@@ -124,30 +128,25 @@ class DistrictCourtOpener:
             'localFipsCode':code,
             'clientSearchCounter':0
         }
-        data = six.moves.urllib.parse.urlencode(data)
         url = self.url('criminalCivilCaseSearch.do')
-        self.opener.open(url, data)
-        # the post returns 302, then we have to do a GET... strange
+        self.context.request.post(url, form=data)
 
-        url = self.url('criminalDetail.do' if search_division == 'T' else 'civilDetail.do')
-        content = self.opener.open(url)
-        soup = BeautifulSoup(content, 'html.parser')
-        return soup
+        url_postfix = 'criminalDetail.do' if search_division == 'T' else 'civilDetail.do'
+        url2 = self.url(url_postfix)
+        resp = self.context.request.get(url2)
+        return BeautifulSoup(resp.text(), 'html.parser')
 
     def open_case_details(self, details_url):
         url = self.url(details_url)
-        page = self.opener.open(url)
-        return BeautifulSoup(page.read(), 'html.parser')
+        resp = self.context.request.get(url)
+        return BeautifulSoup(resp.text(), 'html.parser')
 
     def open_name_search(self, code, search_division):
         url = self.url('nameSearch.do')
         url += '?fromSidebar=true&formAction=searchLanding&searchDivision=' + search_division
         url += '&searchFipsCode=' + code
         url += '&curentFipsCode=' + code
-        if self.use_driver:
-            self.driver.goto(url)
-        else:
-            self.opener.open(url)
+        self.driver.goto(url)
 
     def do_name_search_with_driver(self, code, name, count, prev_cases):
         if prev_cases:
@@ -155,14 +154,14 @@ class DistrictCourtOpener:
         else:
             self.driver.locator("input[name='localnamesearchlastName']").fill(name)
             self.driver.locator("//input[@value='Search'][@type='submit']").click()
-        time.sleep(1)
-        source = self.driver.content()
-        soup = BeautifulSoup(source, 'html.parser')
-        return soup
+        
+        self.driver.wait_for_timeout(1000)
+        return BeautifulSoup(self.driver.content(), 'html.parser')
 
     def do_name_search(self, code, search_division, name, count, prev_cases=None):
         if self.use_driver:
             return self.do_name_search_with_driver(code, name, count, prev_cases)
+        
         data = {
             'formAction':'newSearch',
             'displayCaseNumber':'',
@@ -198,8 +197,7 @@ class DistrictCourtOpener:
             data['firstRowCaseNumber'] = prev_cases[0]['case_number']
             data['lastRowName'] = prev_cases[-1]['defendant']
             data['lastRowCaseNumber'] = prev_cases[-1]['case_number']
-        data = six.moves.urllib.parse.urlencode(data)
+        
         url = self.url('nameSearch.do')
-        content = self.opener.open(url, data)
-        soup = BeautifulSoup(content, 'html.parser')
-        return soup
+        resp = self.context.request.post(url, form=data)
+        return BeautifulSoup(resp.text(), 'html.parser')

@@ -26,6 +26,7 @@ python-Levenshtein
 requests
 s3transfer
 playwright
+playwright-stealth
 sendwithus
 six
 SQLAlchemy
