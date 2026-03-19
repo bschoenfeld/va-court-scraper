@@ -1,7 +1,10 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import csv
 import os
 import sys
 from pprint import pprint
+from six.moves import range
 
 def get_parties(case_id, party_reader, last_party_read):
     parties = []
@@ -9,9 +12,9 @@ def get_parties(case_id, party_reader, last_party_read):
     while True:
         if party is None:
             try:
-                party = party_reader.next()
+                party = next(party_reader)
             except StopIteration:
-                print 'EOF'
+                print('EOF')
                 return (parties, party)
         if party['case_id'] != case_id:
             return (parties, party)
@@ -35,9 +38,9 @@ def get_party_headers(party_name):
         ])
     return party_headers
 
-with open(sys.argv[1]) as cases_file, \
-     open(sys.argv[2]) as plaintiffs_file, \
-     open(sys.argv[3]) as defendants_file:
+with open(sys.argv[1], 'r', encoding='utf-8') as cases_file, \
+     open(sys.argv[2], 'r', encoding='utf-8') as plaintiffs_file, \
+     open(sys.argv[3], 'r', encoding='utf-8') as defendants_file:
 
     case_reader = csv.DictReader(cases_file)
     plaintiff_reader = csv.DictReader(plaintiffs_file)
@@ -71,7 +74,7 @@ with open(sys.argv[1]) as cases_file, \
                 str(file_count).zfill(2),
                 filename_parts[1]
             )
-            output_file = open(filename, 'w')
+            output_file = open(filename, 'w', newline='')
             output_writer = csv.DictWriter(output_file, fieldnames=headers)
             output_writer.writeheader()
 

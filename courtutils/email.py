@@ -1,8 +1,9 @@
+from __future__ import absolute_import
 from datetime import timedelta, datetime
 import hashlib
 import os
 import sendwithus
-import urllib
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 
 def unix_time_millis(dt):
     epoch = datetime.utcfromtimestamp(0)
@@ -23,7 +24,7 @@ def generate_uri(route, email_address, expiration):
 def create_link(email_address, route):
     expires = datetime.utcnow() + timedelta(days=1)
     uri = generate_uri(route,
-        urllib.quote(email_address),
+        six.moves.urllib.parse.quote(email_address),
         str(unix_time_millis(expires)))
     uri += '&token=' + generate_token(uri)
     return uri
@@ -32,7 +33,7 @@ def verify_link(route, email_address, expiration, token):
     if datetime.fromtimestamp(float(expiration)) < datetime.utcnow():
         return False
     uri = generate_uri(route,
-        urllib.quote(email_address),
+        six.moves.urllib.parse.quote(email_address),
         expiration)
     return token == generate_token(uri)
 

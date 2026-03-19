@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 from datetime import datetime, date
 from sqlalchemy import (create_engine, Boolean, Column,
@@ -793,7 +795,7 @@ class PostgresDatabase():
                     'case_type': task.casetype
                 }
             except IntegrityError:
-                print 'WARNING - FAILED TO GET NEW TASK'
+                print('WARNING - FAILED TO GET NEW TASK')
                 self.session.rollback()
 
     def add_date_search(self, search):

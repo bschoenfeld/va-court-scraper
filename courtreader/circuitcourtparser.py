@@ -1,10 +1,12 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import re
 from datetime import datetime
 
 def handle_parse_exception(soup):
-    print '\nException parsing HTML.', \
+    print('\nException parsing HTML.', \
           'Probably contained something unexpected.', \
-          'Check unexpected_output.html'
+          'Check unexpected_output.html')
     with open('unexpected_output.html', 'wb') as output:
         output.write(soup.prettify().encode('UTF-8'))
 

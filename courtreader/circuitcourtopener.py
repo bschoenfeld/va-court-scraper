@@ -1,37 +1,55 @@
-import urllib
+from __future__ import absolute_import
+import logging
 from bs4 import BeautifulSoup
-from opener import Opener
+from .browser import get_playwright
+
+log = logging.getLogger('logentries')
 
 class CircuitCourtOpener:
     url_root = 'https://eapps.courts.state.va.us/CJISWeb/'
 
     def __init__(self):
-        self.opener = Opener('circuit')
+        self.playwright = get_playwright()
+        self.browser = self.playwright.chromium.launch(headless=False)
+        self.context = self.browser.new_context(
+            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                       '(KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+        )
+        self.driver = self.context.new_page()
+        try:
+            from playwright_stealth import stealth_sync
+            stealth_sync(self.driver)
+        except ImportError:
+            log.warning("playwright-stealth not installed.")
 
     def url(self, url):
         return CircuitCourtOpener.url_root + url
 
     def open_welcome_page(self):
         url = self.url('circuit.jsp')
-        page = self.opener.open(url)
-        return BeautifulSoup(page.read(), 'html.parser')
+        resp = self.context.request.get(url)
+        return BeautifulSoup(resp.text(), 'html.parser')
 
     def log_off(self):
-        data = urllib.urlencode({'searchType': ''})
+        data = {'searchType': ''}
         url = self.url('Logoff.do')
-        self.opener.open(url, data)
+        self.context.request.post(url, form=data)
+        if self.browser:
+            self.browser.close()
+        if self.playwright:
+            self.playwright.stop()
 
     def change_court(self, code, court):
-        data = urllib.urlencode({
+        data = {
             'courtId': code,
             'courtType': 'C',
             'caseType': 'ALL',
             'testdos': False,
             'sessionCreate': 'NEW',
             'whichsystem': court
-        })
+        }
         url = self.url('MainMenu.do')
-        self.opener.open(url, data)
+        self.context.request.post(url, form=data)
 
     def do_case_number_search(self, code, case_number, category):
         data = {
@@ -40,10 +58,9 @@ class CircuitCourtOpener:
             'caseNo':case_number,
             'categorySelected':category
         }
-        data = urllib.urlencode(data)
         url = self.url('CaseDetail.do')
-        page = self.opener.open(url, data)
-        return BeautifulSoup(page.read(), 'html.parser')
+        resp = self.context.request.post(url, form=data)
+        return BeautifulSoup(resp.text(), 'html.parser')
 
     def do_case_number_pleadings_search(self, code, case_number, category):
         data = {
@@ -53,10 +70,9 @@ class CircuitCourtOpener:
             'caseStatus':'A',
             'caseNo':case_number
         }
-        data = urllib.urlencode(data)
         url = self.url('CaseDetail.do')
-        page = self.opener.open(url, data)
-        return BeautifulSoup(page.read(), 'html.parser')
+        resp = self.context.request.post(url, form=data)
+        return BeautifulSoup(resp.text(), 'html.parser')
 
     def do_case_number_services_search(self, code, case_number, category):
         data = {
@@ -66,18 +82,16 @@ class CircuitCourtOpener:
             'caseStatus':'A',
             'caseNo':case_number
         }
-        data = urllib.urlencode(data)
         url = self.url('CaseDetail.do')
-        page = self.opener.open(url, data)
-        return BeautifulSoup(page.read(), 'html.parser')
+        resp = self.context.request.post(url, form=data)
+        return BeautifulSoup(resp.text(), 'html.parser')
 
     def return_to_main_menu(self, code):
         data = {
             'courtId':code
         }
-        data = urllib.urlencode(data)
         url = self.url('MainMenu.do')
-        self.opener.open(url, data)
+        self.context.request.post(url, form=data)
         return
 
     def do_name_search(self, code, name, category):
@@ -87,10 +101,9 @@ class CircuitCourtOpener:
             'courtId': code,
             'submitValue': 'N'
         }
-        data = urllib.urlencode(data)
         url = self.url('Search.do')
-        page = self.opener.open(url, data)
-        return BeautifulSoup(page.read(), 'html.parser')
+        resp = self.context.request.post(url, form=data)
+        return BeautifulSoup(resp.text(), 'html.parser')
 
     def continue_name_search(self, code, category):
         data = {
@@ -106,10 +119,9 @@ class CircuitCourtOpener:
             'searchType': '',
             'emptyList': ''
         }
-        data = urllib.urlencode(data)
         url = self.url('Search.do')
-        page = self.opener.open(url, data)
-        return BeautifulSoup(page.read(), 'html.parser')
+        resp = self.context.request.post(url, form=data)
+        return BeautifulSoup(resp.text(), 'html.parser')
 
     def do_date_search(self, code, date, category):
         data = {
@@ -120,10 +132,9 @@ class CircuitCourtOpener:
             'submitValue':'',
             'courtId':code
         }
-        data = urllib.urlencode(data)
         url = self.url('hearSearch.do')
-        page = self.opener.open(url, data)
-        return BeautifulSoup(page.read(), 'html.parser')
+        resp = self.context.request.post(url, form=data)
+        return BeautifulSoup(resp.text(), 'html.parser')
 
     def continue_date_search(self, code, category):
         data = {
@@ -137,7 +148,6 @@ class CircuitCourtOpener:
             'searchType': '',
             'emptyList': ''
         }
-        data = urllib.urlencode(data)
         url = self.url('hearSearch.do')
-        page = self.opener.open(url, data)
-        return BeautifulSoup(page.read(), 'html.parser')
+        resp = self.context.request.post(url, form=data)
+        return BeautifulSoup(resp.text(), 'html.parser')
