@@ -18,7 +18,6 @@ I'll be using AWS, but that's not a requirement.
 
         git clone https://github.com/bschoenfeld/va-court-scraper.git
 
-1. Download [Chromedriver](https://sites.google.com/a/chromium.org/chromedriver/downloads) to the root of the repo directory
 1. Create a virtual environment in the root of the repo directory. Again, I'm using powershell on windows. The commands will be a bit different for activating the virtual environment and setting the environment variables
 
         pip install virtualenv
@@ -27,7 +26,8 @@ I'll be using AWS, but that's not a requirement.
 
 1. Install dependencies
 
-        pip install selenium mechanize beautifulsoup4 psycopg2 SQLAlchemy GeoAlchemy2 pgcli
+        pip install playwright mechanize beautifulsoup4 psycopg2 SQLAlchemy GeoAlchemy2 pgcli
+        playwright install chromium
 
 1. Connect to the database and add the postgis extension
 
@@ -125,7 +125,8 @@ git clone https://github.com/bschoenfeld/va-court-scraper.git
 cd va-court-scraper
 virtualenv venv
 source venv/bin/activate
-pip install selenium mechanize beautifulsoup4 psycopg2 SQLAlchemy GeoAlchemy2 pgcli boto3 awscli python-firebase
+pip install playwright mechanize beautifulsoup4 psycopg2 SQLAlchemy GeoAlchemy2 pgcli boto3 awscli python-firebase
+playwright install chromium
 export FIREBASE_TOKEN='<FIREBASETOKEN>'
 export PGHOST='<PGHOST>'
 export PGDATABASE='<PGDATABASE>'

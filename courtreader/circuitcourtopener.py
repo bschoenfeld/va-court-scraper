@@ -1,38 +1,44 @@
 from __future__ import absolute_import
-import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 from bs4 import BeautifulSoup
-from .opener import Opener
+from playwright.sync_api import sync_playwright
 
 class CircuitCourtOpener:
     url_root = 'https://eapps.courts.state.va.us/CJISWeb/'
 
     def __init__(self):
-        self.opener = Opener('circuit')
+        self.playwright = sync_playwright().start()
+        self.browser = self.playwright.chromium.launch()
+        self.context = self.browser.new_context()
+        self.driver = self.context.new_page()
 
     def url(self, url):
         return CircuitCourtOpener.url_root + url
 
     def open_welcome_page(self):
         url = self.url('circuit.jsp')
-        page = self.opener.open(url)
-        return BeautifulSoup(page.read(), 'html.parser')
+        resp = self.context.request.get(url)
+        return BeautifulSoup(resp.text(), 'html.parser')
 
     def log_off(self):
-        data = six.moves.urllib.parse.urlencode({'searchType': ''})
+        data = {'searchType': ''}
         url = self.url('Logoff.do')
-        self.opener.open(url, data)
+        self.context.request.post(url, form=data)
+        if self.browser:
+            self.browser.close()
+        if self.playwright:
+            self.playwright.stop()
 
     def change_court(self, code, court):
-        data = six.moves.urllib.parse.urlencode({
+        data = {
             'courtId': code,
             'courtType': 'C',
             'caseType': 'ALL',
             'testdos': False,
             'sessionCreate': 'NEW',
             'whichsystem': court
-        })
+        }
         url = self.url('MainMenu.do')
-        self.opener.open(url, data)
+        self.context.request.post(url, form=data)
 
     def do_case_number_search(self, code, case_number, category):
         data = {
@@ -41,10 +47,9 @@ class CircuitCourtOpener:
             'caseNo':case_number,
             'categorySelected':category
         }
-        data = six.moves.urllib.parse.urlencode(data)
         url = self.url('CaseDetail.do')
-        page = self.opener.open(url, data)
-        return BeautifulSoup(page.read(), 'html.parser')
+        resp = self.context.request.post(url, form=data)
+        return BeautifulSoup(resp.text(), 'html.parser')
 
     def do_case_number_pleadings_search(self, code, case_number, category):
         data = {
@@ -54,10 +59,9 @@ class CircuitCourtOpener:
             'caseStatus':'A',
             'caseNo':case_number
         }
-        data = six.moves.urllib.parse.urlencode(data)
         url = self.url('CaseDetail.do')
-        page = self.opener.open(url, data)
-        return BeautifulSoup(page.read(), 'html.parser')
+        resp = self.context.request.post(url, form=data)
+        return BeautifulSoup(resp.text(), 'html.parser')
 
     def do_case_number_services_search(self, code, case_number, category):
         data = {
@@ -67,18 +71,16 @@ class CircuitCourtOpener:
             'caseStatus':'A',
             'caseNo':case_number
         }
-        data = six.moves.urllib.parse.urlencode(data)
         url = self.url('CaseDetail.do')
-        page = self.opener.open(url, data)
-        return BeautifulSoup(page.read(), 'html.parser')
+        resp = self.context.request.post(url, form=data)
+        return BeautifulSoup(resp.text(), 'html.parser')
 
     def return_to_main_menu(self, code):
         data = {
             'courtId':code
         }
-        data = six.moves.urllib.parse.urlencode(data)
         url = self.url('MainMenu.do')
-        self.opener.open(url, data)
+        self.context.request.post(url, form=data)
         return
 
     def do_name_search(self, code, name, category):
@@ -88,10 +90,9 @@ class CircuitCourtOpener:
             'courtId': code,
             'submitValue': 'N'
         }
-        data = six.moves.urllib.parse.urlencode(data)
         url = self.url('Search.do')
-        page = self.opener.open(url, data)
-        return BeautifulSoup(page.read(), 'html.parser')
+        resp = self.context.request.post(url, form=data)
+        return BeautifulSoup(resp.text(), 'html.parser')
 
     def continue_name_search(self, code, category):
         data = {
@@ -107,10 +108,9 @@ class CircuitCourtOpener:
             'searchType': '',
             'emptyList': ''
         }
-        data = six.moves.urllib.parse.urlencode(data)
         url = self.url('Search.do')
-        page = self.opener.open(url, data)
-        return BeautifulSoup(page.read(), 'html.parser')
+        resp = self.context.request.post(url, form=data)
+        return BeautifulSoup(resp.text(), 'html.parser')
 
     def do_date_search(self, code, date, category):
         data = {
@@ -121,10 +121,9 @@ class CircuitCourtOpener:
             'submitValue':'',
             'courtId':code
         }
-        data = six.moves.urllib.parse.urlencode(data)
         url = self.url('hearSearch.do')
-        page = self.opener.open(url, data)
-        return BeautifulSoup(page.read(), 'html.parser')
+        resp = self.context.request.post(url, form=data)
+        return BeautifulSoup(resp.text(), 'html.parser')
 
     def continue_date_search(self, code, category):
         data = {
@@ -138,7 +137,6 @@ class CircuitCourtOpener:
             'searchType': '',
             'emptyList': ''
         }
-        data = six.moves.urllib.parse.urlencode(data)
         url = self.url('hearSearch.do')
-        page = self.opener.open(url, data)
-        return BeautifulSoup(page.read(), 'html.parser')
+        resp = self.context.request.post(url, form=data)
+        return BeautifulSoup(resp.text(), 'html.parser')

@@ -5,7 +5,7 @@ import time
 import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 from bs4 import BeautifulSoup
 from .opener import Opener
-from selenium import webdriver
+from playwright.sync_api import sync_playwright
 from six.moves import input
 
 log = logging.getLogger('logentries')
@@ -16,16 +16,27 @@ class DistrictCourtOpener:
     def __init__(self):
         self.opener = Opener('district')
         self.use_driver = True
+        self.browser = None
+        self.playwright = None
+        self.context = None
+        self.driver = None
+        self.driver_open = False
 
     def url(self, url):
         return DistrictCourtOpener.url_root + url
 
     def log_off(self):
+        if hasattr(self, 'browser') and self.browser:
+            self.browser.close()
+        if hasattr(self, 'playwright') and self.playwright:
+            self.playwright.stop()
         return None
 
     def open_driver(self):
-        self.driver = webdriver.Chrome('./chromedriver')
-        self.driver.implicitly_wait(3)
+        self.playwright = sync_playwright().start()
+        self.browser = self.playwright.chromium.launch()
+        self.context = self.browser.new_context()
+        self.driver = self.context.new_page()
         self.driver_open = True
 
     def open_welcome_page(self):
@@ -134,21 +145,18 @@ class DistrictCourtOpener:
         url += '&searchFipsCode=' + code
         url += '&curentFipsCode=' + code
         if self.use_driver:
-            self.driver.get(url)
+            self.driver.goto(url)
         else:
             self.opener.open(url)
 
     def do_name_search_with_driver(self, code, name, count, prev_cases):
         if prev_cases:
-            xpath = "//input[@value='Next'][@type='submit']"
-            self.driver.find_element_by_xpath(xpath).click()
+            self.driver.locator("//input[@value='Next'][@type='submit']").click()
         else:
-            self.driver.find_element_by_name('localnamesearchlastName') \
-                .send_keys(name)
-            xpath = "//input[@value='Search'][@type='submit']"
-            self.driver.find_element_by_xpath(xpath).click()
+            self.driver.locator("input[name='localnamesearchlastName']").fill(name)
+            self.driver.locator("//input[@value='Search'][@type='submit']").click()
         time.sleep(1)
-        source = self.driver.page_source
+        source = self.driver.content()
         soup = BeautifulSoup(source, 'html.parser')
         return soup
 
