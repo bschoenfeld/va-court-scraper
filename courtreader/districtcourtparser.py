@@ -278,7 +278,13 @@ def parse_table_row(row, table_headers):
 def simplify_time_str_to_days(time_string):
     time_string = time_string.replace(' Year(s)', 'Years ') \
                              .replace(' Month(s)', 'Months ') \
-                             .replace(' Day(s)', 'Days ')
+                             .replace(' Day(s)', 'Days ') \
+							 .replace(' Years', 'Years') \
+							 .replace(' Years', 'Years') \
+                             .replace(' Months', 'Months') \
+                             .replace(' Months', 'Months') \
+							 .replace(' Days', 'Days')\
+							 .replace(' Days', 'Days')
     days = 0
     string_parts = time_string.split(' ')
     for string_part in string_parts:
