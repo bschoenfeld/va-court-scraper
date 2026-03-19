@@ -111,6 +111,7 @@ class CircuitCriminalCase(Base, Case):
     DispositionCode = Column(String)
     DispositionDate = Column(Date)
     ConcludedBy = Column(String)
+    SentencedBy = Column(String)
     AmendedCharge = Column(String)
     AmendedCodeSection = Column(String)
     AmendedChargeType = Column(String)
