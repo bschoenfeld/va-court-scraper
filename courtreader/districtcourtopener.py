@@ -49,7 +49,7 @@ class DistrictCourtOpener:
     def _request_get(self, url, **kwargs):
         while True:
             resp = self.context.request.get(url, **kwargs)
-            if "You have exceeded the rate limit" in resp.text():
+            if b"You have exceeded the rate limit" in resp.body():
                 log.info("Rate limit exceeded. Waiting 10 seconds before retrying...")
                 time.sleep(10)
                 continue
@@ -58,7 +58,7 @@ class DistrictCourtOpener:
     def _request_post(self, url, **kwargs):
         while True:
             resp = self.context.request.post(url, **kwargs)
-            if "You have exceeded the rate limit" in resp.text():
+            if b"You have exceeded the rate limit" in resp.body():
                 log.info("Rate limit exceeded. Waiting 10 seconds before retrying...")
                 time.sleep(10)
                 continue
