@@ -30,11 +30,11 @@ def get_data_from_table(case, table):
         strings = list(cell.stripped_strings)
         if len(strings) < 2:
             continue
-        name = strings[0].encode('ascii', 'ignore') \
+        name = strings[0].encode('ascii', 'ignore').decode('ascii') \
                          .replace(':', '') \
                          .replace('/', '') \
                          .replace(' ', '')
-        case[name] = strings[1].encode('ascii', 'ignore') \
+        case[name] = strings[1].encode('ascii', 'ignore').decode('ascii') \
                                .replace('\0', '').strip()
 
 DATES = [
@@ -81,18 +81,18 @@ def get_data_from_table_with_rows(table, court_type):
         date_format = '%m/%d/%y'
     data = []
     rows = table.find_all('tr')
-    col_names = [x.encode('ascii') for x in rows.pop(0).stripped_strings]
+    col_names = [x.encode('ascii', 'ignore').decode('ascii') for x in rows.pop(0).stripped_strings]
     if '#' in col_names[0]:
         col_names[0] = 'Number'
     for row in rows:
         item = {}
         for i, col in enumerate(row.find_all('td')):
-            key = col_names[i].encode('ascii', 'ignore') \
+            key = col_names[i].encode('ascii', 'ignore').decode('ascii') \
                          .replace(':', '') \
                          .replace('/', '') \
                          .replace(' ', '')
             val = col.get_text(strip=True) \
-                     .encode('ascii', 'ignore') \
+                     .encode('ascii', 'ignore').decode('ascii') \
                      .replace('\0', '').strip()
             if val == '':
                 continue
@@ -196,7 +196,7 @@ def parse_civil_case_details(soup):
         case_details['Defendants'] = []
 
         for li in soup.find_all('li'):
-            line = [x.encode('ascii', 'ignore') for x in li.stripped_strings]
+            line = [x.encode('ascii', 'ignore').decode('ascii') for x in li.stripped_strings]
             if len(line) < 2:
                 continue
             key = line[0].replace(':', '')
