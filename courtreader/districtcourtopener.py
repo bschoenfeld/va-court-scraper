@@ -46,9 +46,36 @@ class DistrictCourtOpener:
             log.warning("playwright-stealth not installed. Captcha might be triggered easily.")
         self.driver_open = True
 
+    def _request_get(self, url, **kwargs):
+        while True:
+            resp = self.context.request.get(url, **kwargs)
+            if "You have exceeded the rate limit" in resp.text():
+                log.info("Rate limit exceeded. Waiting 10 seconds before retrying...")
+                time.sleep(10)
+                continue
+            return resp
+
+    def _request_post(self, url, **kwargs):
+        while True:
+            resp = self.context.request.post(url, **kwargs)
+            if "You have exceeded the rate limit" in resp.text():
+                log.info("Rate limit exceeded. Waiting 10 seconds before retrying...")
+                time.sleep(10)
+                continue
+            return resp
+
+    def _driver_goto(self, url, **kwargs):
+        while True:
+            self.driver.goto(url, **kwargs)
+            if "You have exceeded the rate limit" in self.driver.content():
+                log.info("Rate limit exceeded. Waiting 10 seconds before retrying...")
+                time.sleep(10)
+                continue
+            break
+
     def open_welcome_page(self):
         url = self.url('caseSearch.do?welcomePage=welcomePage')
-        self.driver.goto(url)
+        self._driver_goto(url)
         content = self.driver.content()
         # See if we need to solve a captcha
         if 'By clicking Accept' in content:
@@ -69,7 +96,7 @@ class DistrictCourtOpener:
             'sessionCourtsFipCode': ''
         }
         url = self.url('changeCourt.do')
-        self.context.request.post(url, form=data)
+        self._request_post(url, form=data)
 
     def open_hearing_date_search(self, code, search_division):
         url = self.url('caseSearch.do')
@@ -77,7 +104,7 @@ class DistrictCourtOpener:
         url += '&searchType=hearingDate&searchDivision=' + search_division
         url += '&searchFipsCode=' + code
         url += '&curentFipsCode=' + code
-        self.context.request.get(url)
+        self._request_get(url)
 
     def do_hearing_date_search(self, code, date, first_page):
         data = {
@@ -101,7 +128,7 @@ class DistrictCourtOpener:
             data['unCheckedCases'] = ''
         
         url = self.url('caseSearch.do')
-        resp = self.context.request.post(url, form=data)
+        resp = self._request_post(url, form=data)
         content = ''
         
         for line in resp.text().splitlines():
@@ -116,7 +143,7 @@ class DistrictCourtOpener:
         url += '?fromSidebar=true&formAction=searchLanding&searchDivision=' + search_division
         url += '&searchFipsCode=' + code
         url += '&curentFipsCode=' + code
-        self.context.request.get(url)
+        self._request_get(url)
 
     def do_case_number_search(self, code, case_number, search_division):
         data = {
@@ -129,16 +156,16 @@ class DistrictCourtOpener:
             'clientSearchCounter':0
         }
         url = self.url('criminalCivilCaseSearch.do')
-        self.context.request.post(url, form=data)
+        self._request_post(url, form=data)
 
         url_postfix = 'criminalDetail.do' if search_division == 'T' else 'civilDetail.do'
         url2 = self.url(url_postfix)
-        resp = self.context.request.get(url2)
+        resp = self._request_get(url2)
         return BeautifulSoup(resp.text(), 'html.parser')
 
     def open_case_details(self, details_url):
         url = self.url(details_url)
-        resp = self.context.request.get(url)
+        resp = self._request_get(url)
         return BeautifulSoup(resp.text(), 'html.parser')
 
     def open_name_search(self, code, search_division):
@@ -146,17 +173,27 @@ class DistrictCourtOpener:
         url += '?fromSidebar=true&formAction=searchLanding&searchDivision=' + search_division
         url += '&searchFipsCode=' + code
         url += '&curentFipsCode=' + code
-        self.driver.goto(url)
+        self._driver_goto(url)
 
     def do_name_search_with_driver(self, code, name, count, prev_cases):
-        if prev_cases:
-            self.driver.locator("//input[@value='Next'][@type='submit']").click()
-        else:
-            self.driver.locator("input[name='localnamesearchlastName']").fill(name)
-            self.driver.locator("//input[@value='Search'][@type='submit']").click()
-        
-        self.driver.wait_for_timeout(1000)
-        return BeautifulSoup(self.driver.content(), 'html.parser')
+        while True:
+            if prev_cases:
+                self.driver.locator("//input[@value='Next'][@type='submit']").click()
+            else:
+                self.driver.locator("input[name='localnamesearchlastName']").fill(name)
+                self.driver.locator("//input[@value='Search'][@type='submit']").click()
+            
+            self.driver.wait_for_timeout(1000)
+            content = self.driver.content()
+            
+            if "You have exceeded the rate limit" in content:
+                log.info("Rate limit exceeded. Waiting 10 seconds before retrying...")
+                time.sleep(10)
+                self.driver.go_back()
+                self.driver.wait_for_timeout(1000)
+                continue
+                
+            return BeautifulSoup(content, 'html.parser')
 
     def do_name_search(self, code, search_division, name, count, prev_cases=None):
         if self.use_driver:
@@ -199,5 +236,5 @@ class DistrictCourtOpener:
             data['lastRowCaseNumber'] = prev_cases[-1]['case_number']
         
         url = self.url('nameSearch.do')
-        resp = self.context.request.post(url, form=data)
+        resp = self._request_post(url, form=data)
         return BeautifulSoup(resp.text(), 'html.parser')
