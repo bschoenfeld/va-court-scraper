@@ -40,7 +40,7 @@ class DistrictCourtReader:
             self.opener.change_court(name, fips_code)
             self.fips_code = fips_code
             self.case_type = case_type
-            sleep(1.5)
+            sleep(1)
 
     def log_off(self):
         self.opener.log_off()
@@ -48,7 +48,7 @@ class DistrictCourtReader:
     def get_case_details_by_number(self, fips_code, case_type, case_number, case_details_url=None):
         self.manage_opener()
         self.change_court(fips_code, case_type)
-        sleep(1.5)
+        sleep(1)
         search_division = 'T'
         if case_type == 'civil':
             search_division = 'V'
@@ -63,13 +63,13 @@ class DistrictCourtReader:
         if case_type == 'civil':
             search_division = 'V'
         self.opener.open_hearing_date_search(fips_code, search_division)
-        sleep(1.5)
+        sleep(1)
 
         #date = date.strftime('%m/%d/%Y')
         print('\tSearching ' + self.court_names[fips_code] + \
               ' for cases on ' + date)
         soup = self.opener.do_hearing_date_search(fips_code, date, True)
-        sleep(1.5)
+        sleep(1)
 
         cases = []
         while True:
@@ -78,7 +78,7 @@ class DistrictCourtReader:
             sys.stdout.flush()
             if not districtcourtparser.next_button_found(soup):
                 break
-            sleep(1.5)
+            sleep(1)
             soup = self.opener.do_hearing_date_search(fips_code, date, False)
         return cases
 
