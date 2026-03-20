@@ -223,7 +223,7 @@ def get_string_from_cell(cell, is_label=False):
     values = list(cell.stripped_strings)
     if len(values) < 1:
         return ''
-    value = values[0].encode('ascii', 'ignore') \
+    value = values[0].encode('ascii', 'ignore').decode('ascii') \
                      .replace('\t', '') \
                      .replace('\r', '') \
                      .replace('\n', '') \
