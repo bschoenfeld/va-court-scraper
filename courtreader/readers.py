@@ -24,14 +24,19 @@ class DistrictCourtReader:
 
     def manage_opener(self):
         self.searches_on_session += 1
-        if self.searches_on_session > 10000:
-            print('RESETTING OPENER')
-            self.log_off()
-            sleep(2)
-            self.connect()
+        if self.searches_on_session > 20:
+            print('Resetting Rate Limiter')
+            sleep(10)
             self.searches_on_session = 0
-            self.fips_code = ''
-            print('RESET SUCCESSFUL')
+
+        #if self.searches_on_session > 10000:
+        #    print('RESETTING OPENER')
+        #    self.log_off()
+        #    sleep(2)
+        #    self.connect()
+        #    self.searches_on_session = 0
+        #    self.fips_code = ''
+        #    print('RESET SUCCESSFUL')
 
     def change_court(self, fips_code, case_type):
         if fips_code != self.fips_code or case_type != self.case_type:
