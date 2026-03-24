@@ -35,11 +35,11 @@ class DistrictCourtOpener:
         page = self.opener.open(url)
         page_content = page.read()
         # See if we need to solve a captcha
-        if 'By clicking Accept' in page_content:
+        if b'By clicking Accept' in page_content:
             self.solve_captcha(url)
             page = self.opener.open(url)
             page_content = page.read()
-        if 'By clicking Accept' in page_content:
+        if b'By clicking Accept' in page_content:
             raise RuntimeError('CAPTCHA failed')
         return BeautifulSoup(page_content, 'html.parser')
 
@@ -90,9 +90,9 @@ class DistrictCourtOpener:
         page = self.opener.open(url, data)
         content = ''
         for line in page:
-            if '<a href="caseSearch.do?formAction=caseDetails' in line:
-                line = line.replace('/>', '>')
-            content += line
+            if b'<a href="caseSearch.do?formAction=caseDetails' in line:
+                line = line.replace(b'/>', b'>')
+            content += line.decode('utf-8', errors='ignore')
         soup = BeautifulSoup(content, 'html.parser')
         return soup
 
