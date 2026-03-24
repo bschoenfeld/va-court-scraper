@@ -14,6 +14,7 @@ class CircuitCourtOpener:
         self.state_file = f'.circuit_court_state_{self.instance_id}.json'
         
         self.driver_open = False
+        self.playwright_mgr = None
         self.playwright = None
         self.browser = None
         self.context = None
@@ -23,8 +24,16 @@ class CircuitCourtOpener:
     def open_driver(self):
         if self.driver_open:
             return
-        self.playwright = get_playwright()
-        self.browser = self.playwright.chromium.launch(headless=False)
+        self.playwright_mgr, self.playwright = get_playwright()
+        self.browser = self.playwright.chromium.launch(
+            headless=False,
+            args=[
+                '--disable-logging',
+                '--disable-gpu',
+                '--log-level=3',
+                '--silent'
+            ]
+        )
         
         kwargs = {
             'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
@@ -79,6 +88,9 @@ class CircuitCourtOpener:
         if self.playwright:
             self.playwright.stop()
             self.playwright = None
+        if self.playwright_mgr:
+            self.playwright_mgr.stop()
+            self.playwright_mgr = None
         self.driver_open = False
 
     def change_court(self, code, court):
