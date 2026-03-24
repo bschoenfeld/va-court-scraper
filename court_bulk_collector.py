@@ -36,14 +36,16 @@ def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
     log.info('Getting cases on ' + dateStr)
     sleep(1)
     cases = reader.get_cases_by_date(fips, case_type, dateStr)
-    for case in cases:
+    total_cases = len(cases)
+    for i, case in enumerate(cases, 1):
+        counter = f"[{i}/{total_cases}]"
         case['details_fetched_for_hearing_date'] = date
         case['fips'] = fips
         case['collected'] = datetime.datetime.now()
 
         # If the hearing is in the future, add to the docket table - don't get details
         if date > datetime.datetime.now().date():
-            log.info('Docket %s %s', case['case_number'], case['defendant'])
+            log.info('%s Docket %s %s', counter, case['case_number'], case['defendant'])
             case['CaseNumber'] = case['case_number']
             case['Defendant'] = case['defendant']
             if case_type == 'civil':
@@ -57,10 +59,10 @@ def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
             last_date = case_details['details_fetched_for_hearing_date'].strftime('%m/%d/%Y')
             collected_date = case_details['collected'].strftime('%m/%d/%Y')
             if case_details['details_fetched_for_hearing_date'] < case_details['collected']:
-                log.info('%s details collected for hearing on %s', case['case_number'], last_date)
+                log.info('%s %s details collected for hearing on %s', counter, case['case_number'], last_date)
                 continue
             else:
-                log.info('%s details were collected on %s before hearing date on %s - updating now', case['case_number'], collected_date, last_date)
+                log.info('%s %s details were collected on %s before hearing date on %s - updating now', counter, case['case_number'], collected_date, last_date)
         if '--' in case['case_number']:
             if case_type == 'civil':
                 case['details'] = {
@@ -73,16 +75,16 @@ def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
                 }
         else:
             if len(case['case_number']) < 13:
-                log.warn('[%s] is an invalid case number', case['case_number'])
+                log.warn('%s [%s] is an invalid case number', counter, case['case_number'])
                 continue
             case['details'] = reader.get_case_details_by_number(
                 fips, case_type, case['case_number'],
                 case['details_url'] if 'details_url' in case else None)
         if 'error' in case['details']:
-            log.warn('Could not collect case details for %s in %s',
-                     case['case_number'], case['fips'])
+            log.warn('%s Could not collect case details for %s in %s',
+                     counter, case['case_number'], case['fips'])
         else:
-            log.info('%s %s', case['case_number'], case['defendant'])
+            log.info('%s %s %s', counter, case['case_number'], case['defendant'])
             db.replace_case_details(case, case_type)
 
 def run_collector(reader, last_task):

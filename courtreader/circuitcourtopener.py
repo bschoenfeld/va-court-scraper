@@ -9,6 +9,10 @@ class CircuitCourtOpener:
     url_root = 'https://eapps.courts.state.va.us/CJISWeb/'
 
     def __init__(self):
+        import uuid
+        self.instance_id = str(uuid.uuid4())
+        self.state_file = f'.circuit_court_state_{self.instance_id}.json'
+        
         self.driver_open = False
         self.playwright = None
         self.browser = None
@@ -27,8 +31,8 @@ class CircuitCourtOpener:
         }
         
         import os
-        if os.path.exists('.circuit_court_state.json'):
-            kwargs['storage_state'] = '.circuit_court_state.json'
+        if os.path.exists(self.state_file):
+            kwargs['storage_state'] = self.state_file
             
         self.context = self.browser.new_context(**kwargs)
         self.driver = self.context.new_page()
@@ -48,9 +52,9 @@ class CircuitCourtOpener:
         return BeautifulSoup(resp.text(), 'html.parser')
 
     def log_off(self, preserve_session=False):
-        if self.context:
+        if preserve_session and self.context:
             try:
-                self.context.storage_state(path='.circuit_court_state.json')
+                self.context.storage_state(path=self.state_file)
             except:
                 pass
                 
@@ -59,6 +63,13 @@ class CircuitCourtOpener:
             url = self.url('Logoff.do')
             try:
                 self.context.request.post(url, form=data)
+            except:
+                pass
+                
+            import os
+            try:
+                if os.path.exists(self.state_file):
+                    os.remove(self.state_file)
             except:
                 pass
                 

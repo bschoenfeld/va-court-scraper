@@ -10,6 +10,9 @@ class DistrictCourtOpener:
     url_root = 'https://eapps.courts.state.va.us/gdcourts/'
 
     def __init__(self):
+        import uuid
+        self.instance_id = str(uuid.uuid4())
+        self.state_file = f'.district_court_state_{self.instance_id}.json'
         self.use_driver = True
         self.browser = None
         self.playwright = None
@@ -22,9 +25,9 @@ class DistrictCourtOpener:
         return DistrictCourtOpener.url_root + url
 
     def log_off(self, preserve_session=False):
-        if self.context:
+        if preserve_session and self.context:
             try:
-                self.context.storage_state(path='.district_court_state.json')
+                self.context.storage_state(path=self.state_file)
             except:
                 pass
         if self.browser:
@@ -34,6 +37,14 @@ class DistrictCourtOpener:
             self.playwright.stop()
             self.playwright = None
         self.driver_open = False
+        
+        if not preserve_session:
+            import os
+            try:
+                if os.path.exists(self.state_file):
+                    os.remove(self.state_file)
+            except:
+                pass
         return None
 
     def open_driver(self):
@@ -48,8 +59,8 @@ class DistrictCourtOpener:
         }
         
         import os
-        if os.path.exists('.district_court_state.json'):
-            kwargs['storage_state'] = '.district_court_state.json'
+        if os.path.exists(self.state_file):
+            kwargs['storage_state'] = self.state_file
             
         self.context = self.browser.new_context(**kwargs)
         self.driver = self.context.new_page()
