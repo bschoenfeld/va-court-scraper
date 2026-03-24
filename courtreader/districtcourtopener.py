@@ -38,7 +38,7 @@ class DistrictCourtOpener:
             self.playwright.stop()
             self.playwright = None
         if self.playwright_mgr:
-            self.playwright_mgr.stop()
+            self.playwright_mgr.__exit__(None, None, None)
             self.playwright_mgr = None
         self.driver_open = False
         
@@ -86,20 +86,30 @@ class DistrictCourtOpener:
     def _request_get(self, url, **kwargs):
         while True:
             resp = self.context.request.get(url, **kwargs)
-            if b"You have exceeded the rate limit" in resp.body():
+            body = resp.body()
+            if b"You have exceeded the rate limit" in body:
                 log.info("Rate limit exceeded. Waiting 10 seconds before retrying...")
                 time.sleep(10)
+                try: resp.dispose()
+                except: pass
                 continue
-            return resp
+            try: resp.dispose()
+            except: pass
+            return body.decode('utf-8', errors='ignore')
 
     def _request_post(self, url, **kwargs):
         while True:
             resp = self.context.request.post(url, **kwargs)
-            if b"You have exceeded the rate limit" in resp.body():
+            body = resp.body()
+            if b"You have exceeded the rate limit" in body:
                 log.info("Rate limit exceeded. Waiting 10 seconds before retrying...")
                 time.sleep(10)
+                try: resp.dispose()
+                except: pass
                 continue
-            return resp
+            try: resp.dispose()
+            except: pass
+            return body.decode('utf-8', errors='ignore')
 
     def _driver_goto(self, url, **kwargs):
         while True:
@@ -165,10 +175,10 @@ class DistrictCourtOpener:
             data['unCheckedCases'] = ''
         
         url = self.url('caseSearch.do')
-        resp = self._request_post(url, form=data)
+        html = self._request_post(url, form=data)
         content = ''
         
-        for line in resp.text().splitlines():
+        for line in html.splitlines():
             if '<a href="caseSearch.do?formAction=caseDetails' in line:
                 line = line.replace('/>', '>')
             content += line + '\n'
@@ -197,13 +207,13 @@ class DistrictCourtOpener:
 
         url_postfix = 'criminalDetail.do' if search_division == 'T' else 'civilDetail.do'
         url2 = self.url(url_postfix)
-        resp = self._request_get(url2)
-        return BeautifulSoup(resp.text(), 'html.parser')
+        html = self._request_get(url2)
+        return BeautifulSoup(html, 'html.parser')
 
     def open_case_details(self, details_url):
         url = self.url(details_url)
-        resp = self._request_get(url)
-        return BeautifulSoup(resp.text(), 'html.parser')
+        html = self._request_get(url)
+        return BeautifulSoup(html, 'html.parser')
 
     def open_name_search(self, code, search_division):
         url = self.url('nameSearch.do')
@@ -273,5 +283,5 @@ class DistrictCourtOpener:
             data['lastRowCaseNumber'] = prev_cases[-1]['case_number']
         
         url = self.url('nameSearch.do')
-        resp = self._request_post(url, form=data)
-        return BeautifulSoup(resp.text(), 'html.parser')
+        html = self._request_post(url, form=data)
+        return BeautifulSoup(html, 'html.parser')
