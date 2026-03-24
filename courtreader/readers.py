@@ -32,7 +32,7 @@ class DistrictCourtReader:
             sleep(10)
             self.rate_limit_searches = 0
 
-        if self.searches_on_session > 50:
+        if self.searches_on_session > 1000:
             print('RESETTING OPENER TO FREE MEMORY')
             self.log_off(preserve_session=True)
             sleep(2)
