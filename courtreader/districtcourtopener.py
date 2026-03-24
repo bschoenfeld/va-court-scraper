@@ -26,6 +26,7 @@ class DistrictCourtOpener:
             
             content = page.read()
             if b'You have exceeded the rate limit' in content:
+                print('WARNING: Rate limit exceeded. Waiting 10 seconds and retrying...')
                 time.sleep(10)
                 continue
             
@@ -148,6 +149,7 @@ class DistrictCourtOpener:
             while True:
                 self.driver.get(url)
                 if 'You have exceeded the rate limit' in self.driver.page_source:
+                    print('WARNING: Rate limit exceeded. Waiting 10 seconds and retrying...')
                     time.sleep(10)
                     continue
                 break
@@ -168,6 +170,7 @@ class DistrictCourtOpener:
             time.sleep(1)
             source = self.driver.page_source
             if 'You have exceeded the rate limit' in source:
+                print('WARNING: Rate limit exceeded. Waiting 10 seconds and retrying...')
                 time.sleep(10)
                 self.driver.back()
                 time.sleep(1)
