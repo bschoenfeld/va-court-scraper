@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import logging
 from bs4 import BeautifulSoup
-from .browser import get_playwright
+from .browser import get_playwright, kill_playwright_processes
 
 log = logging.getLogger('logentries')
 
@@ -106,6 +106,7 @@ class CircuitCourtOpener:
             self.playwright_mgr.__exit__(None, None, None)
             self.playwright_mgr = None
         self.driver_open = False
+        kill_playwright_processes()
 
     def change_court(self, code, court):
         data = {

@@ -2,7 +2,7 @@ from __future__ import absolute_import
 import logging
 import time
 from bs4 import BeautifulSoup
-from .browser import get_playwright
+from .browser import get_playwright, kill_playwright_processes
 
 log = logging.getLogger('logentries')
 
@@ -41,7 +41,9 @@ class DistrictCourtOpener:
             self.playwright_mgr.__exit__(None, None, None)
             self.playwright_mgr = None
         self.driver_open = False
-        
+
+        kill_playwright_processes()
+
         if not preserve_session:
             import os
             try:
