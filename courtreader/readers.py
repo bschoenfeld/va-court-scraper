@@ -32,9 +32,9 @@ class DistrictCourtReader:
             sleep(10)
             self.rate_limit_searches = 0
 
-        if self.searches_on_session > 100:
+        if self.searches_on_session > 50:
             print('RESETTING OPENER TO FREE MEMORY')
-            self.log_off()
+            self.log_off(preserve_session=True)
             sleep(2)
             self.connect()
             self.searches_on_session = 0
@@ -50,8 +50,8 @@ class DistrictCourtReader:
             self.case_type = case_type
             sleep(1)
 
-    def log_off(self):
-        self.opener.log_off()
+    def log_off(self, preserve_session=False):
+        self.opener.log_off(preserve_session)
 
     def get_case_details_by_number(self, fips_code, case_type, case_number, case_details_url=None):
         self.manage_opener()
@@ -130,7 +130,7 @@ class CircuitCourtReader:
         self.searches_on_session += 1
         if self.searches_on_session > 500:
             print('RESETTING OPENER TO FREE MEMORY')
-            self.log_off()
+            self.log_off(preserve_session=True)
             sleep(2)
             self.connect()
             self.searches_on_session = 0
@@ -143,8 +143,8 @@ class CircuitCourtReader:
         self.courts = circuitcourtparser.parse_court_names(soup)
         return self.courts
 
-    def log_off(self):
-        self.opener.log_off()
+    def log_off(self, preserve_session=False):
+        self.opener.log_off(preserve_session)
 
     def change_court(self, fips_code, case_type):
         if fips_code != self.fips_code or case_type != self.case_type:

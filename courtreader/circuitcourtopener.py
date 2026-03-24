@@ -21,10 +21,16 @@ class CircuitCourtOpener:
             return
         self.playwright = get_playwright()
         self.browser = self.playwright.chromium.launch(headless=False)
-        self.context = self.browser.new_context(
-            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-                       '(KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
-        )
+        
+        kwargs = {
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+        }
+        
+        import os
+        if os.path.exists('.circuit_court_state.json'):
+            kwargs['storage_state'] = '.circuit_court_state.json'
+            
+        self.context = self.browser.new_context(**kwargs)
         self.driver = self.context.new_page()
         try:
             from playwright_stealth import stealth_sync
@@ -41,13 +47,21 @@ class CircuitCourtOpener:
         resp = self.context.request.get(url)
         return BeautifulSoup(resp.text(), 'html.parser')
 
-    def log_off(self):
-        data = {'searchType': ''}
-        url = self.url('Logoff.do')
-        try:
-            self.context.request.post(url, form=data)
-        except:
-            pass
+    def log_off(self, preserve_session=False):
+        if self.context:
+            try:
+                self.context.storage_state(path='.circuit_court_state.json')
+            except:
+                pass
+                
+        if not preserve_session:
+            data = {'searchType': ''}
+            url = self.url('Logoff.do')
+            try:
+                self.context.request.post(url, form=data)
+            except:
+                pass
+                
         if self.browser:
             self.browser.close()
             self.browser = None
