@@ -17,6 +17,20 @@ class DistrictCourtOpener:
         self.opener = Opener('district')
         self.use_driver = True
 
+    def make_request(self, url, data=None):
+        while True:
+            if data:
+                page = self.opener.open(url, data)
+            else:
+                page = self.opener.open(url)
+            
+            content = page.read()
+            if b'You have exceeded the rate limit' in content:
+                time.sleep(10)
+                continue
+            
+            return content
+
     def url(self, url):
         return DistrictCourtOpener.url_root + url
 
@@ -30,15 +44,12 @@ class DistrictCourtOpener:
 
     def open_welcome_page(self):
         url = self.url('caseSearch.do?welcomePage=welcomePage')
-        page = self.opener.open('https://google.com')
-        page_content = page.read()
-        page = self.opener.open(url)
-        page_content = page.read()
+        page_content = self.make_request('https://google.com')
+        page_content = self.make_request(url)
         # See if we need to solve a captcha
         if b'By clicking Accept' in page_content:
             self.solve_captcha(url)
-            page = self.opener.open(url)
-            page_content = page.read()
+            page_content = self.make_request(url)
         if b'By clicking Accept' in page_content:
             raise RuntimeError('CAPTCHA failed')
         return BeautifulSoup(page_content, 'html.parser')
@@ -55,7 +66,7 @@ class DistrictCourtOpener:
             'sessionCourtsFipCode': ''
         })
         url = self.url('changeCourt.do')
-        self.opener.open(url, data)
+        self.make_request(url, data)
 
     def open_hearing_date_search(self, code, search_division):
         url = self.url('caseSearch.do')
@@ -63,7 +74,7 @@ class DistrictCourtOpener:
         url += '&searchType=hearingDate&searchDivision=' + search_division
         url += '&searchFipsCode=' + code
         url += '&curentFipsCode=' + code
-        self.opener.open(url)
+        self.make_request(url)
 
     def do_hearing_date_search(self, code, date, first_page):
         data = {
@@ -87,9 +98,9 @@ class DistrictCourtOpener:
             data['unCheckedCases'] = ''
         data = six.moves.urllib.parse.urlencode(data)
         url = self.url('caseSearch.do')
-        page = self.opener.open(url, data)
+        page_content = self.make_request(url, data)
         content = ''
-        for line in page:
+        for line in page_content.splitlines(True):
             if b'<a href="caseSearch.do?formAction=caseDetails' in line:
                 line = line.replace(b'/>', b'>')
             content += line.decode('utf-8', errors='ignore')
@@ -101,7 +112,7 @@ class DistrictCourtOpener:
         url += '?fromSidebar=true&formAction=searchLanding&searchDivision=' + search_division
         url += '&searchFipsCode=' + code
         url += '&curentFipsCode=' + code
-        self.opener.open(url)
+        self.make_request(url)
 
     def do_case_number_search(self, code, case_number, search_division):
         data = {
@@ -115,18 +126,18 @@ class DistrictCourtOpener:
         }
         data = six.moves.urllib.parse.urlencode(data)
         url = self.url('criminalCivilCaseSearch.do')
-        self.opener.open(url, data)
+        self.make_request(url, data)
         # the post returns 302, then we have to do a GET... strange
 
         url = self.url('criminalDetail.do' if search_division == 'T' else 'civilDetail.do')
-        content = self.opener.open(url)
+        content = self.make_request(url)
         soup = BeautifulSoup(content, 'html.parser')
         return soup
 
     def open_case_details(self, details_url):
         url = self.url(details_url)
-        page = self.opener.open(url)
-        return BeautifulSoup(page.read(), 'html.parser')
+        content = self.make_request(url)
+        return BeautifulSoup(content, 'html.parser')
 
     def open_name_search(self, code, search_division):
         url = self.url('nameSearch.do')
@@ -134,23 +145,35 @@ class DistrictCourtOpener:
         url += '&searchFipsCode=' + code
         url += '&curentFipsCode=' + code
         if self.use_driver:
-            self.driver.get(url)
+            while True:
+                self.driver.get(url)
+                if 'You have exceeded the rate limit' in self.driver.page_source:
+                    time.sleep(10)
+                    continue
+                break
         else:
-            self.opener.open(url)
+            self.make_request(url)
 
     def do_name_search_with_driver(self, code, name, count, prev_cases):
-        if prev_cases:
-            xpath = "//input[@value='Next'][@type='submit']"
-            self.driver.find_element_by_xpath(xpath).click()
-        else:
-            self.driver.find_element_by_name('localnamesearchlastName') \
-                .send_keys(name)
-            xpath = "//input[@value='Search'][@type='submit']"
-            self.driver.find_element_by_xpath(xpath).click()
-        time.sleep(1)
-        source = self.driver.page_source
-        soup = BeautifulSoup(source, 'html.parser')
-        return soup
+        while True:
+            if prev_cases:
+                xpath = "//input[@value='Next'][@type='submit']"
+                self.driver.find_element_by_xpath(xpath).click()
+            else:
+                name_input = self.driver.find_element_by_name('localnamesearchlastName')
+                name_input.clear()
+                name_input.send_keys(name)
+                xpath = "//input[@value='Search'][@type='submit']"
+                self.driver.find_element_by_xpath(xpath).click()
+            time.sleep(1)
+            source = self.driver.page_source
+            if 'You have exceeded the rate limit' in source:
+                time.sleep(10)
+                self.driver.back()
+                time.sleep(1)
+                continue
+            soup = BeautifulSoup(source, 'html.parser')
+            return soup
 
     def do_name_search(self, code, search_division, name, count, prev_cases=None):
         if self.use_driver:
@@ -192,6 +215,6 @@ class DistrictCourtOpener:
             data['lastRowCaseNumber'] = prev_cases[-1]['case_number']
         data = six.moves.urllib.parse.urlencode(data)
         url = self.url('nameSearch.do')
-        content = self.opener.open(url, data)
+        content = self.make_request(url, data)
         soup = BeautifulSoup(content, 'html.parser')
         return soup
