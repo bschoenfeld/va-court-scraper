@@ -36,14 +36,15 @@ def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
     log.info('Getting cases on ' + dateStr)
     sleep(1)
     cases = reader.get_cases_by_date(fips, case_type, dateStr)
-    for case in cases:
+    total_cases = len(cases)
+    for i, case in enumerate(cases, 1):
         case['details_fetched_for_hearing_date'] = date
         case['fips'] = fips
         case['collected'] = datetime.datetime.now()
 
         # If the hearing is in the future, add to the docket table - don't get details
         if date > datetime.datetime.now().date():
-            log.info('Docket %s %s', case['case_number'], case['defendant'])
+            log.info('[%d/%d] Docket %s %s', i, total_cases, case['case_number'], case['defendant'])
             case['CaseNumber'] = case['case_number']
             case['Defendant'] = case['defendant']
             if case_type == 'civil':
@@ -57,10 +58,10 @@ def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
             last_date = case_details['details_fetched_for_hearing_date'].strftime('%m/%d/%Y')
             collected_date = case_details['collected'].strftime('%m/%d/%Y')
             if case_details['details_fetched_for_hearing_date'] < case_details['collected']:
-                log.info('%s details collected for hearing on %s', case['case_number'], last_date)
+                log.info('[%d/%d] %s details collected for hearing on %s', i, total_cases, case['case_number'], last_date)
                 continue
             else:
-                log.info('%s details were collected on %s before hearing date on %s - updating now', case['case_number'], collected_date, last_date)
+                log.info('[%d/%d] %s details were collected on %s before hearing date on %s - updating now', i, total_cases, case['case_number'], collected_date, last_date)
         if '--' in case['case_number']:
             if case_type == 'civil':
                 case['details'] = {
@@ -82,7 +83,7 @@ def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
             log.warn('Could not collect case details for %s in %s',
                      case['case_number'], case['fips'])
         else:
-            log.info('%s %s', case['case_number'], case['defendant'])
+            log.info('[%d/%d] %s %s', i, total_cases, case['case_number'], case['defendant'])
             db.replace_case_details(case, case_type)
 
 def run_collector(reader, last_task):
