@@ -12,31 +12,34 @@ log = logging.getLogger('logentries')
 
 class DistrictCourtReader:
     def __init__(self):
+        self.rate_limit_searches = 0
         self.searches_on_session = 0
         self.fips_code = ''
         self.case_type = ''
         self.opener = DistrictCourtOpener()
 
     def connect(self):
+        self.opener.open_driver()
         soup = self.opener.open_welcome_page()
         self.court_names = districtcourtparser.parse_court_names(soup)
         return self.court_names
 
     def manage_opener(self):
         self.searches_on_session += 1
-        if self.searches_on_session > 20:
+        self.rate_limit_searches += 1
+        if self.rate_limit_searches > 20:
             print('Resetting Rate Limiter')
             sleep(10)
-            self.searches_on_session = 0
+            self.rate_limit_searches = 0
 
-        #if self.searches_on_session > 10000:
-        #    print('RESETTING OPENER')
-        #    self.log_off()
-        #    sleep(2)
-        #    self.connect()
-        #    self.searches_on_session = 0
-        #    self.fips_code = ''
-        #    print('RESET SUCCESSFUL')
+        if self.searches_on_session > 100:
+            print('RESETTING OPENER TO FREE MEMORY')
+            self.log_off()
+            sleep(2)
+            self.connect()
+            self.searches_on_session = 0
+            self.fips_code = ''
+            print('RESET SUCCESSFUL')
 
     def change_court(self, fips_code, case_type):
         if fips_code != self.fips_code or case_type != self.case_type:
@@ -125,8 +128,8 @@ class CircuitCourtReader:
 
     def manage_opener(self):
         self.searches_on_session += 1
-        if self.searches_on_session > 100:
-            print('RESETTING OPENER')
+        if self.searches_on_session > 500:
+            print('RESETTING OPENER TO FREE MEMORY')
             self.log_off()
             sleep(2)
             self.connect()
@@ -135,6 +138,7 @@ class CircuitCourtReader:
             print('RESET SUCCESSFUL')
 
     def connect(self):
+        self.opener.open_driver()
         soup = self.opener.open_welcome_page()
         self.courts = circuitcourtparser.parse_court_names(soup)
         return self.courts

@@ -9,6 +9,16 @@ class CircuitCourtOpener:
     url_root = 'https://eapps.courts.state.va.us/CJISWeb/'
 
     def __init__(self):
+        self.driver_open = False
+        self.playwright = None
+        self.browser = None
+        self.context = None
+        self.driver = None
+        self.open_driver()
+
+    def open_driver(self):
+        if self.driver_open:
+            return
         self.playwright = get_playwright()
         self.browser = self.playwright.chromium.launch(headless=False)
         self.context = self.browser.new_context(
@@ -21,6 +31,7 @@ class CircuitCourtOpener:
             stealth_sync(self.driver)
         except ImportError:
             log.warning("playwright-stealth not installed.")
+        self.driver_open = True
 
     def url(self, url):
         return CircuitCourtOpener.url_root + url
@@ -33,11 +44,17 @@ class CircuitCourtOpener:
     def log_off(self):
         data = {'searchType': ''}
         url = self.url('Logoff.do')
-        self.context.request.post(url, form=data)
+        try:
+            self.context.request.post(url, form=data)
+        except:
+            pass
         if self.browser:
             self.browser.close()
+            self.browser = None
         if self.playwright:
             self.playwright.stop()
+            self.playwright = None
+        self.driver_open = False
 
     def change_court(self, code, court):
         data = {
