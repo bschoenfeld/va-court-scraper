@@ -30,8 +30,38 @@ class Opener:
         return
 
     def open(self, *args):
+        import time
+        import socket
+        import logging
+        log = logging.getLogger('logentries')
+        
         url = args[0]
-        if len(args) == 2:
-            data = args[1]
-            return self.opener.open(url, data)
-        return self.opener.open(url)
+        data = args[1] if len(args) == 2 else None
+        
+        for attempt in range(5):
+            try:
+                if data:
+                    page = self.opener.open(url, data)
+                else:
+                    page = self.opener.open(url)
+                
+                content = page.read()
+                
+                class DummyPage:
+                    def __init__(self, c):
+                        self.c = c
+                    def read(self):
+                        return self.c
+                
+                return DummyPage(content)
+            
+            except Exception as e:
+                # Catch timeout errors to prevent losing the session
+                if isinstance(e, socket.timeout) or "timeout" in str(e).lower() or "read operation" in str(e).lower():
+                    log.warning('Network timeout in opener. Retrying... (Attempt %d of 5)', attempt + 1)
+                    print('WARNING: Network timeout in opener. Retrying in 10 seconds...')
+                    time.sleep(10)
+                    if attempt == 4:
+                        raise
+                else:
+                    raise
