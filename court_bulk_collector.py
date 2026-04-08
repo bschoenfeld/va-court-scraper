@@ -7,6 +7,10 @@ import os
 import sys
 import time
 import traceback
+import socket
+
+# Prevent infinite hangs on network sockets (which blocks Ctrl-C in Windows)
+socket.setdefaulttimeout(60)
 
 MONGO = False
 POSTGRES = True
@@ -173,6 +177,10 @@ def run():
                 pass
             reader = None
             log.error(traceback.format_exc())
-            log.info('Unexpect error. Sleeping for 10 minute')
-            sleep(600)
+            if isinstance(err, socket.timeout) or "timeout" in str(err).lower() or "read operation timed out" in str(err).lower():
+                log.info('Network timeout occurred. Sleeping for 30 seconds before retrying...')
+                sleep(30)
+            else:
+                log.info('Unexpect error. Sleeping for 10 minute')
+                sleep(600)
 run()
