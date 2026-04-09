@@ -25,7 +25,7 @@ def parse_court_names(soup):
         raise
 
 def get_data_from_table(case, table):
-    table_cells = table.find_all('td')
+    table_cells = table.find_all(['td', 'th'])
     for cell in table_cells:
         strings = list(cell.stripped_strings)
         if len(strings) < 2:
@@ -129,17 +129,49 @@ def parse_case_details(soup):
         if soup.find(text=re.compile('Please enter a valid Case Number')) is not None:
             case_details['error'] = 'case_not_found'
             return case_details
+        if soup.find(text=re.compile('Application Error')) is not None:
+            case_details['error'] = 'application_error'
+            return case_details
         tables = soup.find_all('table')
-        details_table = tables[4]
-        hearings_table = tables[6]
-        final_disposition_table = tables[8]
-        sentencing_table = tables[9]
-        appeal_table = tables[10]
+        if not tables:
+            case_details['error'] = 'missing_tables'
+            return case_details
 
-        get_data_from_table(case_details, details_table)
-        get_data_from_table(case_details, final_disposition_table)
-        get_data_from_table(case_details, sentencing_table)
-        get_data_from_table(case_details, appeal_table)
+        if len(tables) > 10:
+            details_table = tables[4]
+            hearings_table = tables[6]
+            final_disposition_table = tables[8]
+            sentencing_table = tables[9]
+            appeal_table = tables[10]
+
+            get_data_from_table(case_details, details_table)
+            get_data_from_table(case_details, final_disposition_table)
+            get_data_from_table(case_details, sentencing_table)
+            get_data_from_table(case_details, appeal_table)
+
+            case_details['Hearings'] = get_data_from_table_with_rows(hearings_table, 'criminal')
+        else:
+            details_table = tables[0]
+            get_data_from_table(case_details, details_table)
+            
+            for t in tables[1:]:
+                if t.get('id') == 'count':
+                    case_details['Hearings'] = get_data_from_table_with_rows(t, 'criminal')
+                else:
+                    get_data_from_table(case_details, t)
+            
+            if 'Hearings' not in case_details:
+                case_details['Hearings'] = []
+                
+            for li in soup.find_all('li'):
+                line = [x.encode('ascii', 'ignore').decode('ascii') for x in li.stripped_strings]
+                if len(line) < 2:
+                    continue
+                key = line[0].replace(':', '')
+                # Avoid accidentally overwriting party list info if present
+                if 'Plaintiff' not in key and 'Defendant' not in key:
+                    case_details[key] = line[1]
+
 
         if 'DOB' in case_details:
             case_details['DOB'] = case_details['DOB'].replace('****', '1004')
@@ -172,7 +204,17 @@ def parse_case_details(soup):
             if 'Sentencing' in case_details['ProbationStarts']:
                 case_details['ProbationStarts'] = 'Sentencing'
 
-        case_details['Hearings'] = get_data_from_table_with_rows(hearings_table, 'criminal')
+        if 'ConcurrentConsecutive' in case_details:
+            if 'Consecutively' in case_details['ConcurrentConsecutive']:
+                case_details['ConcurrentConsecutive'] = 'Consecutive'
+            if 'Concurrently' in case_details['ConcurrentConsecutive']:
+                case_details['ConcurrentConsecutive'] = 'Concurrent'
+
+        if 'ProbationStarts' in case_details:
+            if 'Release' in case_details['ProbationStarts']:
+                case_details['ProbationStarts'] = 'Release'
+            if 'Sentencing' in case_details['ProbationStarts']:
+                case_details['ProbationStarts'] = 'Sentencing'
 
         return case_details
     except:
@@ -185,12 +227,22 @@ def parse_civil_case_details(soup):
         if soup.find(text=re.compile('Case not found')) is not None:
             case_details['error'] = 'case_not_found'
             return case_details
+        if soup.find(text=re.compile('Application Error')) is not None:
+            case_details['error'] = 'application_error'
+            return case_details
         tables = soup.find_all('table')
-        details_table = tables[4]
+        if not tables:
+            case_details['error'] = 'missing_tables'
+            return case_details
+            
+        details_table = tables[4] if len(tables) > 4 else tables[0]
         get_data_from_table(case_details, details_table)
 
-        hearings_table = tables[12]
-        case_details['Hearings'] = get_data_from_table_with_rows(hearings_table, 'civil')
+        hearings_table = tables[12] if len(tables) > 12 else (tables[1] if len(tables) > 1 else None)
+        if hearings_table:
+            case_details['Hearings'] = get_data_from_table_with_rows(hearings_table, 'civil')
+        else:
+            case_details['Hearings'] = []
 
         case_details['Plaintiffs'] = []
         case_details['Defendants'] = []
@@ -225,8 +277,15 @@ def parse_civil_case_details(soup):
 
         if 'NumberofDefendants' in case_details:
             case_details['NumberofDefendants'] = int(case_details['NumberofDefendants'])
+        elif 'NumberofDefendantsRespondents' in case_details:
+            case_details['NumberofDefendants'] = int(case_details['NumberofDefendantsRespondents'])
+            del case_details['NumberofDefendantsRespondents']
+
         if 'NumberofPlaintiffs' in case_details:
             case_details['NumberofPlaintiffs'] = int(case_details['NumberofPlaintiffs'])
+        elif 'NumberofPlaintiffsPetitioners' in case_details:
+            case_details['NumberofPlaintiffs'] = int(case_details['NumberofPlaintiffsPetitioners'])
+            del case_details['NumberofPlaintiffsPetitioners']
 
         return case_details
     except:
