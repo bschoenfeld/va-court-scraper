@@ -208,6 +208,7 @@ class CircuitCivilCase(Base, Case):
     AppealedDate = Column(Date)
     ConcludedBy = Column(String)
     DivorceDispositionType = Column(String)
+    InjunctionType = Column(String)
 
     @staticmethod
     def create(case):
