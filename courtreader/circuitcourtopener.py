@@ -30,6 +30,7 @@ class CircuitCourtOpener:
 
     def open_welcome_page(self):
         url = self.url('circuit.jsp')
+        self.make_request('https://google.com')
         content = self.make_request(url)
         return BeautifulSoup(content, 'html.parser')
 
