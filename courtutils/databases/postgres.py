@@ -95,6 +95,7 @@ class CircuitCriminalCase(Base, Case):
 
     #person_id = Column(BigInteger)
     Defendant = Column(String)
+    DefendantsAttorney = Column(String)
     AKA = Column(String)
     AKA2 = Column(String)
     Sex = Column(String)

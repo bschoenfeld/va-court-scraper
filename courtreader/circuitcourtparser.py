@@ -176,6 +176,10 @@ def parse_case_details(soup):
             case_details['ChargeType'] = case_details['CaseType']
             del case_details['CaseType']
 
+        if "Defendant'sAttorney" in case_details:
+            case_details['DefendantsAttorney'] = case_details["Defendant'sAttorney"]
+            del case_details["Defendant'sAttorney"]
+
         if 'DOB' in case_details:
             case_details['DOB'] = case_details['DOB'].replace('****', '1004')
 
