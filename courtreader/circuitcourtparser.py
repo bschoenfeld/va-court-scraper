@@ -172,6 +172,9 @@ def parse_case_details(soup):
                 if 'Plaintiff' not in key and 'Defendant' not in key:
                     case_details[key] = line[1]
 
+        if 'CaseType' in case_details:
+            case_details['ChargeType'] = case_details['CaseType']
+            del case_details['CaseType']
 
         if 'DOB' in case_details:
             case_details['DOB'] = case_details['DOB'].replace('****', '1004')
