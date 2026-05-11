@@ -114,6 +114,11 @@ def run_collector(reader, last_task):
                  end_date.strftime('%m/%d/%Y'))
         date = start_date
 
+        searched_dates = set([
+            d.strftime('%m/%d/%Y') if hasattr(d, 'strftime') else d 
+            for d in db.get_date_searches(fips, case_type, start_date, end_date)
+        ])
+
         while date >= end_date:
             date_search = {
                 'fips': fips,
@@ -121,7 +126,7 @@ def run_collector(reader, last_task):
                 'date': date
             }
             date_str = date.strftime('%m/%d/%Y')
-            if db.get_date_search(date_search) != None:
+            if date_str in searched_dates:
                 log.info(date_str + ' already searched')
             else:
                 if not reader_connected:
@@ -129,6 +134,7 @@ def run_collector(reader, last_task):
                     reader_connected = True
                 get_cases_on_date(db, reader, fips, case_type, date, date_str)
                 db.add_date_search(date_search)
+                searched_dates.add(date_str)
             date += datetime.timedelta(days=-1)
 
         if reader_connected:

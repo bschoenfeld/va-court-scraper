@@ -41,6 +41,14 @@ class MongoDatabase():
     def get_date_search(self, search):
         return self.client[self.court_type + '_court_dates_searched'].find_one(search)
 
+    def get_date_searches(self, fips, case_type, start_date, end_date):
+        results = self.client[self.court_type + '_court_dates_searched'].find({
+            'fips': fips,
+            'case_type': case_type,
+            'date': {'$gte': end_date, '$lte': start_date}
+        })
+        return [r['date'] for r in results]
+
     def get_more_recent_case_details(self, case, case_type, date):
         return self.client[self.court_type + '_court_detailed_cases'].find_one({
             'court_fips': case['court_fips'],

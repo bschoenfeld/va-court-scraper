@@ -820,6 +820,15 @@ class PostgresDatabase():
             return None
         return search
 
+    def get_date_searches(self, fips, case_type, start_date, end_date):
+        results = self.session.query(self.date_search_builder.date).filter(
+            self.date_search_builder.fips == int(fips),
+            self.date_search_builder.casetype == case_type,
+            self.date_search_builder.date >= end_date,
+            self.date_search_builder.date <= start_date
+        ).all()
+        return [r[0] for r in results]
+
     def count_dates_searched_for_year(self, case_type, year):
         start_date = date(year, 1, 1)
         end_date = date(year+1, 1, 1)
