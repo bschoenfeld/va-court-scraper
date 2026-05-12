@@ -38,14 +38,15 @@ class Opener:
         url = args[0]
         data = args[1] if len(args) == 2 else None
         
-        for attempt in range(5):
+        for attempt in range(2):
             try:
                 if data:
-                    page = self.opener.open(url, data)
+                    page = self.opener.open(url, data, timeout=10)
                 else:
-                    page = self.opener.open(url)
+                    page = self.opener.open(url, timeout=10)
                 
                 content = page.read()
+                page.close()
                 
                 class DummyPage:
                     def __init__(self, c):
@@ -58,10 +59,10 @@ class Opener:
             except Exception as e:
                 # Catch timeout errors to prevent losing the session
                 if isinstance(e, socket.timeout) or "timeout" in str(e).lower() or "read operation" in str(e).lower():
-                    log.warning('Network timeout in opener. Retrying... (Attempt %d of 5)', attempt + 1)
-                    print('WARNING: Network timeout in opener. Retrying in 10 seconds...')
-                    time.sleep(10)
-                    if attempt == 4:
+                    #log.warning('Network timeout in opener. Retrying... (Attempt %d of 2)', attempt + 1)
+                    print('WARNING: Network timeout in opener. Retrying in 5 seconds...')
+                    time.sleep(5)
+                    if attempt == 1:
                         raise
                 else:
                     raise

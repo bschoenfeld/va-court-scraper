@@ -132,9 +132,15 @@ def run_collector(reader, last_task):
                 if not reader_connected:
                     reader.connect()
                     reader_connected = True
-                get_cases_on_date(db, reader, fips, case_type, date, date_str)
-                db.add_date_search(date_search)
-                searched_dates.add(date_str)
+                try:
+                    get_cases_on_date(db, reader, fips, case_type, date, date_str)
+                    db.add_date_search(date_search)
+                    searched_dates.add(date_str)
+                except Exception as err:
+                    if isinstance(err, socket.timeout) or "timeout" in str(err).lower() or "read operation" in str(err).lower():
+                        log.warn('Timeout fetching cases for %s on %s. Skipping.', fips, date_str)
+                    else:
+                        raise
             date += datetime.timedelta(days=-1)
 
         if reader_connected:
