@@ -39,9 +39,9 @@ class Opener:
         for attempt in range(2):
             try:
                 if data:
-                    page = self.opener.open(url, data, timeout=10)
+                    page = self.opener.open(url, data, timeout=120)
                 else:
-                    page = self.opener.open(url, timeout=10)
+                    page = self.opener.open(url, timeout=120)
                 
                 content = page.read()
                 page.close()
@@ -57,10 +57,5 @@ class Opener:
             except Exception as e:
                 # Catch timeout errors to prevent losing the session
                 if isinstance(e, socket.timeout) or "timeout" in str(e).lower() or "read operation" in str(e).lower():
-                    #log.warning('Network timeout in opener. Retrying... (Attempt %d of 2)', attempt + 1)
-                    print('WARNING: Network timeout in opener. Retrying in 5 seconds...')
-                    time.sleep(5)
-                    if attempt == 1:
-                        raise
-                else:
-                    raise
+                    print('Network timeout in opener')
+                raise
