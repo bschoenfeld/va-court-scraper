@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from courtreader import readers
-from courtutils.logger import get_logger
 from datetime import datetime, timedelta, date
 from time import sleep
 import os
@@ -12,8 +11,7 @@ import traceback
 from courtutils.databases.postgres import PostgresDatabase
 
 # configure logging
-log = get_logger()
-log.info('Worker running')
+print('Worker running')
 
 fips = sys.argv[1]
 stop_at_fips = int(fips) + 100
@@ -27,14 +25,14 @@ def next_fips(all_fips, cur_fips):
     return None
 
 def update_case(reader, db, cur_fips, case):
-    log.info('%s %s WritIssued:%s Fetched:%s Collected:%s', 
+    print('%s %s WritIssued:%s Fetched:%s Collected:%s' % (
         case['fips'], case['case_number'], case['WritIssuedDate'], 
         case['details_fetched_for_hearing_date'], case['collected']
-    )
+    ))
 
     case['details'] = reader.get_case_details_by_number(cur_fips, 'civil', case['case_number'], None)
     if 'error' in case['details']:
-        log.warn('Could not collect case details')
+        print('Could not collect case details')
         return
 
     case['collected'] = datetime.now()
@@ -58,7 +56,7 @@ def run(cur_fips):
         if cur_fips is None:
             break
 
-        log.info('FIPS %s', cur_fips)
+        print('FIPS %s' % cur_fips)
 
         while True:
             case = db.get_next_unlawful_detainer_to_update(cur_fips, date(2019, 12, 1))

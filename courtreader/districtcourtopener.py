@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-import logging
 import os
 import time
 import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
@@ -8,7 +7,6 @@ from .opener import Opener
 from selenium import webdriver
 from six.moves import input
 
-log = logging.getLogger('logentries')
 
 class DistrictCourtOpener:
     url_root = 'https://eapps.courts.state.va.us/gdcourts/'

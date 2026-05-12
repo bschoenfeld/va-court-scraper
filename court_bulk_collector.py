@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 from courtreader import readers
-from courtutils.logger import get_logger
 from time import sleep
 import datetime
 import os
@@ -22,8 +21,7 @@ if POSTGRES:
     from courtutils.databases.postgres import PostgresDatabase
 
 # configure logging
-log = get_logger()
-log.info('Worker running')
+print('Worker running')
 
 COURT_TYPE = sys.argv[1]
 if COURT_TYPE != 'circuit' and COURT_TYPE != 'district':
@@ -37,7 +35,7 @@ def get_db_connection():
     return None
 
 def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
-    log.info('Getting cases on ' + dateStr)
+    print('Getting cases on ' + dateStr)
     sleep(1)
     cases = reader.get_cases_by_date(fips, case_type, dateStr)
     total_cases = len(cases)
@@ -48,7 +46,7 @@ def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
 
         # If the hearing is in the future, add to the docket table - don't get details
         if date > datetime.datetime.now().date():
-            log.info('[%s] [%d/%d] Docket %s %s', fips, i, total_cases, case['case_number'], case['defendant'])
+            print('[%s] [%d/%d] Docket %s %s' % (fips, i, total_cases, case['case_number'], case['defendant']))
             case['CaseNumber'] = case['case_number']
             case['Defendant'] = case['defendant']
             if case_type == 'civil':
@@ -62,10 +60,10 @@ def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
             last_date = case_details['details_fetched_for_hearing_date'].strftime('%m/%d/%Y')
             collected_date = case_details['collected'].strftime('%m/%d/%Y')
             if case_details['details_fetched_for_hearing_date'] < case_details['collected']:
-                log.info('[%s] [%d/%d] %s details collected for hearing on %s', fips, i, total_cases, case['case_number'], last_date)
+                print('[%s] [%d/%d] %s details collected for hearing on %s' % (fips, i, total_cases, case['case_number'], last_date))
                 continue
             else:
-                log.info('[%s] [%d/%d] %s details were collected on %s before hearing date on %s - updating now', fips, i, total_cases, case['case_number'], collected_date, last_date)
+                print('[%s] [%d/%d] %s details were collected on %s before hearing date on %s - updating now' % (fips, i, total_cases, case['case_number'], collected_date, last_date))
         if '--' in case['case_number']:
             if case_type == 'civil':
                 case['details'] = {
@@ -78,16 +76,16 @@ def get_cases_on_date(db, reader, fips, case_type, date, dateStr):
                 }
         else:
             if len(case['case_number']) < 13:
-                log.warn('[%s] is an invalid case number', case['case_number'])
+                print('[%s] is an invalid case number' % (case['case_number'],))
                 continue
             case['details'] = reader.get_case_details_by_number(
                 fips, case_type, case['case_number'],
                 case['details_url'] if 'details_url' in case else None)
         if 'error' in case['details']:
-            log.warn('Could not collect case details for %s in %s',
-                     case['case_number'], case['fips'])
+            print('Could not collect case details for %s in %s' % (
+                     case['case_number'], case['fips']))
         else:
-            log.info('[%s] [%d/%d] %s %s', fips, i, total_cases, case['case_number'], case['defendant'])
+            print('[%s] [%d/%d] %s %s' % (fips, i, total_cases, case['case_number'], case['defendant']))
             db.replace_case_details(case, case_type)
 
 def run_collector(reader, last_task):
@@ -95,7 +93,7 @@ def run_collector(reader, last_task):
 
     task = db.get_and_delete_date_task(last_task)
     if task is None:
-        log.info('Nothing to do. Sleeping for 30 seconds.')
+        print('Nothing to do. Sleeping for 30 seconds.')
         sleep(30)
         return
 
@@ -107,11 +105,11 @@ def run_collector(reader, last_task):
         end_date = task['end_date']
         case_type = task['case_type']
 
-        log.info('Start %s %s %s-%s',
+        print('Start %s %s %s-%s' % (
                  fips,
                  case_type,
                  start_date.strftime('%m/%d/%Y'),
-                 end_date.strftime('%m/%d/%Y'))
+                 end_date.strftime('%m/%d/%Y')))
         date = start_date
 
         searched_dates = set([
@@ -127,7 +125,7 @@ def run_collector(reader, last_task):
             }
             date_str = date.strftime('%m/%d/%Y')
             if date_str in searched_dates:
-                log.info(date_str + ' already searched')
+                print(date_str + ' already searched')
             else:
                 if not reader_connected:
                     reader.connect()
@@ -138,7 +136,7 @@ def run_collector(reader, last_task):
                     searched_dates.add(date_str)
                 except Exception as err:
                     if isinstance(err, socket.timeout) or "timeout" in str(err).lower() or "read operation" in str(err).lower():
-                        log.warn('Timeout fetching cases for %s on %s. Skipping.', fips, date_str)
+                        print('Timeout fetching cases for %s on %s. Skipping.' % (fips, date_str))
                     else:
                         raise
             date += datetime.timedelta(days=-1)
@@ -146,8 +144,8 @@ def run_collector(reader, last_task):
         if reader_connected:
             reader.log_off()
     except Exception as err:
-        log.error(traceback.format_exc())
-        log.warn('Putting task back')
+        print(traceback.format_exc())
+        print('Putting task back')
         db.rollback()
         db.add_date_task(task, True)
         db.disconnect()
@@ -157,7 +155,7 @@ def run_collector(reader, last_task):
             pass
         raise
     except KeyboardInterrupt:
-        log.warn('Putting task back')
+        print('Putting task back')
         db.rollback()
         db.add_date_task(task, True)
         db.disconnect()
@@ -188,11 +186,11 @@ def run():
             except:
                 pass
             reader = None
-            log.error(traceback.format_exc())
+            print(traceback.format_exc())
             if isinstance(err, socket.timeout) or "timeout" in str(err).lower() or "read operation timed out" in str(err).lower():
-                log.info('Network timeout occurred. Sleeping for 30 seconds before retrying...')
+                print('Network timeout occurred. Sleeping for 30 seconds before retrying...')
                 sleep(30)
             else:
-                log.info('Unexpect error. Sleeping for 10 minute')
+                print('Unexpect error. Sleeping for 10 minute')
                 sleep(600)
 run()

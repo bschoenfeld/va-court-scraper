@@ -2,13 +2,11 @@ from __future__ import absolute_import
 from __future__ import print_function
 from . import circuitcourtparser
 from . import districtcourtparser
-import logging
 import sys
 from .circuitcourtopener import CircuitCourtOpener
 from .districtcourtopener import DistrictCourtOpener
 from time import sleep
 
-log = logging.getLogger('logentries')
 
 class DistrictCourtReader:
     def __init__(self):
@@ -105,7 +103,6 @@ class DistrictCourtReader:
             cases.extend(found_cases)
             if not districtcourtparser.next_names_button_found(soup):
                 break
-            log.info('Next Names Page')
             print('Next Names Page')
             count += 1
             sleep(2)

@@ -32,9 +32,7 @@ class Opener:
     def open(self, *args):
         import time
         import socket
-        import logging
-        log = logging.getLogger('logentries')
-        
+
         url = args[0]
         data = args[1] if len(args) == 2 else None
         

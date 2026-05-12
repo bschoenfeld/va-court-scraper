@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from courtreader import readers
-from courtutils.logger import get_logger
 from datetime import datetime, timedelta
 import csv
 import os

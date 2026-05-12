@@ -14,7 +14,6 @@ itsdangerous
 Jinja2
 jmespath
 joblib
-Logentries
 MarkupSafe
 mechanize
 memory-profiler
