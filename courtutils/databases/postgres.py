@@ -944,6 +944,7 @@ class PostgresDatabase():
 
     def disconnect(self):
         self.session.close()
+        self.engine.dispose()
 
     def get_cases_with_no_past_due(self, fips, case_type):
         case_builder = self.get_case_builder(case_type)

@@ -60,6 +60,11 @@ for fips, court in six.iteritems(courts):
 district_db.add_court_location_index()
 district_db.commit()
 
+if circuit_db is not None:
+    circuit_db.disconnect()
+if district_db is not None:
+    district_db.disconnect()
+
 '''
 court_names.sort()
 for court_name in court_names:

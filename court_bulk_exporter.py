@@ -121,6 +121,7 @@ def export_table(table, court_type, case_type):
             upload_zip_file(anon_data_zip_path)
         else:
             break
+    db.disconnect()
     return metadata
 
 def download_data_by_person(start_id, end_id, outfile_path, with_header):

@@ -53,4 +53,5 @@ for court in courts:
 
 # add the tasks to the database
 db.add_date_tasks(tasks)
+db.disconnect()
 print('Created', len(tasks), 'tasks')

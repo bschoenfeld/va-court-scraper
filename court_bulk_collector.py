@@ -95,6 +95,7 @@ def run_collector(reader, last_task):
     if task is None:
         print('Nothing to do. Sleeping for 30 seconds.')
         sleep(30)
+        db.disconnect()
         return
 
     try:
