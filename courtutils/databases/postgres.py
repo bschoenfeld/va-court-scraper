@@ -4,7 +4,7 @@ import os
 from datetime import datetime, date
 from sqlalchemy import (create_engine, Boolean, Column,
                         Date, DateTime, Integer, BigInteger,
-                        Float, String, ForeignKey, Index, and_)
+                        Float, String, ForeignKey, Index, and_, or_)
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
@@ -53,6 +53,40 @@ class CircuitCourtActiveDateTask(Base, ActiveDateTask):
 
 class DistrictCourtActiveDateTask(Base, ActiveDateTask):
     __tablename__ = 'district_court_active_date_tasks'
+
+class CompletedDateTask():
+    id = Column(Integer, primary_key=True)
+    fips = Column(Integer)
+    startdate = Column(Date)
+    enddate = Column(Date)
+    casetype = Column(String)
+    completed_at = Column(DateTime, default=datetime)
+
+class CircuitCourtCompletedDateTask(Base, CompletedDateTask):
+    __tablename__ = 'circuit_court_completed_date_tasks'
+
+class DistrictCourtCompletedDateTask(Base, CompletedDateTask):
+    __tablename__ = 'district_court_completed_date_tasks'
+
+# Tracks each running collector process so the dashboard can show workers even
+# when they are idle (between tasks), not just when they hold an active task.
+class Worker(Base):
+    __tablename__ = 'workers'
+    worker_id = Column(String, primary_key=True)
+    court_type = Column(String)
+    status = Column(String)       # 'working' or 'idle'
+    fips = Column(Integer)        # populated while working
+    case_type = Column(String)    # populated while working
+    last_alive = Column(DateTime)
+
+# Desired number of collector processes per court type. The dashboard writes
+# this; a worker_supervisor.py on each host reads it and starts/stops local
+# collectors to match.
+class WorkerTarget(Base):
+    __tablename__ = 'worker_targets'
+    court_type = Column(String, primary_key=True)
+    desired_count = Column(Integer)
+    updated_at = Column(DateTime)
 
 
 class DateSearch():
@@ -630,6 +664,12 @@ TABLES = [
     DistrictCourtDateTask,
     CircuitCourtActiveDateTask,
     DistrictCourtActiveDateTask,
+    CircuitCourtCompletedDateTask,
+    DistrictCourtCompletedDateTask,
+
+    # Workers
+    Worker,
+    WorkerTarget,
 
     # Searches
     CircuitCourtDateSearch,
@@ -688,13 +728,21 @@ class PostgresDatabase():
         for table in TABLES:
             table.__table__.create(self.engine, checkfirst=True) #pylint: disable=E1101
 
-        # Add last_alive column to active task tables if it doesn't exist yet
+        # Add last_alive column to active task tables if it doesn't exist yet.
+        # Only ALTER when the column is actually missing: ALTER TABLE takes an
+        # ACCESS EXCLUSIVE lock even for "ADD COLUMN IF NOT EXISTS", so running
+        # it on every connection serializes against heartbeat updates and reads.
         from sqlalchemy import text
         with self.engine.connect() as conn:
             for table_name in ['circuit_court_active_date_tasks', 'district_court_active_date_tasks']:
-                conn.execute(
-                    text("ALTER TABLE %s ADD COLUMN IF NOT EXISTS last_alive TIMESTAMP" % table_name)
-                )
+                exists = conn.execute(text(
+                    "SELECT 1 FROM information_schema.columns "
+                    "WHERE table_name = :t AND column_name = 'last_alive'"
+                ), {'t': table_name}).scalar()
+                if not exists:
+                    conn.execute(
+                        text("ALTER TABLE %s ADD COLUMN last_alive TIMESTAMP" % table_name)
+                    )
             conn.commit()
 
         self.court_type = court_type
@@ -702,11 +750,13 @@ class PostgresDatabase():
             self.court_builder = CircuitCourt
             self.date_task_builder = CircuitCourtDateTask
             self.active_date_task_builder = CircuitCourtActiveDateTask
+            self.completed_date_task_builder = CircuitCourtCompletedDateTask
             self.date_search_builder = CircuitCourtDateSearch
         else:
             self.court_builder = DistrictCourt
             self.date_task_builder = DistrictCourtDateTask
             self.active_date_task_builder = DistrictCourtActiveDateTask
+            self.completed_date_task_builder = DistrictCourtCompletedDateTask
             self.date_search_builder = DistrictCourtDateSearch
 
     def commit(self):
@@ -748,6 +798,32 @@ class PostgresDatabase():
                 )
             )
         self.session.commit()
+
+    def add_completed_date_task(self, task):
+        self.session.add(
+            self.completed_date_task_builder(
+                fips=int(task['fips']),
+                startdate=task['start_date'],
+                enddate=task['end_date'],
+                casetype=task['case_type'],
+                completed_at=datetime.now()
+            )
+        )
+        self.session.commit()
+
+    def get_recent_completed_date_tasks(self, limit=25):
+        rows = self.session \
+            .query(self.completed_date_task_builder) \
+            .order_by(self.completed_date_task_builder.completed_at.desc()) \
+            .limit(limit) \
+            .all()
+        return [{
+            'fips': str(r.fips).zfill(3),
+            'start_date': r.startdate,
+            'end_date': r.enddate,
+            'case_type': r.casetype,
+            'completed_at': r.completed_at
+        } for r in rows]
 
     def add_date_task(self, task, stopping_work=False):
         self.session.add(
@@ -811,22 +887,18 @@ class PostgresDatabase():
                 print('WARNING - FAILED TO GET NEW TASK')
                 self.session.rollback()
 
-    def update_task_heartbeat(self, task):
-        self.session \
-            .query(self.active_date_task_builder) \
-            .filter(
-                self.active_date_task_builder.fips == int(task['fips']),
-                self.active_date_task_builder.casetype == task['case_type']
-            ) \
-            .update({'last_alive': datetime.now()}, synchronize_session=False)
-        self.session.commit()
-
     def reset_stale_tasks(self, stale_threshold_seconds=120):
         from datetime import timedelta
         cutoff = datetime.now() - timedelta(seconds=stale_threshold_seconds)
+        # Include rows with a NULL last_alive: those are active tasks that never
+        # recorded a heartbeat (e.g. created before the column existed) and would
+        # otherwise never be reset, since NULL < cutoff is never true in SQL.
         stale_tasks = self.session \
             .query(self.active_date_task_builder) \
-            .filter(self.active_date_task_builder.last_alive < cutoff) \
+            .filter(or_(
+                self.active_date_task_builder.last_alive < cutoff,
+                self.active_date_task_builder.last_alive.is_(None)
+            )) \
             .all()
         for task in stale_tasks:
             print('Resetting stale task: fips=%s casetype=%s last_alive=%s' % (
