@@ -18,20 +18,31 @@ if POSTGRES:
 
 print('CIRCUIT COURT')
 circuit_db = None
-if MONGO: circuit_db = MongoDatabase('va_court_search', 'circuit')
-if POSTGRES: circuit_db = PostgresDatabase('circuit')
-circuit_db.drop_courts()
-reader = readers.CircuitCourtReader()
-courts = reader.connect()
-court_names = []
-for fips, court in six.iteritems(courts):
-    print(court['name'])
-    court_locality = court['name'].replace(' Circuit Court', '')
-    #location = geolocator.geocode(court_locality + ', Virginia, USA')
-    circuit_db.add_court(court['name'], fips, None)
-    court_names.append(court['name'] + ' ' + fips)
-circuit_db.add_court_location_index()
-circuit_db.commit()
+try:
+    if MONGO: circuit_db = MongoDatabase('va_court_search', 'circuit')
+    if POSTGRES: circuit_db = PostgresDatabase('circuit')
+    reader = readers.CircuitCourtReader()
+    # Connect first so a failure here doesn't wipe the existing circuit courts.
+    courts = reader.connect()
+    circuit_db.drop_courts()
+    court_names = []
+    for fips, court in six.iteritems(courts):
+        print(court['name'])
+        court_locality = court['name'].replace(' Circuit Court', '')
+        #location = geolocator.geocode(court_locality + ', Virginia, USA')
+        circuit_db.add_court(court['name'], fips, None)
+        court_names.append(court['name'] + ' ' + fips)
+    circuit_db.add_court_location_index()
+    circuit_db.commit()
+except Exception as err:
+    # If circuit courts can't be loaded (e.g. an unresolved 403), skip them and
+    # continue on to load the district courts.
+    print('Skipping circuit courts - failed to load (%s)' % err)
+    if circuit_db is not None:
+        try:
+            circuit_db.rollback()
+        except Exception:
+            pass
 
 '''
 court_names.sort()

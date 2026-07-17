@@ -51,7 +51,9 @@ for court in courts:
         'case_type': case_type
     })
 
-# add the tasks to the database
-db.add_date_tasks(tasks)
+# record this task-creation batch, then add the tasks tagged with its id so the
+# cases retrieved for them can be tracked back to this batch
+batch_id = db.create_batch(case_type, start_date, end_date)
+db.add_date_tasks(tasks, batch_id)
 db.disconnect()
-print('Created', len(tasks), 'tasks')
+print('Created', len(tasks), 'tasks (batch', batch_id, ')')

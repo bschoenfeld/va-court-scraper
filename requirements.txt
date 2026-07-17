@@ -26,6 +26,7 @@ s3transfer
 selenium
 sendwithus
 six
+openpyxl
 SQLAlchemy
 urllib3
 Werkzeug

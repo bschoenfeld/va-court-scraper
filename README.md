@@ -67,6 +67,36 @@ Run it in a separate terminal alongside your collectors:
 
 Only one instance of the watchdog needs to run regardless of how many collectors you have. It is recommended to always run the watchdog when running collectors.
 
+**If you manage collectors with the supervisor (see below), you do not need the watchdog** - the supervisor already reclaims stale tasks on every poll cycle. Only run the watchdog when you start collectors manually (without the supervisor), and never run both at once, since two processes reclaiming stale tasks concurrently can create duplicate pending rows.
+
+### Monitor workers with the dashboard
+
+The dashboard gives a live, browser-based view of what the collectors are doing, and lets you schedule new collection tasks. Start it in its own terminal:
+
+        python worker_dashboard.py
+
+It automatically opens your browser to the dashboard and refreshes every second. For each court type it shows the active workers (with how long ago each one last sent a heartbeat, highlighting any that have gone stale), the number of pending tasks, how many dates have been searched, and the total cases collected. While workers are active, case totals are shown as fast approximate estimates (prefixed with `~`); once a court's workers are idle, the exact count is computed and shown.
+
+The "Schedule tasks" form at the top creates collection tasks without the command line - the same as running `court_bulk_task_creator.py`. Choose a court level, case type, and a descending date range (start date on or after end date); leave FIPS blank to create a task for every court, or enter one to target a single court. Newly created tasks appear in the pending count and are picked up by any running collectors.
+
+The "Scheduled tasks" box lists the tasks currently queued (court, FIPS, case type, and date range), paginated newest-first. It updates live, so tasks disappear from the list as collectors claim them.
+
+The dashboard needs Flask, which is already listed in `requirements.txt`.
+
+### Start workers from the dashboard
+
+Each court card has a worker control showing how many collectors are running and a desired count you can raise or lower with the `+` / `-` buttons. The dashboard only writes the desired number to the database - it never spawns processes itself. A supervisor process does the spawning, so this works the same whether you run everything on one machine or across several servers.
+
+On every machine that should host collectors, run the supervisor:
+
+        python worker_supervisor.py
+
+The supervisor polls the desired count and starts or stops local `court_bulk_collector.py` processes to match (capped at 10, since the court site becomes unstable past that). Collectors run without opening a window; each one's output is written to its own file under `worker_logs/`. To scale across servers, run one supervisor per machine - the desired count is shared through the database, and the dashboard's "running" figure reflects the actual collectors that have registered.
+
+The supervisor also reclaims stale tasks each cycle (the same job as the watchdog), so when you run the supervisor you do not need to run `task_watchdog.py` as well.
+
+The **Worker logs** button at the top opens a viewer for those `worker_logs/` files: pick a log on the left to see its tail on the right, refreshed live while open. Note that the dashboard reads the log directory on its own machine, so it shows logs for collectors running on that same host (in a multi-server setup, logs on other machines aren't visible here).
+
 ## How to generate person ids
 
 Many effective uses of this data require grouping criminal cases to defendant. Unfortunately, the state does not provide any unique identifier, so the [generate_person_ids.py](https://github.com/bschoenfeld/va-court-scraper/blob/master/generate_person_ids.py) script attempts to create one. The script takes all cases and breaks them into groups based on gender, day of birth (there are no years in the case data), and first letter of last name. For each group, every name is compared to every other name using a fuzzy string match. This process can take a while. The script is built so that it can be run in parallel, one execution for each month of the year. I recommend a beefy server - I use a t2.xlarge on AWS, which has 4 CPUs and 16 GB of memory.
